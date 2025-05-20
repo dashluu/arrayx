@@ -1,0 +1,49 @@
+#pragma once
+
+#include "../../../core/dtype.h"
+#include "mtl_kernel.h"
+
+namespace ax::runtime::metal
+{
+    using namespace ax::core;
+
+    class MTLContext : public std::enable_shared_from_this<MTLContext>
+    {
+    private:
+        NS::SharedPtr<MTL::Device> device;
+        NS::SharedPtr<MTL::Library> lib;
+        NS::SharedPtr<MTL::CommandQueue> cmd_queue;
+        std::unordered_map<std::string, std::shared_ptr<MTLKernel>> kernel_by_name;
+
+        void init_kernel(const std::string &name);
+        void init_kernels(const std::vector<std::string> &opstrs, DtypePtrSet &dtypes, const std::vector<std::string> &modes);
+        void init_kernels(const std::string &opstr, DtypePtrSet &dtypes, const std::vector<std::string> &modes);
+        void init_kernels(const std::string &opstr, DtypePtrSet &dtypes);
+        void init_initializer_kernels();
+        void init_unary_kernels();
+        void init_binary_kernels();
+        void init_reduce_kernels();
+        void init_matmul_kernels();
+        void init_copy_kernels();
+
+    public:
+        MTLContext(const std::string &lib_path);
+
+        bool register_kernel(const std::string &name, std::shared_ptr<MTLKernel> kernel);
+
+        std::shared_ptr<MTLKernel> get_kernel(const std::string &name)
+        {
+            return kernel_by_name[name];
+        }
+
+        NS::SharedPtr<MTL::Device> get_device()
+        {
+            return device;
+        }
+
+        NS::SharedPtr<MTL::CommandQueue> get_cmd_queue()
+        {
+            return cmd_queue;
+        }
+    };
+}
