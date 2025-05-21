@@ -5,8 +5,8 @@
 #include "shape.h"
 #include "dtype.h"
 #include "device.h"
-#include "buffer.h"
 #include "id.h"
+#include "../runtime/buffer.h"
 
 namespace ax::core
 {
@@ -18,12 +18,15 @@ namespace ax::core
         Shape shape;
         DtypePtr dtype;
         DevicePtr device;
+        using Buffer = ax::runtime::Buffer;
+
+    public:
         std::shared_ptr<Buffer> buff = nullptr;
 
     public:
         Array(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
         {
-            buff = std::make_shared<Buffer>(ptr, nbytes, false);
+            buff = std::make_shared<Buffer>(ptr, nbytes);
         }
 
         Array(const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
@@ -34,13 +37,7 @@ namespace ax::core
         {
         }
 
-        ~Array()
-        {
-            if (buff != nullptr)
-            {
-                device->get_allocator()->free(buff);
-            }
-        }
+        ~Array() {}
 
         Array &operator=(const Array &arr) = delete;
 
@@ -88,24 +85,6 @@ namespace ax::core
             return std::make_shared<Array>(ptr, nbytes, shape, dtype, device);
         }
 
-        // Only allocate if the buffer is null
-        void alloc()
-        {
-            if (buff == nullptr)
-            {
-                buff = device->get_allocator()->alloc(get_nbytes());
-            }
-        }
-
-        // Low overhead by pointing to another buffer
-        void alloc(Buffer &buff)
-        {
-            if (this->buff == nullptr)
-            {
-                this->buff = std::make_shared<Buffer>(buff);
-            }
-        }
-
         bool is_contiguous() const { return shape.is_contiguous(); }
 
         // TODO: handle more cases to reduce copying?
@@ -118,6 +97,4 @@ namespace ax::core
 
     inline IdGenerator Array::id_gen = IdGenerator();
     using ArrayPtrVec = std::vector<ArrayPtr>;
-    using ArrayPtrVecIter = ArrayPtrVec::iterator;
-    using ArrayPtrVecConstIter = ArrayPtrVec::const_iterator;
 };

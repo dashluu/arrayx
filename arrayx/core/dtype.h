@@ -4,7 +4,7 @@
 
 namespace ax::core
 {
-    enum class DtypeName
+    enum struct DtypeName
     {
         F32,
         I8,
@@ -13,7 +13,7 @@ namespace ax::core
         B8
     };
 
-    enum class DtypeType
+    enum struct DtypeType
     {
         FLOAT,
         INT,
@@ -27,7 +27,7 @@ namespace ax::core
         {DtypeName::I32, "i32"},
         {DtypeName::B8, "b8"}};
 
-    class Dtype
+    struct Dtype
     {
     private:
         DtypeName name;
@@ -86,7 +86,7 @@ namespace ax::core
     };
 
     template <class T>
-    class Float : public Dtype
+    struct Float : public Dtype
     {
     public:
         Float(DtypeName name, isize size) : Dtype(name, DtypeType::FLOAT, size) {}
@@ -119,7 +119,7 @@ namespace ax::core
     };
 
     template <class T>
-    class Int : public Dtype
+    struct Int : public Dtype
     {
     public:
         Int(DtypeName name, isize size) : Dtype(name, DtypeType::INT, size) {}
@@ -148,7 +148,7 @@ namespace ax::core
         int one() const override { return 1; }
     };
 
-    class F32 : public Float<float>
+    struct F32 : public Float<float>
     {
     public:
         F32() : Float<float>(DtypeName::F32, 4) {}
@@ -157,28 +157,28 @@ namespace ax::core
         int one() const override { return std::bit_cast<int>(1.0f); }
     };
 
-    class I8 : public Int<int8_t>
+    struct I8 : public Int<int8_t>
     {
     public:
         I8() : Int<int8_t>(DtypeName::I8, 1) {}
         I8(const I8 &dtype) : Int<int8_t>(dtype) {}
     };
 
-    class I16 : public Int<int16_t>
+    struct I16 : public Int<int16_t>
     {
     public:
         I16() : Int<int16_t>(DtypeName::I16, 2) {}
         I16(const I16 &dtype) : Int<int16_t>(dtype) {}
     };
 
-    class I32 : public Int<int32_t>
+    struct I32 : public Int<int32_t>
     {
     public:
         I32() : Int<int32_t>(DtypeName::I32, 4) {}
         I32(const I32 &dtype) : Int<int32_t>(dtype) {}
     };
 
-    class Bool : public Dtype
+    struct Bool : public Dtype
     {
     public:
         Bool() : Dtype(DtypeName::B8, DtypeType::BOOL, 1) {}

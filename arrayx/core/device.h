@@ -1,11 +1,10 @@
 #pragma once
 
 #include "../utils.h"
-#include "allocator.h"
 
 namespace ax::core
 {
-    enum class DeviceType
+    enum struct DeviceType
     {
         CPU,
         MPS
@@ -14,22 +13,19 @@ namespace ax::core
     struct Device : public IStr
     {
     private:
-        Allocator *allocator;
         DeviceType type;
         isize idx;
 
     public:
         Device() = delete;
 
-        Device(DeviceType type, Allocator *allocator, isize idx = 0) : type(type), idx(idx), allocator(allocator) {}
+        Device(DeviceType type, isize idx = 0) : type(type), idx(idx) {}
 
-        Device(const Device &device) : Device(device.type, device.allocator, device.idx) {}
+        Device(const Device &device) : Device(device.type, device.idx) {}
 
         DeviceType get_type() const { return type; }
 
         isize get_idx() const { return idx; }
-
-        Allocator *get_allocator() const { return allocator; }
 
         Device &operator=(const Device &device) = delete;
 
@@ -53,6 +49,6 @@ namespace ax::core
         }
     };
 
-    inline const Device device0(DeviceType::MPS, &allocator0, 0);
+    inline const Device device0(DeviceType::MPS, 0);
     using DevicePtr = const Device *;
 }

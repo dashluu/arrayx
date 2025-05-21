@@ -18,7 +18,7 @@ namespace ax::graph
 		}
 	}
 
-	void Op::update_grad(OpPtr grad, bool sub)
+	void Op::update_grad(std::shared_ptr<Op> grad, bool sub)
 	{
 		this->grad = sub ? self_sub(this->grad, grad) : self_add(this->grad, grad);
 		this->gradroot = this->grad;
@@ -69,8 +69,153 @@ namespace ax::graph
 		lhs->init_grad();
 		lhs->update_grad(div(grad, detach(rhs)));
 		rhs->init_grad();
-		OpPtr detached_this = detach(std::const_pointer_cast<Op>(shared_from_this()));
-		rhs->update_grad(mul(grad, div(detached_this, detach(rhs))), true);
+		OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+		rhs->update_grad(mul(grad, div(self, detach(rhs))), true);
+	}
+
+	void SqOp::backward() const
+	{
+		// z = x**2
+		// dx += dz * 2x
+		operand->init_grad();
+		operand->update_grad(mul(grad, mul(detach(operand), 2.0f)));
+	}
+
+	void SqrtOp::backward() const
+	{
+		// z = sqrt(x)
+		// dx += dz / (2*sqrt(x))
+		// dx += dz / 2z
+		operand->init_grad();
+		OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+		operand->update_grad(div(grad, mul(self, 2.0f)));
+	}
+
+	void NegOp::backward() const
+	{
+		// z = -x
+		// dx += dz * -1
+		// dx -= dz
+		operand->init_grad();
+		operand->update_grad(grad, true);
+	}
+
+	void IdentityOp::backward() const
+	{
+		// z = x
+		// dx += dz
+		operand->init_grad();
+		operand->update_grad(grad);
+	}
+
+	void ExpOp::backward() const
+	{
+		// z = exp(x)
+		// dx += dz * exp(x)
+		// dx += dz * z
+		operand->init_grad();
+		OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+		operand->update_grad(mul(grad, self));
+	}
+
+	void LogOp::backward() const
+	{
+		// z = log(x)
+		// dx += dz / x
+		operand->init_grad();
+		operand->update_grad(div(grad, detach(operand)));
+	}
+
+	void RecipOp::backward() const
+	{
+		// z = 1/x
+		// dx += dz * -1/x**2
+		// dx += dz * -z**2
+		// dx -= dz * z**2
+		operand->init_grad();
+		OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+		operand->update_grad(mul(grad, sq(self)), true);
+	}
+
+	void SliceOp::backward() const
+	{
+		operand->init_grad();
+		operand->gradroot = slice(operand->grad, ranges);
+		operand->gradroot = self_add(operand->gradroot, grad);
+	}
+
+	void ReshapeOp::backward() const
+	{
+		operand->init_grad();
+		const ShapeView &operand_view = operand->get_output()->get_view();
+		// Copy must be done to ensure gradient independence
+		if (grad->get_output()->copy_when_reshape(operand_view))
+		{
+			// No need to copy since reshaping invokes copying anyway
+			operand->update_grad(reshape(grad, operand_view));
+		}
+		else
+		{
+			// Copy first and then reshape because reshaping to incompatible shape might cause another copy
+			// Copy first creates a contiguous array so reshaping it is easier
+			operand->update_grad(reshape(identity(grad), operand_view));
+		}
+	}
+
+	void PermuteOp::backward() const
+	{
+		operand->init_grad();
+		// Copy must be done before permuting to ensure gradient independence
+		// Permuting array does not invoke copying
+		OpPtr grad_copy = identity(grad);
+		ShapeView reverse_dims = grad_copy->get_output()->get_shape().undo_permute_view(dims);
+		operand->update_grad(permute(grad_copy, reverse_dims));
+	}
+
+	void BroadcastOp::backward() const
+	{
+		operand->init_grad();
+		operand->update_grad(reshape(sum(grad, dims), input_view));
+	}
+
+	void SqueezeOp::backward() const
+	{
+		operand->init_grad();
+		operand->update_grad(unsqueeze(grad, dim));
+	}
+
+	void UnsqueezeOp::backward() const
+	{
+		operand->init_grad();
+		operand->update_grad(squeeze(grad, dim));
+	}
+
+	void SumOp::backward() const
+	{
+		operand->init_grad();
+		operand->update_grad(grad);
+	}
+
+	void MaxOp::backward() const
+	{
+		operand->init_grad();
+		// No need to use detach here since both operand's array and "this" array are not modified
+		// Column reduction: operand's array is of shape (d1, d2) and "this" array is of shape (d1, 1)
+		// All reduction: operand's array is of shape (d1, d2, etc.) and "this" array is of shape (1)
+		// eq() handles broadcasting automatically
+		OpPtr mask = eq(operand, std::const_pointer_cast<Op>(shared_from_this()));
+		operand->update_grad(mul(astype(mask, operand->get_output()->get_dtype()), grad));
+	}
+
+	void MinOp::backward() const
+	{
+		operand->init_grad();
+		// No need to use detach here since both operand's array and "this" array are not modified
+		// Column reduction: operand's array is of shape (d1, d2) and "this" array is of shape (d1, 1)
+		// All reduction: operand's array is of shape (d1, d2, etc.) and "this" array is of shape (1)
+		// eq() handles broadcasting automatically
+		OpPtr mask = eq(operand, std::const_pointer_cast<Op>(shared_from_this()));
+		operand->update_grad(mul(astype(mask, operand->get_output()->get_dtype()), grad));
 	}
 
 	const std::string UnaryOp::str() const
@@ -100,7 +245,11 @@ namespace ax::graph
 
 	OpPtr detach(OpPtr op)
 	{
-		return std::make_shared<NoopOp>(op->get_output());
+		// Shared array -> shared buffer -> buffer goes out of scope -> Memory is freed twice
+		// Solution: separate buffers but reference same memory region since a buffer knows when to free the memory
+		ArrayPtr in_arr = op->get_output();
+		ArrayPtr out_arr = Array::from_ptr(in_arr->get_ptr(), in_arr->get_nbytes(), in_arr->get_shape(), in_arr->get_dtype(), in_arr->get_device());
+		return std::make_shared<NoopOp>(out_arr);
 	}
 
 	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
@@ -115,9 +264,19 @@ namespace ax::graph
 		return full(view, dtype->zero(), dtype, device);
 	}
 
+	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
+	{
+		return full_like(in_op, dtype->zero(), dtype, device);
+	}
+
 	OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device)
 	{
 		return full(view, dtype->one(), dtype, device);
+	}
+
+	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
+	{
+		return full_like(in_op, dtype->one(), dtype, device);
 	}
 
 	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, DevicePtr device)
@@ -187,6 +346,42 @@ namespace ax::graph
 		return out_op;
 	}
 
+	OpPtr slice(OpPtr in_op, const RangeVec &ranges)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().slice(ranges), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<SliceOp>(out_arr, in_op, ranges);
+		return out_op;
+	}
+
+	OpPtr astype(OpPtr in_op, DtypePtr dtype)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		if (in_arr->get_dtype() == dtype)
+		{
+			return in_op;
+		}
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape(), dtype, in_arr->get_device());
+		OpPtr out_op = std::make_shared<AstypeOp>(out_arr, in_op, dtype);
+		return out_op;
+	}
+
+	OpPtr unsqueeze(OpPtr in_op, isize dim)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<UnsqueezeOp>(out_arr, in_op, dim);
+		return out_op;
+	}
+
+	OpPtr squeeze(OpPtr in_op, isize dim)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<SqueezeOp>(out_arr, in_op, dim);
+		return out_op;
+	}
+
 	OpPtr add(OpPtr lop, OpPtr rop)
 	{
 		return binary_ss<AddOp>(lop, rop);
@@ -207,6 +402,80 @@ namespace ax::graph
 		return binary_ss<DivOp>(lop, rop);
 	}
 
+	OpPtr matmul(OpPtr lop, OpPtr rop)
+	{
+		MatmulOp dummy_op(nullptr, nullptr, nullptr);
+		ArrayPtr larr = lop->get_output();
+		ArrayPtr rarr = rop->get_output();
+		const Shape &lshape = larr->get_shape();
+		const ShapeView &lview = larr->get_view();
+		const ShapeView &rview = rarr->get_view();
+		DtypePtr ldtype = larr->get_dtype();
+		DtypePtr rdtype = rarr->get_dtype();
+		DevicePtr ldevice = larr->get_device();
+		DevicePtr rdevice = rarr->get_device();
+
+		if (!lshape.matmul_broadcastable(rview))
+		{
+			throw IncompatShapesForOp(dummy_op.get_opcode_str(), vnumstr(lview), vnumstr(rview));
+		}
+		if (!binary_dtypes.contains(ldtype) || ldtype != rdtype)
+		{
+			throw IncompatDtypesForOp(dummy_op.get_opcode_str(), ldtype->str(), rdtype->str());
+		}
+		if (ldevice != rdevice)
+		{
+			throw IncompatDevicesForOp(dummy_op.get_opcode_str(), ldevice->str(), rdevice->str());
+		}
+
+		ShapeView broadcasted_lview = lview;
+		ShapeView broadcasted_rview = rview;
+		size_t ndim = std::max(broadcasted_lview.size(), broadcasted_rview.size());
+		broadcasted_lview.insert(broadcasted_lview.begin(), ndim - broadcasted_lview.size(), 1);
+		broadcasted_rview.insert(broadcasted_rview.begin(), ndim - broadcasted_rview.size(), 1);
+
+		for (size_t i = 0; i < ndim - 2; i++)
+		{
+			isize shared_dim = std::max(broadcasted_lview[i], broadcasted_rview[i]);
+			broadcasted_lview[i] = shared_dim;
+			broadcasted_rview[i] = shared_dim;
+		}
+
+		isize batch = std::accumulate(
+			broadcasted_lview.begin(),
+			std::prev(broadcasted_lview.end(), 2),
+			1,
+			std::multiplies<isize>());
+		ShapeView mm_lview = {
+			batch,
+			broadcasted_lview[broadcasted_lview.size() - 2],
+			broadcasted_lview[broadcasted_lview.size() - 1]};
+		ShapeView mm_rview = {
+			batch,
+			broadcasted_rview[broadcasted_rview.size() - 2],
+			broadcasted_rview[broadcasted_rview.size() - 1]};
+
+		// Broadcast lhs and rhs to have only 3D
+		// Lhs's shape: B, M, N
+		OpPtr mm_lop = broadcast(lop, broadcasted_lview);
+		mm_lop = reshape(mm_lop, mm_lview);
+		// Rhs's shape: B, N, K
+		OpPtr mm_rop = broadcast(rop, broadcasted_rview);
+		mm_rop = reshape(mm_rop, mm_rview);
+
+		// Result's shape: B, M, K
+		ShapeView mm_view = mm_lop->get_output()->get_view();
+		mm_view[mm_view.size() - 1] = rview[rview.size() - 1];
+		ArrayPtr mm_arr = Array::empty(Shape(mm_view), ldtype, ldevice);
+		OpPtr out_op = std::make_shared<MatmulOp>(mm_arr, mm_lop, mm_rop);
+
+		// Reshape to expected result's shape
+		ShapeView reshaped_mm_view = broadcasted_lview;
+		reshaped_mm_view[reshaped_mm_view.size() - 1] = rview[rview.size() - 1];
+		out_op = reshape(out_op, reshaped_mm_view);
+		return out_op;
+	}
+
 	OpPtr self_add(OpPtr lop, OpPtr rop)
 	{
 		return self_binary_ss<AddOp>(lop, rop);
@@ -225,5 +494,134 @@ namespace ax::graph
 	OpPtr self_div(OpPtr lop, OpPtr rop)
 	{
 		return self_binary_ss<DivOp>(lop, rop);
+	}
+
+	OpPtr eq(OpPtr lop, OpPtr rop)
+	{
+		return cmp<EqOp>(lop, rop, all_dtypes);
+	}
+
+	OpPtr neq(OpPtr lop, OpPtr rop)
+	{
+		return cmp<NeqOp>(lop, rop, all_dtypes);
+	}
+
+	OpPtr lt(OpPtr lop, OpPtr rop)
+	{
+		return cmp<LtOp>(lop, rop, numeric_dtypes);
+	}
+
+	OpPtr gt(OpPtr lop, OpPtr rop)
+	{
+		return cmp<GtOp>(lop, rop, numeric_dtypes);
+	}
+
+	OpPtr leq(OpPtr lop, OpPtr rop)
+	{
+		return cmp<LeqOp>(lop, rop, numeric_dtypes);
+	}
+
+	OpPtr geq(OpPtr lop, OpPtr rop)
+	{
+		return cmp<GeqOp>(lop, rop, numeric_dtypes);
+	}
+
+	OpPtr sq(OpPtr in_op, bool in_place)
+	{
+		return unary_ss<SqOp>(in_op, in_place);
+	}
+
+	OpPtr sqrt(OpPtr in_op, bool in_place)
+	{
+		return unary_ss_float<SqrtOp>(in_op, in_place);
+	}
+
+	OpPtr neg(OpPtr in_op, bool in_place)
+	{
+		return unary_ss<NegOp>(in_op, in_place);
+	}
+
+	OpPtr identity(OpPtr in_op, bool in_place)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<IdentityOp>(out_arr, in_op);
+		return out_op;
+	}
+
+	OpPtr exp(OpPtr in_op, bool in_place)
+	{
+		return unary_ss_float<ExpOp>(in_op, in_place);
+	}
+
+	OpPtr log(OpPtr in_op, bool in_place)
+	{
+		return unary_ss_float<LogOp>(in_op, in_place);
+	}
+
+	OpPtr recip(OpPtr in_op, bool in_place)
+	{
+		return unary_ss_float<RecipOp>(in_op, in_place);
+	}
+
+	OpPtr reshape(OpPtr in_op, const ShapeView &view)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		if (in_arr->get_view() == view)
+		{
+			return in_op;
+		}
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().reshape(view), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<ReshapeOp>(out_arr, in_op, view);
+		return out_op;
+	}
+
+	OpPtr permute(OpPtr in_op, const ShapeDims &dims)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().permute(dims), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<PermuteOp>(out_arr, in_op, dims);
+		return out_op;
+	}
+
+	OpPtr transpose(OpPtr in_op, isize start_dim, isize end_dim)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		const Shape &in_shape = in_arr->get_shape();
+		ShapeDims transpose_dims = in_shape.transpose(start_dim, end_dim);
+		return permute(in_op, transpose_dims);
+	}
+
+	OpPtr flatten(OpPtr in_op, isize start_dim, isize end_dim)
+	{
+		ArrayPtr in_arr = in_op->get_output();
+		const Shape &in_shape = in_arr->get_shape();
+		ShapeView flattened_view = in_shape.flatten(start_dim, end_dim);
+		return reshape(in_op, flattened_view);
+	}
+
+	OpPtr sum(OpPtr in_op, const ShapeDims &dims)
+	{
+		return reduce<SumOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+	}
+
+	OpPtr max(OpPtr in_op, const ShapeDims &dims)
+	{
+		return reduce<MaxOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+	}
+
+	OpPtr min(OpPtr in_op, const ShapeDims &dims)
+	{
+		return reduce<MinOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+	}
+
+	OpPtr argmax(OpPtr in_op, const ShapeDims &dims)
+	{
+		return reduce<ArgmaxOp>(in_op, dims, &i32, numeric_dtypes);
+	}
+
+	OpPtr argmin(OpPtr in_op, const ShapeDims &dims)
+	{
+		return reduce<ArgminOp>(in_op, dims, &i32, numeric_dtypes);
 	}
 }

@@ -75,6 +75,22 @@ namespace ax::core
             }
         }
 
+        void if_start_end_dim_are_valid(isize start_dim, isize end_dim) const
+        {
+            if (start_dim > end_dim)
+            {
+                throw std::invalid_argument("The start dimension must be smaller than the end dimension.");
+            }
+            if (start_dim >= get_ndim())
+            {
+                throw std::invalid_argument("The start dimension must be smaller than the number of dimensions.");
+            }
+            if (end_dim >= get_ndim())
+            {
+                throw std::invalid_argument("The end dimension must be smaller than the number of dimensions.");
+            }
+        }
+
     public:
         Shape() : Shape(0, {1}, {1}) {}
 
@@ -285,10 +301,38 @@ namespace ax::core
             return std::make_pair(broadcast_shape, broadcast_dims);
         }
 
-        Shape reshape(const ShapeView &target)
+        Shape reshape(const ShapeView &target) const
         {
             // TODO: fix this
+            if_view_is_valid(target);
+            isize numel = get_numel();
+            isize target_numel = std::accumulate(target.begin(), target.end(), 1, std::multiplies<isize>());
+            if (numel != target_numel)
+            {
+                throw std::invalid_argument("Cannot reshape array of " + std::to_string(numel) + " to " + std::to_string(target_numel) + " elements.");
+            }
             return Shape(offset, target);
+        }
+
+        ShapeDims transpose(isize start_dim, isize end_dim) const
+        {
+            if_start_end_dim_are_valid(start_dim, end_dim);
+            ShapeDims transpose_dims(get_ndim());
+            std::iota(transpose_dims.begin(), transpose_dims.end(), 0);
+            std::reverse(transpose_dims.begin() + start_dim, transpose_dims.begin() + end_dim + 1);
+            return transpose_dims;
+        }
+
+        ShapeView flatten(isize start_dim, isize end_dim) const
+        {
+            if_start_end_dim_are_valid(start_dim, end_dim);
+            ShapeView flattened_view = view;
+            isize prod = std::accumulate(flattened_view.begin() + start_dim, flattened_view.begin() + end_dim + 1, 1, std::multiplies<isize>());
+            // Erase from start_dim + 1 to end_dim + 1
+            flattened_view.erase(flattened_view.begin() + start_dim + 1, flattened_view.begin() + end_dim + 1);
+            // Update view at start_dim
+            flattened_view[start_dim] = prod;
+            return flattened_view;
         }
 
         Shape permute(const ShapeDims &dims) const

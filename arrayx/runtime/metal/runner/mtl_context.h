@@ -2,6 +2,7 @@
 
 #include "../../../core/dtype.h"
 #include "mtl_kernel.h"
+#include "mtl_allocator.h"
 
 namespace ax::runtime::metal
 {
@@ -10,6 +11,7 @@ namespace ax::runtime::metal
     class MTLContext : public std::enable_shared_from_this<MTLContext>
     {
     private:
+        std::shared_ptr<MTLAllocator> allocator;
         NS::SharedPtr<MTL::Device> device;
         NS::SharedPtr<MTL::Library> lib;
         NS::SharedPtr<MTL::CommandQueue> cmd_queue;
@@ -30,6 +32,11 @@ namespace ax::runtime::metal
         MTLContext(const std::string &lib_path);
 
         bool register_kernel(const std::string &name, std::shared_ptr<MTLKernel> kernel);
+
+        std::shared_ptr<MTLAllocator> get_allocator()
+        {
+            return allocator;
+        }
 
         std::shared_ptr<MTLKernel> get_kernel(const std::string &name)
         {

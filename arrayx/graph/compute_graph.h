@@ -4,8 +4,6 @@
 
 namespace ax::graph
 {
-	using namespace ax::core;
-
 	class ComputeGraph : public IStr, public std::enable_shared_from_this<ComputeGraph>
 	{
 	private:

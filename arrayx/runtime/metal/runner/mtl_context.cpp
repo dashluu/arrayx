@@ -94,6 +94,7 @@ namespace ax::runtime::metal
 
     MTLContext::MTLContext(const std::string &lib_path)
     {
+        allocator = std::make_shared<MTLAllocator>();
         device = NS::TransferPtr<MTL::Device>(MTL::CreateSystemDefaultDevice());
         NS::String *path = NS::String::string(lib_path.c_str(), NS::ASCIIStringEncoding);
         auto url = NS::URL::fileURLWithPath(path);

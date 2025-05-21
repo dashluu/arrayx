@@ -5,7 +5,7 @@ namespace ax::runtime::metal
 	void MTLRunner::run_initializer_op(OpPtr op)
 	{
 		ArrayPtr arr = op->get_output();
-		arr->alloc();
+		alloc(arr);
 		switch (op->get_opcode())
 		{
 		case Opcode::FULL:
@@ -32,13 +32,20 @@ namespace ax::runtime::metal
 		OpPtr operand = unary_op->get_operand();
 		if (unary_op->is_in_place())
 		{
-			arr->alloc(*(operand->get_output())->get_buff());
+			alloc(arr, operand->get_output()->get_buff());
 		}
 		else
 		{
-			arr->alloc();
+			alloc(arr);
 		}
-		run_unary_ss_kernel(unary_op->get_opcode_str(), operand, op);
+		if (unary_op->get_opcode() == Opcode::IDENTITY)
+		{
+			run_copy_kernel(operand, op);
+		}
+		else
+		{
+			run_unary_ss_kernel(unary_op->get_opcode_str(), operand, op);
+		}
 	}
 
 	void MTLRunner::run_binary_op(OpPtr op)
@@ -50,11 +57,11 @@ namespace ax::runtime::metal
 		if (binary_op->is_in_place())
 		{
 			// Share memory with lhs
-			arr->alloc(*(lop->get_output())->get_buff());
+			alloc(arr, lop->get_output()->get_buff());
 		}
 		else
 		{
-			arr->alloc();
+			alloc(arr);
 		}
 		run_binary_ss_kernel(binary_op->get_opcode_str(), lop, rop, op);
 	}
@@ -64,7 +71,7 @@ namespace ax::runtime::metal
 		std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
 		OpPtr lop = matmul_op->get_lhs();
 		OpPtr rop = matmul_op->get_rhs();
-		matmul_op->get_output()->alloc();
+		alloc(matmul_op->get_output());
 		run_matmul_kernel(lop, rop, op);
 	}
 
@@ -80,11 +87,11 @@ namespace ax::runtime::metal
 			ArrayPtr in_arr = operand->get_output();
 			if (!in_arr->copy_when_reshape(reshape_op->get_view()))
 			{
-				out_arr->alloc(*in_arr->get_buff());
+				alloc(out_arr, in_arr->get_buff());
 			}
 			else
 			{
-				out_arr->alloc();
+				alloc(out_arr);
 				run_copy_kernel(operand, op);
 			}
 			break;
@@ -114,11 +121,11 @@ namespace ax::runtime::metal
 			run_simple_transform_op<UnsqueezeOp>(op);
 			break;
 		}
-		case Opcode::AS_TYPE:
+		case Opcode::ASTYPE:
 		{
-			std::shared_ptr<AsTypeOp> as_type_op = std::static_pointer_cast<AsTypeOp>(op);
+			std::shared_ptr<AstypeOp> as_type_op = std::static_pointer_cast<AstypeOp>(op);
 			OpPtr operand = as_type_op->get_operand();
-			op->get_output()->alloc();
+			alloc(as_type_op->get_output());
 			run_copy_kernel(operand, op);
 			break;
 		}
@@ -132,7 +139,7 @@ namespace ax::runtime::metal
 		std::shared_ptr<ReduceOp> reduce_op = std::static_pointer_cast<ReduceOp>(op);
 		ArrayPtr arr = reduce_op->get_output();
 		OpPtr operand = reduce_op->get_operand();
-		arr->alloc();
+		alloc(arr);
 		int default_val = reduce_op->get_default_val();
 		if (reduce_op->get_mode() == ReduceMode::VALUE)
 		{
@@ -153,56 +160,15 @@ namespace ax::runtime::metal
 		}
 	}
 
-	void MTLRunner::run(OpPtr op)
+	void MTLRunner::alloc(ArrayPtr arr)
 	{
-		switch (op->get_optype())
-		{
-		case Optype::INITIALIZER:
-		{
-			run_initializer_op(op);
-			break;
-		}
-		case Optype::UNARY:
-		{
-			run_unary_op(op);
-			break;
-		}
-		case Optype::BINARY:
-		{
-			run_binary_op(op);
-			break;
-		}
-		case Optype::MATMUL:
-		{
-			run_matmul_op(op);
-			break;
-		}
-		case Optype::TRANSFORM:
-		{
-			run_transform_op(op);
-			break;
-		}
-		default:
-		{
-			run_reduce_op(op);
-			break;
-		}
-		}
+		arr->buff = std::make_shared<Buffer>(ctx->get_allocator(), arr->get_nbytes());
 	}
 
-	void MTLRunner::forward(std::shared_ptr<ComputeGraph> graph)
+	void MTLRunner::alloc(ArrayPtr arr, std::shared_ptr<Buffer> buff)
 	{
-		for (auto iter = graph->cbegin(); iter != graph->cend(); ++iter)
-		{
-			run(*iter);
-		}
-	}
-
-	void MTLRunner::backward(std::shared_ptr<ComputeGraph> graph)
-	{
-		for (auto iter = graph->crbegin(); iter != graph->crend(); ++iter)
-		{
-			run(*iter);
-		}
+		// Simply assigning buff prevents the memory from being freed properly
+		// Reason: shared buffer -> buffer goes out of scope -> Memory is freed twice
+		arr->buff = std::make_shared<Buffer>(*buff);
 	}
 }

@@ -6,12 +6,14 @@ set(CMAKE_CXX_STANDARD 23)
 file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils.h"
 )
 
 file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.cpp"
 )
 
 if(APPLE)

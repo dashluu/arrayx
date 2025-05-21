@@ -11,8 +11,9 @@ using namespace ax::graph;
 int main()
 {
 	auto op1 = arange({2, 3, 4}, 0, 2);
-	auto op2 = arange({2, 3, 4}, 1, 4);
-	auto op3 = add(op1, op2);
+	// auto op2 = arange({2, 3, 4}, 1, 4);
+	// auto op3 = add(op1, 2);
+	auto op3 = sum(op1);
 	auto cg = std::make_shared<ComputeGraph>(op3);
 	auto ctx = std::make_shared<MTLContext>("runtime/metal/kernels/kernels.metallib");
 	MTLRunner runner(ctx);
