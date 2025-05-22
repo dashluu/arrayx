@@ -4,9 +4,9 @@
 #include "range.h"
 #include "shape.h"
 #include "dtype.h"
-#include "device.h"
 #include "id.h"
-#include "../runtime/buffer.h"
+#include "../devices/device.h"
+#include "../devices/buffer.h"
 
 namespace ax::core
 {
@@ -17,20 +17,23 @@ namespace ax::core
         Id id;
         Shape shape;
         DtypePtr dtype;
+        using Buffer = ax::devices::Buffer;
+        using DevicePtr = ax::devices::DevicePtr;
         DevicePtr device;
-        using Buffer = ax::runtime::Buffer;
 
     public:
         std::shared_ptr<Buffer> buff = nullptr;
 
     public:
-        Array(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
+        Array(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu") : id(id_gen.generate()), shape(shape), dtype(dtype)
         {
+            // device = get_device_by_name(device_name);
             buff = std::make_shared<Buffer>(ptr, nbytes);
         }
 
-        Array(const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
+        Array(const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu") : id(id_gen.generate()), shape(shape), dtype(dtype)
         {
+            // device = get_device_by_name(device_name);
         }
 
         Array(const Array &arr) : id(id_gen.generate()), shape(arr.shape), dtype(arr.dtype), device(arr.device), buff(arr.buff)
@@ -61,6 +64,8 @@ namespace ax::core
 
         DevicePtr get_device() const { return device; }
 
+        const std::string get_device_name() const { return device->get_name(); }
+
         std::shared_ptr<Buffer> get_buff() const { return buff; }
 
         isize get_numel() const { return shape.get_numel(); }
@@ -75,14 +80,14 @@ namespace ax::core
         // Note: get_buff_nbytes() != get_nbytes()
         isize get_buff_nbytes() const { return buff->get_nbytes(); }
 
-        static ArrayPtr empty(const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0)
+        static ArrayPtr empty(const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu")
         {
-            return std::make_shared<Array>(shape, dtype, device);
+            return std::make_shared<Array>(shape, dtype, device_name);
         }
 
-        static ArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0)
+        static ArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu")
         {
-            return std::make_shared<Array>(ptr, nbytes, shape, dtype, device);
+            return std::make_shared<Array>(ptr, nbytes, shape, dtype, device_name);
         }
 
         bool is_contiguous() const { return shape.is_contiguous(); }

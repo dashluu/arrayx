@@ -1,9 +1,11 @@
 #pragma once
 
-#include "metal.h"
-#include "../../../utils.h"
+#include <Foundation/Foundation.hpp>
+#include <Metal/Metal.hpp>
+#include <QuartzCore/QuartzCore.hpp>
+#include "../../utils.h"
 
-namespace ax::runtime::metal
+namespace ax::devices::metal
 {
     struct MTLKernel : public std::enable_shared_from_this<MTLKernel>
     {
@@ -16,6 +18,10 @@ namespace ax::runtime::metal
     public:
         MTLKernel(const std::string &name) : name(name) {}
 
+        MTLKernel(const MTLKernel &other) = delete;
+
+        MTLKernel &operator=(const MTLKernel &other) = delete;
+
         void init(NS::SharedPtr<MTL::Device> device, NS::SharedPtr<MTL::Library> lib)
         {
             NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
@@ -27,10 +33,10 @@ namespace ax::runtime::metal
             pool->release();
         }
 
-        const std::string &get_name() { return name; }
+        const std::string &get_name() const { return name; }
 
-        NS::SharedPtr<MTL::Function> get_function() { return function; }
+        NS::SharedPtr<MTL::Function> get_function() const { return function; }
 
-        NS::SharedPtr<MTL::ComputePipelineState> get_state() { return state; }
+        NS::SharedPtr<MTL::ComputePipelineState> get_state() const { return state; }
     };
 }

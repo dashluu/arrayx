@@ -2,10 +2,13 @@
 
 #include "../utils.h"
 #include "../core/array.h"
+#include "../devices/device.h"
 
 namespace ax::graph
 {
     using namespace ax::core;
+    using namespace ax::devices;
+
     enum struct Opcode
     {
         NOOP,
@@ -509,14 +512,14 @@ namespace ax::graph
     };
 
     OpPtr detach(OpPtr op);
-    OpPtr full(const ShapeView &view, int c, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr zeros_like(OpPtr in_op, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr ones(const ShapeView &view, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr ones_like(OpPtr in_op, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0);
-    OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, DevicePtr device = &device0);
+    OpPtr full(const ShapeView &view, int c, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr zeros_like(OpPtr in_op, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr ones_like(OpPtr in_op, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+    OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
     OpPtr broadcast(OpPtr op, const ShapeView &view);
     OpPtr broadcast_to(OpPtr op, const ShapeView &view);
     OpPtr slice(OpPtr in_op, const RangeVec &ranges);
@@ -562,11 +565,11 @@ namespace ax::graph
     }
 
     template <class T>
-    OpPtr full_like(OpPtr in_op, T c, DtypePtr dtype = &f32, DevicePtr device = &device0)
+    OpPtr full_like(OpPtr in_op, T c, DtypePtr dtype = &f32, const std::string &device_name = "cpu")
     {
         if_scalar_is_numeric(c);
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        return full(in_op->get_output()->get_view(), dtype->get_value_as_int(c_ptr), dtype, device);
+        return full(in_op->get_output()->get_view(), dtype->get_value_as_int(c_ptr), dtype, device_name);
     }
 
     template <class T>
@@ -576,7 +579,7 @@ namespace ax::graph
         ArrayPtr larr = lop->get_output();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device_name());
         return add(lop, rop);
     }
 
@@ -587,7 +590,7 @@ namespace ax::graph
         ArrayPtr larr = lop->get_output();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device_name());
         return sub(lop, rop);
     }
 
@@ -598,7 +601,7 @@ namespace ax::graph
         ArrayPtr larr = lop->get_output();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device_name());
         return mul(lop, rop);
     }
 
@@ -609,7 +612,7 @@ namespace ax::graph
         ArrayPtr larr = lop->get_output();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device_name());
         return div(lop, rop);
     }
 
@@ -641,7 +644,7 @@ namespace ax::graph
 
         OpPtr broadcasted_lop = broadcast(lop, rview);
         OpPtr broadcasted_rop = broadcast(rop, lview);
-        ArrayPtr out_arr = Array::empty(Shape(broadcasted_lop->get_output()->get_view()), ldtype, ldevice);
+        ArrayPtr out_arr = Array::empty(Shape(broadcasted_lop->get_output()->get_view()), ldtype, ldevice->get_name());
         OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop, false);
         return out_op;
     }
@@ -674,7 +677,7 @@ namespace ax::graph
         }
 
         OpPtr broadcasted_rop = broadcast_to(rop, lview);
-        ArrayPtr out_arr = Array::empty(lshape, ldtype, ldevice);
+        ArrayPtr out_arr = Array::empty(lshape, ldtype, ldevice->get_name());
         OpPtr out_op = std::make_shared<O>(out_arr, lop, broadcasted_rop, true);
         return out_op;
     }
@@ -691,7 +694,7 @@ namespace ax::graph
             throw IncompatDtypeForOp(dummy_op.get_opcode_str(), in_dtype->str());
         }
 
-        ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_dtype, in_arr->get_device());
+        ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_dtype, in_arr->get_device_name());
         OpPtr out_op = std::make_shared<O>(out_arr, in_op, in_place);
         return out_op;
     }
@@ -719,7 +722,7 @@ namespace ax::graph
             throw IncompatDtypeForOp(dummy_op.get_opcode_str(), in_dtype->str());
         }
 
-        ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), result_dtype->second, in_arr->get_device());
+        ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), result_dtype->second, in_arr->get_device_name());
         OpPtr out_op = std::make_shared<O>(out_arr, in_op, in_place);
         return out_op;
     }
@@ -752,7 +755,7 @@ namespace ax::graph
 
         OpPtr broadcasted_lop = broadcast(lop, rview);
         OpPtr broadcasted_rop = broadcast(rop, lview);
-        ArrayPtr out_arr = Array::empty(Shape(broadcasted_lop->get_output()->get_view()), &b8, ldevice);
+        ArrayPtr out_arr = Array::empty(Shape(broadcasted_lop->get_output()->get_view()), &b8, ldevice->get_name());
         OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop);
         return out_op;
     }
@@ -763,7 +766,7 @@ namespace ax::graph
         ArrayPtr in_arr = in_op->get_output();
         const Shape &in_shape = in_arr->get_shape();
         DtypePtr in_dtype = in_arr->get_dtype();
-        DevicePtr in_device = in_arr->get_device();
+        const std::string &in_device_name = in_arr->get_device_name();
 
         if (!valid_dtypes.contains(in_dtype))
         {
@@ -777,7 +780,7 @@ namespace ax::graph
         if (dims.size() == 0)
         {
             // Reduce to one element
-            reduction_arr = Array::empty(Shape({1}), result_dtype, in_device);
+            reduction_arr = Array::empty(Shape({1}), result_dtype, in_device_name);
             reduction_op = std::make_shared<O>(reduction_arr, in_op, dims);
             return reduction_op;
         }
@@ -825,7 +828,7 @@ namespace ax::graph
 
         OpPtr reshape_op_before_reduction = reshape(permutation_op, {kept_numel, reduction_numel});
         // Reduce the array
-        reduction_arr = Array::empty(Shape({kept_numel, 1}), result_dtype, in_device);
+        reduction_arr = Array::empty(Shape({kept_numel, 1}), result_dtype, in_device_name);
         reduction_op = std::make_shared<O>(reduction_arr, reshape_op_before_reduction, dims);
         // Reshape the array back to the shape without reduced dimensions(except for 1 at the end)
         kept_view.emplace_back(1);

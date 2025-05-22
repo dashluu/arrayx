@@ -13,8 +13,8 @@ namespace ax::graph
 			}
 			const ShapeView &view = output->get_shape().get_view();
 			DtypePtr grad_dtype = float_dtype_by_dtype.at(dtype);
-			DevicePtr device = output->get_device();
-			grad = with_zeros ? zeros(view, grad_dtype, device) : ones(view, grad_dtype, device);
+			const std::string &device_name = output->get_device_name();
+			grad = with_zeros ? zeros(view, grad_dtype, device_name) : ones(view, grad_dtype, device_name);
 		}
 	}
 
@@ -248,54 +248,54 @@ namespace ax::graph
 		// Shared array -> shared buffer -> buffer goes out of scope -> Memory is freed twice
 		// Solution: separate buffers but reference same memory region since a buffer knows when to free the memory
 		ArrayPtr in_arr = op->get_output();
-		ArrayPtr out_arr = Array::from_ptr(in_arr->get_ptr(), in_arr->get_nbytes(), in_arr->get_shape(), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::from_ptr(in_arr->get_ptr(), in_arr->get_nbytes(), in_arr->get_shape(), in_arr->get_dtype(), in_arr->get_device_name());
 		return std::make_shared<NoopOp>(out_arr);
 	}
 
-	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
+	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, const std::string &device_name)
 	{
-		ArrayPtr arr = Array::empty(Shape(view), dtype, device);
+		ArrayPtr arr = Array::empty(Shape(view), dtype, device_name);
 		OpPtr op = std::make_shared<FullOp>(arr, view, c, dtype);
 		return op;
 	}
 
-	OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device)
+	OpPtr zeros(const ShapeView &view, DtypePtr dtype, const std::string &device_name)
 	{
-		return full(view, dtype->zero(), dtype, device);
+		return full(view, dtype->zero(), dtype, device_name);
 	}
 
-	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
+	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, const std::string &device_name)
 	{
-		return full_like(in_op, dtype->zero(), dtype, device);
+		return full_like(in_op, dtype->zero(), dtype, device_name);
 	}
 
-	OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device)
+	OpPtr ones(const ShapeView &view, DtypePtr dtype, const std::string &device_name)
 	{
-		return full(view, dtype->one(), dtype, device);
+		return full(view, dtype->one(), dtype, device_name);
 	}
 
-	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
+	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, const std::string &device_name)
 	{
-		return full_like(in_op, dtype->one(), dtype, device);
+		return full_like(in_op, dtype->one(), dtype, device_name);
 	}
 
-	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, DevicePtr device)
+	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, const std::string &device_name)
 	{
-		ArrayPtr arr = Array::empty(Shape(view), dtype, device);
+		ArrayPtr arr = Array::empty(Shape(view), dtype, device_name);
 		OpPtr op = std::make_shared<ArangeOp>(arr, view, start, step, dtype);
 		return op;
 	}
 
-	OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
+	OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, const std::string &device_name)
 	{
-		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device);
+		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device_name);
 		OpPtr op = std::make_shared<BuffOp>(arr);
 		return op;
 	}
 
-	OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
+	OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, const std::string &device_name)
 	{
-		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device);
+		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device_name);
 		OpPtr op = std::make_shared<NumpyOp>(arr);
 		return op;
 	}
@@ -318,7 +318,7 @@ namespace ax::graph
 		}
 
 		const ShapeDims &broadcast_dims = broadcast_result.second;
-		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<BroadcastOp>(out_arr, op, in_view, view, broadcast_dims);
 		return out_op;
 	}
@@ -341,7 +341,7 @@ namespace ax::graph
 		}
 
 		const ShapeDims &broadcast_dims = broadcast_result.second;
-		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<BroadcastOp>(out_arr, op, in_view, view, broadcast_dims);
 		return out_op;
 	}
@@ -349,7 +349,7 @@ namespace ax::graph
 	OpPtr slice(OpPtr in_op, const RangeVec &ranges)
 	{
 		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().slice(ranges), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().slice(ranges), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<SliceOp>(out_arr, in_op, ranges);
 		return out_op;
 	}
@@ -361,7 +361,7 @@ namespace ax::graph
 		{
 			return in_op;
 		}
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape(), dtype, in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape(), dtype, in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<AstypeOp>(out_arr, in_op, dtype);
 		return out_op;
 	}
@@ -369,7 +369,7 @@ namespace ax::graph
 	OpPtr unsqueeze(OpPtr in_op, isize dim)
 	{
 		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<UnsqueezeOp>(out_arr, in_op, dim);
 		return out_op;
 	}
@@ -377,7 +377,7 @@ namespace ax::graph
 	OpPtr squeeze(OpPtr in_op, isize dim)
 	{
 		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<SqueezeOp>(out_arr, in_op, dim);
 		return out_op;
 	}
@@ -466,7 +466,7 @@ namespace ax::graph
 		// Result's shape: B, M, K
 		ShapeView mm_view = mm_lop->get_output()->get_view();
 		mm_view[mm_view.size() - 1] = rview[rview.size() - 1];
-		ArrayPtr mm_arr = Array::empty(Shape(mm_view), ldtype, ldevice);
+		ArrayPtr mm_arr = Array::empty(Shape(mm_view), ldtype, ldevice->get_name());
 		OpPtr out_op = std::make_shared<MatmulOp>(mm_arr, mm_lop, mm_rop);
 
 		// Reshape to expected result's shape
@@ -544,7 +544,7 @@ namespace ax::graph
 	OpPtr identity(OpPtr in_op, bool in_place)
 	{
 		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<IdentityOp>(out_arr, in_op);
 		return out_op;
 	}
@@ -571,7 +571,7 @@ namespace ax::graph
 		{
 			return in_op;
 		}
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().reshape(view), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().reshape(view), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<ReshapeOp>(out_arr, in_op, view);
 		return out_op;
 	}
@@ -579,7 +579,7 @@ namespace ax::graph
 	OpPtr permute(OpPtr in_op, const ShapeDims &dims)
 	{
 		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().permute(dims), in_arr->get_dtype(), in_arr->get_device());
+		ArrayPtr out_arr = Array::empty(in_arr->get_shape().permute(dims), in_arr->get_dtype(), in_arr->get_device_name());
 		OpPtr out_op = std::make_shared<PermuteOp>(out_arr, in_op, dims);
 		return out_op;
 	}

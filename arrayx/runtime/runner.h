@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../graph/compute_graph.h"
+#include "../devices/buffer.h"
 
 namespace ax::runtime
 {
 	using namespace ax::graph;
+	using namespace ax::devices;
 
 	class Runner
 	{
@@ -44,6 +46,14 @@ namespace ax::runtime
 		void run(OpPtr op);
 
 	public:
+		Runner() = default;
+
+		Runner(const Runner &) = delete;
+
+		virtual ~Runner() = default;
+
+		Runner &operator=(const Runner &) = delete;
+
 		void forward(std::shared_ptr<ComputeGraph> graph);
 
 		void backward(std::shared_ptr<ComputeGraph> graph);

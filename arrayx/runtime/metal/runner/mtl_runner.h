@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../../runner.h"
-#include "mtl_context.h"
 #include "mtl_command_encoder.h"
 
 namespace ax::runtime::metal
 {
-	using namespace ax::runtime;
-
 	class MTLRunner : public Runner
 	{
 	protected:

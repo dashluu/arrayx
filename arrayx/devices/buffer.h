@@ -2,7 +2,7 @@
 
 #include "allocator.h"
 
-namespace ax::runtime
+namespace ax::devices
 {
     struct Buffer : public std::enable_shared_from_this<Buffer>
     {

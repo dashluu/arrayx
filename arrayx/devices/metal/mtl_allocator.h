@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../../allocator.h"
+#include "../allocator.h"
 
-namespace ax::runtime::metal
+namespace ax::devices::metal
 {
-	using ax::runtime::Allocator;
+	using ax::devices::Allocator;
 
 	struct MTLAllocator : public Allocator
 	{
+	public:
 		uint8_t *alloc(isize nbytes) override
 		{
 			allocated += nbytes;

@@ -2,11 +2,11 @@
 
 #include "../utils.h"
 
-namespace ax::runtime
+namespace ax::devices
 {
     using ax::core::isize;
 
-    struct Allocator : std::enable_shared_from_this<Allocator>
+    struct Allocator : public std::enable_shared_from_this<Allocator>
     {
     protected:
         isize allocated = 0;

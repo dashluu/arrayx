@@ -1,6 +1,6 @@
 #include "mtl_context.h"
 
-namespace ax::runtime::metal
+namespace ax::devices::metal
 {
     void MTLContext::init_kernel(const std::string &name)
     {
@@ -92,10 +92,11 @@ namespace ax::runtime::metal
         }
     }
 
-    MTLContext::MTLContext(const std::string &lib_path)
+    MTLContext::MTLContext(MTL::Device *mtl_device, const std::string &lib_path)
     {
         allocator = std::make_shared<MTLAllocator>();
-        device = NS::TransferPtr<MTL::Device>(MTL::CreateSystemDefaultDevice());
+        // device = NS::TransferPtr<MTL::Device>(MTL::CreateSystemDefaultDevice());
+        device = NS::TransferPtr<MTL::Device>(mtl_device);
         NS::String *path = NS::String::string(lib_path.c_str(), NS::ASCIIStringEncoding);
         auto url = NS::URL::fileURLWithPath(path);
         // TODO: handle error

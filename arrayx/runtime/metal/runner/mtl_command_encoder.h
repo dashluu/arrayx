@@ -1,10 +1,11 @@
 #pragma once
 
-#include "mtl_context.h"
 #include "../../../core/array.h"
+#include "../../../devices/metal/mtl_context.h"
 
 namespace ax::runtime::metal
 {
+    using namespace ax::devices::metal;
     using mtl_usize = uint32_t;
     using mtl_isize = int32_t;
 
@@ -36,6 +37,8 @@ namespace ax::runtime::metal
             encoder = cmd_buff->computeCommandEncoder();
         }
 
+        CommandEncoder(const CommandEncoder &) = delete;
+
         ~CommandEncoder()
         {
             for (uint8_t *&buff : buffs)
@@ -44,9 +47,11 @@ namespace ax::runtime::metal
             }
         }
 
-        std::shared_ptr<MTLKernel> get_kernel() { return kernel; }
+        CommandEncoder &operator=(const CommandEncoder &) = delete;
 
-        MTL::ComputeCommandEncoder *get_internal_encoder() { return encoder; }
+        std::shared_ptr<MTLKernel> get_kernel() const { return kernel; }
+
+        MTL::ComputeCommandEncoder *get_internal_encoder() const { return encoder; }
 
         template <class T>
         void encode_scalar(T scalar)
