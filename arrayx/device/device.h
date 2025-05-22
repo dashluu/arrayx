@@ -2,7 +2,7 @@
 
 #include "../utils.h"
 
-namespace ax::devices
+namespace ax::device
 {
     using ax::core::isize;
     using ax::core::IStr;
@@ -63,18 +63,18 @@ namespace ax::devices
 namespace std
 {
     template <>
-    struct hash<const ax::devices::Device *>
+    struct hash<const ax::device::Device *>
     {
-        std::size_t operator()(const ax::devices::Device *device) const
+        std::size_t operator()(const ax::device::Device *device) const
         {
             return std::hash<std::string>()(device->get_name());
         }
     };
 
     template <>
-    struct equal_to<const ax::devices::Device *>
+    struct equal_to<const ax::device::Device *>
     {
-        bool operator()(const ax::devices::Device *lhs, const ax::devices::Device *rhs) const
+        bool operator()(const ax::device::Device *lhs, const ax::device::Device *rhs) const
         {
             return *lhs == *rhs;
         }

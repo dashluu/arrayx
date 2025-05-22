@@ -1,6 +1,6 @@
 #include "mtl_context.h"
 
-namespace ax::devices::metal
+namespace ax::device::metal
 {
     void MTLContext::init_kernel(const std::string &name)
     {

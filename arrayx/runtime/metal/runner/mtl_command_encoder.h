@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../../../core/array.h"
-#include "../../../devices/metal/mtl_context.h"
+#include "../../../core/lazy_array.h"
+#include "../../../device/metal/mtl_context.h"
 
 namespace ax::runtime::metal
 {
-    using namespace ax::devices::metal;
+    using namespace ax::device::metal;
     using mtl_usize = uint32_t;
     using mtl_isize = int32_t;
 
@@ -71,13 +71,13 @@ namespace ax::runtime::metal
             }
         }
 
-        void encode_ndim(ArrayPtr arr)
+        void encode_ndim(LazyArrayPtr arr)
         {
             mtl_usize ndim = static_cast<mtl_usize>(arr->get_ndim());
             encode_scalar(ndim);
         }
 
-        void encode_offset(const ArrayPtrVec &arrs)
+        void encode_offset(const LazyArrayPtrVec &arrs)
         {
             mtl_usize *offset = new mtl_usize[arrs.size()];
             for (size_t i = 0; i < arrs.size(); i++)
@@ -87,21 +87,21 @@ namespace ax::runtime::metal
             encode_buffer(offset, sizeof(mtl_usize) * arrs.size(), true);
         }
 
-        void encode_view(ArrayPtr arr)
+        void encode_view(LazyArrayPtr arr)
         {
             mtl_usize *view = vcast<isize, mtl_usize>(arr->get_view());
             encode_buffer(view, sizeof(mtl_usize) * arr->get_ndim(), true);
         }
 
-        void encode_stride(ArrayPtr arr)
+        void encode_stride(LazyArrayPtr arr)
         {
             mtl_isize *stride = vcast<isize, mtl_isize>(arr->get_stride());
             encode_buffer(stride, sizeof(mtl_isize) * arr->get_ndim(), true);
         }
 
-        void encode_array(ArrayPtr arr)
+        void encode_array(LazyArrayPtr arr)
         {
-            encode_buffer(arr->get_buff_ptr(), arr->get_buff_nbytes(), false);
+            encode_buffer(arr->get_ptr(), arr->get_nbytes(), false);
         }
 
         void set_pipeline_state(const std::string &kernel_name)

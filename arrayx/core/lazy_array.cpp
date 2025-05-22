@@ -2,7 +2,7 @@
 
 namespace ax::core
 {
-	uint8_t *Array::strided_elm_ptr(isize k) const
+	uint8_t *LazyArray::strided_elm_ptr(isize k) const
 	{
 		if (is_contiguous())
 		{
@@ -26,7 +26,7 @@ namespace ax::core
 		return ptr;
 	}
 
-	const std::string Array::str() const
+	const std::string LazyArray::str() const
 	{
 		auto iter = std::make_unique<ArrayIter>(shared_from_this());
 		iter->start();

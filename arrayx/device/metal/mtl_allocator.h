@@ -2,9 +2,9 @@
 
 #include "../allocator.h"
 
-namespace ax::devices::metal
+namespace ax::device::metal
 {
-	using ax::devices::Allocator;
+	using ax::device::Allocator;
 
 	struct MTLAllocator : public Allocator
 	{

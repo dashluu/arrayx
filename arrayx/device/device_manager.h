@@ -3,7 +3,7 @@
 #include "device.h"
 #include "device_context.h"
 
-namespace ax::devices
+namespace ax::device
 {
 	class DeviceManager
 	{
@@ -17,7 +17,7 @@ namespace ax::devices
 		static const DeviceManager &get_instance();
 		DeviceManager(const DeviceManager &) = delete;
 		DeviceManager &operator=(const DeviceManager &) = delete;
-		DevicePtr get_device(const std::string &name);
-		DeviceContextPtr get_context(const std::string &device_name);
+		DevicePtr get_device(const std::string &name) const;
+		DeviceContextPtr get_context(const std::string &device_name) const;
 	};
 }

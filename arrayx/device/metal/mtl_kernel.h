@@ -5,7 +5,7 @@
 #include <QuartzCore/QuartzCore.hpp>
 #include "../../utils.h"
 
-namespace ax::devices::metal
+namespace ax::device::metal
 {
     struct MTLKernel : public std::enable_shared_from_this<MTLKernel>
     {

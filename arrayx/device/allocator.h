@@ -2,7 +2,7 @@
 
 #include "../utils.h"
 
-namespace ax::devices
+namespace ax::device
 {
     using ax::core::isize;
 

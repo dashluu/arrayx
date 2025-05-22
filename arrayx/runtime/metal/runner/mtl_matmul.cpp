@@ -6,9 +6,9 @@ namespace ax::runtime::metal
 	{
 		NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 		CommandEncoder encoder(ctx);
-		ArrayPtr larr = lop->get_output();
-		ArrayPtr rarr = rop->get_output();
-		ArrayPtr out_arr = out_op->get_output();
+		LazyArrayPtr larr = lop->get_array();
+		LazyArrayPtr rarr = rop->get_array();
+		LazyArrayPtr out_arr = out_op->get_array();
 		bool strided_input = !larr->is_contiguous() || !rarr->is_contiguous();
 
 		// Encode buffers

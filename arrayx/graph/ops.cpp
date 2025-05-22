@@ -6,15 +6,15 @@ namespace ax::graph
 	{
 		if (grad == nullptr)
 		{
-			DtypePtr dtype = output->get_dtype();
+			DtypePtr dtype = array->get_dtype();
 			if (dtype->get_type() != DtypeType::FLOAT)
 			{
-				throw std::runtime_error("Only arrays of floating-point types can have gradients but array " + output->get_id().str() + " has type " + dtype->str());
+				throw std::runtime_error("Only arrays of floating-point types can have gradients but array " + array->get_id().str() + " has type " + dtype->str());
 			}
-			const ShapeView &view = output->get_shape().get_view();
+			const ShapeView &view = array->get_shape().get_view();
 			DtypePtr grad_dtype = float_dtype_by_dtype.at(dtype);
-			const std::string &device_name = output->get_device_name();
-			grad = with_zeros ? zeros(view, grad_dtype, device_name) : ones(view, grad_dtype, device_name);
+			DevicePtr device = array->get_device();
+			grad = with_zeros ? zeros(view, grad_dtype, device) : ones(view, grad_dtype, device);
 		}
 	}
 
@@ -147,9 +147,9 @@ namespace ax::graph
 	void ReshapeOp::backward() const
 	{
 		operand->init_grad();
-		const ShapeView &operand_view = operand->get_output()->get_view();
+		const ShapeView &operand_view = operand->get_array()->get_view();
 		// Copy must be done to ensure gradient independence
-		if (grad->get_output()->copy_when_reshape(operand_view))
+		if (grad->get_array()->copy_when_reshape(operand_view))
 		{
 			// No need to copy since reshaping invokes copying anyway
 			operand->update_grad(reshape(grad, operand_view));
@@ -168,7 +168,7 @@ namespace ax::graph
 		// Copy must be done before permuting to ensure gradient independence
 		// Permuting array does not invoke copying
 		OpPtr grad_copy = identity(grad);
-		ShapeView reverse_dims = grad_copy->get_output()->get_shape().undo_permute_view(dims);
+		ShapeView reverse_dims = grad_copy->get_array()->get_shape().undo_permute_view(dims);
 		operand->update_grad(permute(grad_copy, reverse_dims));
 	}
 
@@ -204,7 +204,7 @@ namespace ax::graph
 		// All reduction: operand's array is of shape (d1, d2, etc.) and "this" array is of shape (1)
 		// eq() handles broadcasting automatically
 		OpPtr mask = eq(operand, std::const_pointer_cast<Op>(shared_from_this()));
-		operand->update_grad(mul(astype(mask, operand->get_output()->get_dtype()), grad));
+		operand->update_grad(mul(astype(mask, operand->get_array()->get_dtype()), grad));
 	}
 
 	void MinOp::backward() const
@@ -215,94 +215,94 @@ namespace ax::graph
 		// All reduction: operand's array is of shape (d1, d2, etc.) and "this" array is of shape (1)
 		// eq() handles broadcasting automatically
 		OpPtr mask = eq(operand, std::const_pointer_cast<Op>(shared_from_this()));
-		operand->update_grad(mul(astype(mask, operand->get_output()->get_dtype()), grad));
+		operand->update_grad(mul(astype(mask, operand->get_array()->get_dtype()), grad));
 	}
 
 	const std::string UnaryOp::str() const
 	{
-		return Op::str() + ", in-place: " + std::to_string(in_place) + ", operand: " + operand->get_output()->get_id().str();
+		return Op::str() + ", in-place: " + std::to_string(in_place) + ", operand: " + operand->get_array()->get_id().str();
 	}
 
 	const std::string BinaryOp::str() const
 	{
-		return Op::str() + ", in-place: " + std::to_string(in_place) + ", lhs: " + lhs->get_output()->get_id().str() + ", rhs: " + rhs->get_output()->get_id().str();
+		return Op::str() + ", in-place: " + std::to_string(in_place) + ", lhs: " + lhs->get_array()->get_id().str() + ", rhs: " + rhs->get_array()->get_id().str();
 	}
 
 	const std::string MatmulOp::str() const
 	{
-		return Op::str() + ", lhs: " + lhs->get_output()->get_id().str() + ", rhs: " + rhs->get_output()->get_id().str();
+		return Op::str() + ", lhs: " + lhs->get_array()->get_id().str() + ", rhs: " + rhs->get_array()->get_id().str();
 	}
 
 	const std::string TransformOp::str() const
 	{
-		return Op::str() + ", operand: " + operand->get_output()->get_id().str();
+		return Op::str() + ", operand: " + operand->get_array()->get_id().str();
 	}
 
 	const std::string ReduceOp::str() const
 	{
-		return Op::str() + ", operand: " + operand->get_output()->get_id().str() + ", dims: " + vnumstr(dims) + ", default value: " + std::to_string(default_val);
+		return Op::str() + ", operand: " + operand->get_array()->get_id().str() + ", dims: " + vnumstr(dims) + ", default value: " + std::to_string(default_val);
 	}
 
 	OpPtr detach(OpPtr op)
 	{
 		// Shared array -> shared buffer -> buffer goes out of scope -> Memory is freed twice
-		// Solution: separate buffers but reference same memory region since a buffer knows when to free the memory
-		ArrayPtr in_arr = op->get_output();
-		ArrayPtr out_arr = Array::from_ptr(in_arr->get_ptr(), in_arr->get_nbytes(), in_arr->get_shape(), in_arr->get_dtype(), in_arr->get_device_name());
+		// Solution: separate buffers using same memory region
+		LazyArrayPtr in_arr = op->get_array();
+		LazyArrayPtr out_arr = LazyArray::from_ptr(in_arr->get_ptr(), in_arr->get_nbytes(), in_arr->get_shape(), in_arr->get_dtype(), in_arr->get_device());
 		return std::make_shared<NoopOp>(out_arr);
 	}
 
-	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, const std::string &device_name)
+	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
 	{
-		ArrayPtr arr = Array::empty(Shape(view), dtype, device_name);
+		LazyArrayPtr arr = LazyArray::empty(Shape(view), dtype, device);
 		OpPtr op = std::make_shared<FullOp>(arr, view, c, dtype);
 		return op;
 	}
 
-	OpPtr zeros(const ShapeView &view, DtypePtr dtype, const std::string &device_name)
+	OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device)
 	{
-		return full(view, dtype->zero(), dtype, device_name);
+		return full(view, dtype->zero(), dtype, device);
 	}
 
-	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, const std::string &device_name)
+	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
 	{
-		return full_like(in_op, dtype->zero(), dtype, device_name);
+		return full_like(in_op, dtype->zero(), dtype, device);
 	}
 
-	OpPtr ones(const ShapeView &view, DtypePtr dtype, const std::string &device_name)
+	OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device)
 	{
-		return full(view, dtype->one(), dtype, device_name);
+		return full(view, dtype->one(), dtype, device);
 	}
 
-	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, const std::string &device_name)
+	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
 	{
-		return full_like(in_op, dtype->one(), dtype, device_name);
+		return full_like(in_op, dtype->one(), dtype, device);
 	}
 
-	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, const std::string &device_name)
+	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, DevicePtr device)
 	{
-		ArrayPtr arr = Array::empty(Shape(view), dtype, device_name);
+		LazyArrayPtr arr = LazyArray::empty(Shape(view), dtype, device);
 		OpPtr op = std::make_shared<ArangeOp>(arr, view, start, step, dtype);
 		return op;
 	}
 
-	OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, const std::string &device_name)
+	OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
 	{
-		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device_name);
+		LazyArrayPtr arr = LazyArray::from_ptr(ptr, nbytes, shape, dtype, device);
 		OpPtr op = std::make_shared<BuffOp>(arr);
 		return op;
 	}
 
-	OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, const std::string &device_name)
+	OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
 	{
-		ArrayPtr arr = Array::from_ptr(ptr, nbytes, shape, dtype, device_name);
+		LazyArrayPtr arr = LazyArray::from_ptr(ptr, nbytes, shape, dtype, device);
 		OpPtr op = std::make_shared<NumpyOp>(arr);
 		return op;
 	}
 
 	OpPtr broadcast(OpPtr op, const ShapeView &view)
 	{
-		ArrayPtr in_arr = op->get_output();
+		LazyArrayPtr in_arr = op->get_array();
 		const Shape &in_shape = in_arr->get_shape();
 		const ShapeView &in_view = in_shape.get_view();
 		if (in_view == view)
@@ -318,14 +318,14 @@ namespace ax::graph
 		}
 
 		const ShapeDims &broadcast_dims = broadcast_result.second;
-		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr out_arr = LazyArray::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<BroadcastOp>(out_arr, op, in_view, view, broadcast_dims);
 		return out_op;
 	}
 
 	OpPtr broadcast_to(OpPtr op, const ShapeView &view)
 	{
-		ArrayPtr in_arr = op->get_output();
+		LazyArrayPtr in_arr = op->get_array();
 		const Shape &in_shape = in_arr->get_shape();
 		const ShapeView &in_view = in_shape.get_view();
 		if (in_view == view)
@@ -341,43 +341,43 @@ namespace ax::graph
 		}
 
 		const ShapeDims &broadcast_dims = broadcast_result.second;
-		ArrayPtr out_arr = Array::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr out_arr = LazyArray::empty(broadcast_shape, in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<BroadcastOp>(out_arr, op, in_view, view, broadcast_dims);
 		return out_op;
 	}
 
 	OpPtr slice(OpPtr in_op, const RangeVec &ranges)
 	{
-		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().slice(ranges), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr in_arr = in_op->get_array();
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().slice(ranges), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<SliceOp>(out_arr, in_op, ranges);
 		return out_op;
 	}
 
 	OpPtr astype(OpPtr in_op, DtypePtr dtype)
 	{
-		ArrayPtr in_arr = in_op->get_output();
+		LazyArrayPtr in_arr = in_op->get_array();
 		if (in_arr->get_dtype() == dtype)
 		{
 			return in_op;
 		}
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape(), dtype, in_arr->get_device_name());
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape(), dtype, in_arr->get_device());
 		OpPtr out_op = std::make_shared<AstypeOp>(out_arr, in_op, dtype);
 		return out_op;
 	}
 
 	OpPtr unsqueeze(OpPtr in_op, isize dim)
 	{
-		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr in_arr = in_op->get_array();
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<UnsqueezeOp>(out_arr, in_op, dim);
 		return out_op;
 	}
 
 	OpPtr squeeze(OpPtr in_op, isize dim)
 	{
-		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr in_arr = in_op->get_array();
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<SqueezeOp>(out_arr, in_op, dim);
 		return out_op;
 	}
@@ -405,8 +405,8 @@ namespace ax::graph
 	OpPtr matmul(OpPtr lop, OpPtr rop)
 	{
 		MatmulOp dummy_op(nullptr, nullptr, nullptr);
-		ArrayPtr larr = lop->get_output();
-		ArrayPtr rarr = rop->get_output();
+		LazyArrayPtr larr = lop->get_array();
+		LazyArrayPtr rarr = rop->get_array();
 		const Shape &lshape = larr->get_shape();
 		const ShapeView &lview = larr->get_view();
 		const ShapeView &rview = rarr->get_view();
@@ -464,9 +464,9 @@ namespace ax::graph
 		mm_rop = reshape(mm_rop, mm_rview);
 
 		// Result's shape: B, M, K
-		ShapeView mm_view = mm_lop->get_output()->get_view();
+		ShapeView mm_view = mm_lop->get_array()->get_view();
 		mm_view[mm_view.size() - 1] = rview[rview.size() - 1];
-		ArrayPtr mm_arr = Array::empty(Shape(mm_view), ldtype, ldevice->get_name());
+		LazyArrayPtr mm_arr = LazyArray::empty(Shape(mm_view), ldtype, ldevice);
 		OpPtr out_op = std::make_shared<MatmulOp>(mm_arr, mm_lop, mm_rop);
 
 		// Reshape to expected result's shape
@@ -543,8 +543,8 @@ namespace ax::graph
 
 	OpPtr identity(OpPtr in_op, bool in_place)
 	{
-		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(Shape(in_arr->get_view()), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr in_arr = in_op->get_array();
+		LazyArrayPtr out_arr = LazyArray::empty(Shape(in_arr->get_view()), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<IdentityOp>(out_arr, in_op);
 		return out_op;
 	}
@@ -566,27 +566,27 @@ namespace ax::graph
 
 	OpPtr reshape(OpPtr in_op, const ShapeView &view)
 	{
-		ArrayPtr in_arr = in_op->get_output();
+		LazyArrayPtr in_arr = in_op->get_array();
 		if (in_arr->get_view() == view)
 		{
 			return in_op;
 		}
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().reshape(view), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().reshape(view), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<ReshapeOp>(out_arr, in_op, view);
 		return out_op;
 	}
 
 	OpPtr permute(OpPtr in_op, const ShapeDims &dims)
 	{
-		ArrayPtr in_arr = in_op->get_output();
-		ArrayPtr out_arr = Array::empty(in_arr->get_shape().permute(dims), in_arr->get_dtype(), in_arr->get_device_name());
+		LazyArrayPtr in_arr = in_op->get_array();
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().permute(dims), in_arr->get_dtype(), in_arr->get_device());
 		OpPtr out_op = std::make_shared<PermuteOp>(out_arr, in_op, dims);
 		return out_op;
 	}
 
 	OpPtr transpose(OpPtr in_op, isize start_dim, isize end_dim)
 	{
-		ArrayPtr in_arr = in_op->get_output();
+		LazyArrayPtr in_arr = in_op->get_array();
 		const Shape &in_shape = in_arr->get_shape();
 		ShapeDims transpose_dims = in_shape.transpose(start_dim, end_dim);
 		return permute(in_op, transpose_dims);
@@ -594,7 +594,7 @@ namespace ax::graph
 
 	OpPtr flatten(OpPtr in_op, isize start_dim, isize end_dim)
 	{
-		ArrayPtr in_arr = in_op->get_output();
+		LazyArrayPtr in_arr = in_op->get_array();
 		const Shape &in_shape = in_arr->get_shape();
 		ShapeView flattened_view = in_shape.flatten(start_dim, end_dim);
 		return reshape(in_op, flattened_view);
@@ -602,17 +602,17 @@ namespace ax::graph
 
 	OpPtr sum(OpPtr in_op, const ShapeDims &dims)
 	{
-		return reduce<SumOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+		return reduce<SumOp>(in_op, dims, in_op->get_array()->get_dtype(), numeric_dtypes);
 	}
 
 	OpPtr max(OpPtr in_op, const ShapeDims &dims)
 	{
-		return reduce<MaxOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+		return reduce<MaxOp>(in_op, dims, in_op->get_array()->get_dtype(), numeric_dtypes);
 	}
 
 	OpPtr min(OpPtr in_op, const ShapeDims &dims)
 	{
-		return reduce<MinOp>(in_op, dims, in_op->get_output()->get_dtype(), numeric_dtypes);
+		return reduce<MinOp>(in_op, dims, in_op->get_array()->get_dtype(), numeric_dtypes);
 	}
 
 	OpPtr argmax(OpPtr in_op, const ShapeDims &dims)

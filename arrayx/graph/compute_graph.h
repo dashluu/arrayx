@@ -19,7 +19,7 @@ namespace ax::graph
 		{
 			for (auto &op : input)
 			{
-				visited.insert(op->get_output()->get_id());
+				visited.insert(op->get_array()->get_id());
 			}
 		}
 

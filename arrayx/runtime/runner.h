@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../graph/compute_graph.h"
-#include "../devices/buffer.h"
+#include "../device/buffer.h"
 
 namespace ax::runtime
 {
 	using namespace ax::graph;
-	using namespace ax::devices;
+	using namespace ax::device;
 
 	class Runner
 	{
@@ -39,9 +39,9 @@ namespace ax::runtime
 
 		virtual void run_reduce_op(OpPtr op) = 0;
 
-		virtual void alloc(ArrayPtr arr) = 0;
+		virtual void alloc(LazyArrayPtr arr) = 0;
 
-		virtual void alloc(ArrayPtr arr, std::shared_ptr<Buffer> buff) = 0;
+		virtual void alloc(LazyArrayPtr out_arr, LazyArrayPtr in_arr) = 0;
 
 		void run(OpPtr op);
 

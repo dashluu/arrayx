@@ -5,7 +5,7 @@
 #include "mtl_kernel.h"
 #include "mtl_allocator.h"
 
-namespace ax::devices::metal
+namespace ax::device::metal
 {
     using namespace ax::core;
 

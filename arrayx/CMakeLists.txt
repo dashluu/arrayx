@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/device/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils.h"
@@ -12,14 +13,21 @@ file(GLOB HEADER_FILES
 
 file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/device/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.cpp"
 )
 
 if(APPLE)
     add_subdirectory(runtime/metal/kernels)
-    file(GLOB MTL_HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/runner/*.h")
-    file(GLOB MTL_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/runner/*.cpp")
+    file(GLOB_RECURSE MTL_HEADER_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/device/metal/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.h"
+    )
+    file(GLOB_RECURSE MTL_SRC_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/device/metal/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.cpp"
+    )
     # set(CMAKE_BUILD_TYPE Debug)
     add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
     set(MTL_CPP "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/metal-cpp")

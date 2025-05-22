@@ -1,18 +1,18 @@
 #pragma once
 
-#include "array.h"
+#include "lazy_array.h"
 
 namespace ax::core
 {
     struct ArrayIter
     {
     private:
-        std::shared_ptr<const Array> arr;
+        std::shared_ptr<const LazyArray> arr;
         uint8_t *ptr;
         isize counter;
 
     public:
-        ArrayIter(std::shared_ptr<const Array> arr) : arr(arr)
+        ArrayIter(std::shared_ptr<const LazyArray> arr) : arr(arr)
         {
         }
 

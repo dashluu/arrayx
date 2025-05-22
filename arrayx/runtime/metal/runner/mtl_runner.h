@@ -41,14 +41,14 @@ namespace ax::runtime::metal
 		{
 			auto transform_op = std::static_pointer_cast<O>(op);
 			OpPtr operand = transform_op->get_operand();
-			alloc(op->get_output(), operand->get_output()->get_buff());
+			alloc(op->get_array(), operand->get_array());
 		}
 
 		void run_reduce_op(OpPtr op) override;
 
-		void alloc(ArrayPtr arr) override;
+		void alloc(LazyArrayPtr arr) override;
 
-		void alloc(ArrayPtr arr, std::shared_ptr<Buffer> buff) override;
+		void alloc(LazyArrayPtr out_arr, LazyArrayPtr in_arr) override;
 
 	public:
 		MTLRunner(std::shared_ptr<MTLContext> ctx) : ctx(ctx) {}

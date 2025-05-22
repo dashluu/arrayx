@@ -2,7 +2,7 @@
 
 #include "../utils.h"
 
-namespace ax::devices
+namespace ax::device
 {
 	class DeviceContext : public std::enable_shared_from_this<DeviceContext>
 	{

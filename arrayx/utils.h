@@ -20,8 +20,8 @@
 
 namespace ax::core
 {
-    class Array;
-    using ArrayPtr = std::shared_ptr<Array>;
+    class LazyArray;
+    using LazyArrayPtr = std::shared_ptr<LazyArray>;
     using isize = int64_t;
 
     class IStr
