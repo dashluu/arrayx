@@ -4,10 +4,10 @@
 #define NS_PRIVATE_IMPLEMENTATION
 #define MTL_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
-#include "runtime/metal/mtl_runner.h"
+#include "../runtime/metal/mtl_runner.h"
 #endif
 
-namespace ax
+namespace ax::array
 {
 	static Backend backend;
 

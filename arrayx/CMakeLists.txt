@@ -8,7 +8,7 @@ file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/device/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/array/*.h"
 )
 
 file(GLOB SRC_FILES
@@ -16,7 +16,7 @@ file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/device/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/array/*.cpp"
 )
 
 if(APPLE)
@@ -30,7 +30,7 @@ if(APPLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.cpp"
     )
     # set(CMAKE_BUILD_TYPE Debug)
-    add_executable(${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
+    add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
     set(MTL_CPP "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/metal-cpp")
     target_include_directories(${PROJECT_NAME} PRIVATE ${MTL_CPP})
     target_link_libraries(${PROJECT_NAME} PRIVATE

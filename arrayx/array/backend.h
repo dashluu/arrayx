@@ -1,9 +1,9 @@
 #pragma once
 
-#include "device/device.h"
-#include "runtime/runner.h"
+#include "../device/device.h"
+#include "../runtime/runner.h"
 
-namespace ax
+namespace ax::array
 {
 	using namespace ax::device;
 	using namespace ax::runtime;
