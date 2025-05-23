@@ -58,4 +58,6 @@ namespace ax::runtime
 
 		void backward(std::shared_ptr<ComputeGraph> graph);
 	};
+
+	using RunnerPtr = std::shared_ptr<Runner>;
 }

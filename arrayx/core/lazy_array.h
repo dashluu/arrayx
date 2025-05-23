@@ -57,6 +57,8 @@ namespace ax::core
 
         DevicePtr get_device() const { return device; }
 
+        const std::string get_device_name() const { return device->get_name(); }
+
         isize get_numel() const { return shape.get_numel(); }
 
         isize get_ndim() const { return shape.get_ndim(); }

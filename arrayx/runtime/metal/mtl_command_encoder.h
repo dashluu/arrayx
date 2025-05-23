@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../core/lazy_array.h"
-#include "../../../device/metal/mtl_context.h"
+#include "../../core/lazy_array.h"
+#include "mtl_context.h"
 
 namespace ax::runtime::metal
 {

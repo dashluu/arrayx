@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../runner.h"
+#include "../runner.h"
 #include "mtl_command_encoder.h"
 
 namespace ax::runtime::metal
@@ -41,7 +41,7 @@ namespace ax::runtime::metal
 		{
 			auto transform_op = std::static_pointer_cast<O>(op);
 			OpPtr operand = transform_op->get_operand();
-			alloc(op->get_array(), operand->get_array());
+			alloc(op->get_lazy(), operand->get_lazy());
 		}
 
 		void run_reduce_op(OpPtr op) override;

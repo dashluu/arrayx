@@ -1,15 +1,16 @@
 #pragma once
 
 #include "../../core/dtype.h"
-#include "../device_context.h"
+#include "../../device/metal/mtl_allocator.h"
+#include "../runner_context.h"
 #include "mtl_kernel.h"
-#include "mtl_allocator.h"
 
-namespace ax::device::metal
+namespace ax::runtime::metal
 {
     using namespace ax::core;
+    using namespace ax::device::metal;
 
-    class MTLContext : public DeviceContext
+    class MTLContext : public RunnerContext
     {
     private:
         std::shared_ptr<MTLAllocator> allocator;

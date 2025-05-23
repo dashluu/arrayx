@@ -6,7 +6,7 @@ namespace ax::runtime::metal
 	{
 		NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 		CommandEncoder encoder(ctx);
-		LazyArrayPtr arr = op->get_array();
+		LazyArrayPtr arr = op->get_lazy();
 		DtypePtr dtype = arr->get_dtype();
 		encoder.encode_buffer(&c, dtype->get_size(), false);
 		encoder.encode_array(arr);
@@ -23,7 +23,7 @@ namespace ax::runtime::metal
 		CommandEncoder encoder(ctx);
 		encoder.encode_buffer(&start, sizeof(start), false);
 		encoder.encode_buffer(&step, sizeof(step), false);
-		LazyArrayPtr arr = op->get_array();
+		LazyArrayPtr arr = op->get_lazy();
 		encoder.encode_array(arr);
 		std::string kernel_name = "arange_" + arr->get_dtype()->str();
 		encoder.set_pipeline_state(kernel_name);

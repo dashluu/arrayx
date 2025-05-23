@@ -4,7 +4,7 @@ namespace ax::graph
 {
     void ComputeGraph::toposort(OpPtr op, std::vector<OpPtr> &order)
     {
-        LazyArrayPtr arr = op->get_array();
+        LazyArrayPtr arr = op->get_lazy();
         if (visited.contains(arr->get_id()))
         {
             return;
@@ -81,7 +81,7 @@ namespace ax::graph
         }
         if (bw_order.empty())
         {
-            LazyArrayPtr arr = output->get_array();
+            LazyArrayPtr arr = output->get_lazy();
             if (arr->get_numel() > 1)
             {
                 throw std::invalid_argument("Array " + arr->get_id().str() + " must be a singleton to do gradient backpropation.");
@@ -115,13 +115,13 @@ namespace ax::graph
         std::string s = "Forward:\n";
         for (auto &op : fw_order)
         {
-            arr = op->get_array();
+            arr = op->get_lazy();
             s += arr->get_id().str() + ": " + op->str() + "\n";
         }
         s += "Backward:\n";
         for (auto &op : bw_order)
         {
-            arr = op->get_array();
+            arr = op->get_lazy();
             s += arr->get_id().str() + ": " + op->str() + "\n";
         }
         return s;

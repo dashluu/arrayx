@@ -107,20 +107,20 @@ namespace ax::graph
     protected:
         Opcode opcode;
         Optype optype;
-        LazyArrayPtr array;
+        LazyArrayPtr lazy;
 
     public:
         std::shared_ptr<Op> grad = nullptr;
         std::shared_ptr<Op> gradroot = nullptr;
 
-        Op(Opcode opcode, Optype optype, LazyArrayPtr array) : opcode(opcode), optype(optype), array(array) {}
+        Op(Opcode opcode, Optype optype, LazyArrayPtr lazy) : opcode(opcode), optype(optype), lazy(lazy) {}
         Op(const Op &) = delete;
         Op &operator=(const Op &) = delete;
         virtual ~Op() = default;
         Opcode get_opcode() const { return opcode; }
         const std::string &get_opcode_str() const { return str_by_opname.at(opcode); }
         Optype get_optype() const { return optype; }
-        LazyArrayPtr get_array() const { return array; }
+        LazyArrayPtr get_lazy() const { return lazy; }
         std::shared_ptr<Op> get_grad() const { return grad; }
         std::shared_ptr<Op> get_gradroot() const { return gradroot; }
         virtual void backward() const {}
@@ -128,7 +128,7 @@ namespace ax::graph
         void update_grad(std::shared_ptr<Op> grad, bool sub = false);
         const std::string str() const override
         {
-            return array->get_id().str() + ": opcode: " + get_opcode_str();
+            return lazy->get_id().str() + ": opcode: " + get_opcode_str();
         }
     };
 
@@ -137,13 +137,13 @@ namespace ax::graph
     struct InitializerOp : public Op
     {
     public:
-        InitializerOp(Opcode opcode, LazyArrayPtr array) : Op(opcode, Optype::INITIALIZER, array) {}
+        InitializerOp(Opcode opcode, LazyArrayPtr lazy) : Op(opcode, Optype::INITIALIZER, lazy) {}
     };
 
     struct NoopOp : public InitializerOp
     {
     public:
-        NoopOp(LazyArrayPtr array) : InitializerOp(Opcode::NOOP, array) {}
+        NoopOp(LazyArrayPtr lazy) : InitializerOp(Opcode::NOOP, lazy) {}
     };
 
     struct ArangeOp : public InitializerOp
@@ -155,7 +155,7 @@ namespace ax::graph
         DtypePtr dtype;
 
     public:
-        ArangeOp(LazyArrayPtr array, const ShapeView &view, isize start, isize step, DtypePtr dtype) : InitializerOp(Opcode::ARANGE, array), view(view), start(start), step(step), dtype(dtype) {}
+        ArangeOp(LazyArrayPtr lazy, const ShapeView &view, isize start, isize step, DtypePtr dtype) : InitializerOp(Opcode::ARANGE, lazy), view(view), start(start), step(step), dtype(dtype) {}
         const ShapeView &get_view() const { return view; }
         isize get_start() const { return start; }
         isize get_step() const { return step; }
@@ -174,7 +174,7 @@ namespace ax::graph
         DtypePtr dtype;
 
     public:
-        FullOp(LazyArrayPtr array, const ShapeView &view, int c, DtypePtr dtype) : InitializerOp(Opcode::FULL, array), view(view), c(c), dtype(dtype) {}
+        FullOp(LazyArrayPtr lazy, const ShapeView &view, int c, DtypePtr dtype) : InitializerOp(Opcode::FULL, lazy), view(view), c(c), dtype(dtype) {}
         const ShapeView &get_view() const { return view; }
         int get_const() const { return c; }
         DtypePtr get_dtype() const { return dtype; }
@@ -188,14 +188,14 @@ namespace ax::graph
     struct BuffOp : public InitializerOp
     {
     public:
-        BuffOp(LazyArrayPtr array) : InitializerOp(Opcode::BUFF, array) {}
+        BuffOp(LazyArrayPtr lazy) : InitializerOp(Opcode::BUFF, lazy) {}
         const std::string str() const override { return InitializerOp::str(); }
     };
 
     struct NumpyOp : public InitializerOp
     {
     public:
-        NumpyOp(LazyArrayPtr array) : InitializerOp(Opcode::NUMPY, array) {}
+        NumpyOp(LazyArrayPtr lazy) : InitializerOp(Opcode::NUMPY, lazy) {}
         const std::string str() const override { return InitializerOp::str(); }
     };
 
@@ -206,7 +206,7 @@ namespace ax::graph
         OpPtr operand;
 
     public:
-        UnaryOp(Opcode opcode, LazyArrayPtr array, OpPtr operand, bool in_place) : Op(opcode, Optype::UNARY, array), operand(operand), in_place(in_place) {}
+        UnaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand, bool in_place) : Op(opcode, Optype::UNARY, lazy), operand(operand), in_place(in_place) {}
         OpPtr get_operand() const { return operand; }
         const std::string str() const override;
         bool is_in_place() const { return in_place; }
@@ -220,7 +220,7 @@ namespace ax::graph
         OpPtr rhs;
 
     public:
-        BinaryOp(Opcode opcode, LazyArrayPtr array, OpPtr lhs, OpPtr rhs, bool in_place) : Op(opcode, Optype::BINARY, array), lhs(lhs), rhs(rhs), in_place(in_place) {}
+        BinaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : Op(opcode, Optype::BINARY, lazy), lhs(lhs), rhs(rhs), in_place(in_place) {}
         OpPtr get_lhs() const { return lhs; }
         OpPtr get_rhs() const { return rhs; }
         const std::string str() const override;
@@ -233,7 +233,7 @@ namespace ax::graph
         OpPtr operand;
 
     public:
-        TransformOp(Opcode opcode, LazyArrayPtr array, OpPtr operand) : Op(opcode, Optype::TRANSFORM, array), operand(operand) {}
+        TransformOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand) : Op(opcode, Optype::TRANSFORM, lazy), operand(operand) {}
         OpPtr get_operand() const { return operand; }
         const std::string str() const override;
     };
@@ -247,7 +247,7 @@ namespace ax::graph
         int default_val;
 
     public:
-        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr array, OpPtr operand, const ShapeDims &dims, int default_val) : Op(opcode, Optype::REDUCE, array), mode(mode), operand(operand), dims(dims), default_val(default_val) {}
+        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims, int default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val) {}
         ReduceMode get_mode() const { return mode; }
         OpPtr get_operand() const { return operand; }
         const ShapeDims &get_dims() const { return dims; }
@@ -258,7 +258,7 @@ namespace ax::graph
     struct AddOp : public BinaryOp
     {
     public:
-        AddOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::ADD, array, lhs, rhs, in_place) {}
+        AddOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::ADD, lazy, lhs, rhs, in_place) {}
 
         void backward() const override;
     };
@@ -266,7 +266,7 @@ namespace ax::graph
     struct SubOp : public BinaryOp
     {
     public:
-        SubOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::SUB, array, lhs, rhs, in_place) {}
+        SubOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::SUB, lazy, lhs, rhs, in_place) {}
 
         void backward() const override;
     };
@@ -274,7 +274,7 @@ namespace ax::graph
     struct MulOp : public BinaryOp
     {
     public:
-        MulOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::MUL, array, lhs, rhs, in_place) {}
+        MulOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::MUL, lazy, lhs, rhs, in_place) {}
 
         void backward() const override;
     };
@@ -282,7 +282,7 @@ namespace ax::graph
     struct DivOp : public BinaryOp
     {
     public:
-        DivOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::DIV, array, lhs, rhs, in_place) {}
+        DivOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(Opcode::DIV, lazy, lhs, rhs, in_place) {}
 
         void backward() const override;
     };
@@ -290,37 +290,37 @@ namespace ax::graph
     struct EqOp : public BinaryOp
     {
     public:
-        EqOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::EQ, array, lhs, rhs, false) {}
+        EqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::EQ, lazy, lhs, rhs, false) {}
     };
 
     struct NeqOp : public BinaryOp
     {
     public:
-        NeqOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::NEQ, array, lhs, rhs, false) {}
+        NeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::NEQ, lazy, lhs, rhs, false) {}
     };
 
     struct LtOp : public BinaryOp
     {
     public:
-        LtOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LT, array, lhs, rhs, false) {}
+        LtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LT, lazy, lhs, rhs, false) {}
     };
 
     struct GtOp : public BinaryOp
     {
     public:
-        GtOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GT, array, lhs, rhs, false) {}
+        GtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GT, lazy, lhs, rhs, false) {}
     };
 
     struct LeqOp : public BinaryOp
     {
     public:
-        LeqOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LEQ, array, lhs, rhs, false) {}
+        LeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LEQ, lazy, lhs, rhs, false) {}
     };
 
     struct GeqOp : public BinaryOp
     {
     public:
-        GeqOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GEQ, array, lhs, rhs, false) {}
+        GeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GEQ, lazy, lhs, rhs, false) {}
     };
 
     struct MatmulOp : public Op
@@ -330,7 +330,7 @@ namespace ax::graph
         OpPtr rhs;
 
     public:
-        MatmulOp(LazyArrayPtr array, OpPtr lhs, OpPtr rhs) : Op(Opcode::MATMUL, Optype::MATMUL, array), lhs(lhs), rhs(rhs) {}
+        MatmulOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : Op(Opcode::MATMUL, Optype::MATMUL, lazy), lhs(lhs), rhs(rhs) {}
         OpPtr get_lhs() const { return lhs; }
         OpPtr get_rhs() const { return rhs; }
         const std::string str() const override;
@@ -340,49 +340,49 @@ namespace ax::graph
     struct SqOp : public UnaryOp
     {
     public:
-        SqOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQ, array, operand, in_place) {}
+        SqOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQ, lazy, operand, in_place) {}
         void backward() const override;
     };
 
     struct SqrtOp : public UnaryOp
     {
     public:
-        SqrtOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQRT, array, operand, in_place) {}
+        SqrtOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQRT, lazy, operand, in_place) {}
         void backward() const override;
     };
 
     struct NegOp : public UnaryOp
     {
     public:
-        NegOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::NEG, array, operand, in_place) {}
+        NegOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::NEG, lazy, operand, in_place) {}
         void backward() const override;
     };
 
     struct IdentityOp : public UnaryOp
     {
     public:
-        IdentityOp(LazyArrayPtr array, OpPtr operand) : UnaryOp(Opcode::IDENTITY, array, operand, false) {}
+        IdentityOp(LazyArrayPtr lazy, OpPtr operand) : UnaryOp(Opcode::IDENTITY, lazy, operand, false) {}
         void backward() const override;
     };
 
     struct ExpOp : public UnaryOp
     {
     public:
-        ExpOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::EXP, array, operand, in_place) {}
+        ExpOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::EXP, lazy, operand, in_place) {}
         void backward() const override;
     };
 
     struct LogOp : public UnaryOp
     {
     public:
-        LogOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::LOG, array, operand, in_place) {}
+        LogOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::LOG, lazy, operand, in_place) {}
         void backward() const override;
     };
 
     struct RecipOp : public UnaryOp
     {
     public:
-        RecipOp(LazyArrayPtr array, OpPtr operand, bool in_place) : UnaryOp(Opcode::RECIP, array, operand, in_place) {}
+        RecipOp(LazyArrayPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::RECIP, lazy, operand, in_place) {}
         void backward() const override;
     };
 
@@ -392,7 +392,7 @@ namespace ax::graph
         ShapeView view;
 
     public:
-        ReshapeOp(LazyArrayPtr array, OpPtr operand, const ShapeView &view) : TransformOp(Opcode::RESHAPE, array, operand), view(view) {}
+        ReshapeOp(LazyArrayPtr lazy, OpPtr operand, const ShapeView &view) : TransformOp(Opcode::RESHAPE, lazy, operand), view(view) {}
         const ShapeView &get_view() const { return view; }
         const std::string str() const override { return TransformOp::str() + ", view: (" + vnumstr(view) + ")"; }
         void backward() const override;
@@ -404,7 +404,7 @@ namespace ax::graph
         std::vector<Range> ranges;
 
     public:
-        SliceOp(LazyArrayPtr array, OpPtr operand, const std::vector<Range> &ranges) : TransformOp(Opcode::SLICE, array, operand), ranges(ranges) {}
+        SliceOp(LazyArrayPtr lazy, OpPtr operand, const std::vector<Range> &ranges) : TransformOp(Opcode::SLICE, lazy, operand), ranges(ranges) {}
         const std::vector<Range> &get_ranges() const { return ranges; }
         const std::string str() const override
         {
@@ -421,7 +421,7 @@ namespace ax::graph
         ShapeDims dims;
 
     public:
-        PermuteOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::PERMUTE, array, operand), dims(dims) {}
+        PermuteOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::PERMUTE, lazy, operand), dims(dims) {}
         const ShapeDims &get_perm() const { return dims; }
         const std::string str() const override { return TransformOp::str() + ", permutation: (" + vnumstr(dims) + ")"; }
         void backward() const override;
@@ -435,7 +435,7 @@ namespace ax::graph
         ShapeDims dims;
 
     public:
-        BroadcastOp(LazyArrayPtr array, OpPtr operand, const ShapeView &input_view, const ShapeView &output_view, const ShapeDims &dims) : TransformOp(Opcode::BROADCAST, array, operand), input_view(input_view), output_view(output_view), dims(dims) {}
+        BroadcastOp(LazyArrayPtr lazy, OpPtr operand, const ShapeView &input_view, const ShapeView &output_view, const ShapeDims &dims) : TransformOp(Opcode::BROADCAST, lazy, operand), input_view(input_view), output_view(output_view), dims(dims) {}
         const ShapeView &get_input_view() const { return input_view; }
         const ShapeView &get_output_view() const { return output_view; }
         const ShapeDims &get_dims() const { return dims; }
@@ -449,7 +449,7 @@ namespace ax::graph
         isize dim;
 
     public:
-        SqueezeOp(LazyArrayPtr array, OpPtr operand, isize dim) : TransformOp(Opcode::SQUEEZE, array, operand), dim(dim) {}
+        SqueezeOp(LazyArrayPtr lazy, OpPtr operand, isize dim) : TransformOp(Opcode::SQUEEZE, lazy, operand), dim(dim) {}
         isize get_dim() const { return dim; }
         const std::string str() const override { return TransformOp::str() + ", dim: " + std::to_string(dim); }
         void backward() const override;
@@ -461,7 +461,7 @@ namespace ax::graph
         isize dim;
 
     public:
-        UnsqueezeOp(LazyArrayPtr array, OpPtr operand, isize dim) : TransformOp(Opcode::UNSQUEEZE, array, operand), dim(dim) {}
+        UnsqueezeOp(LazyArrayPtr lazy, OpPtr operand, isize dim) : TransformOp(Opcode::UNSQUEEZE, lazy, operand), dim(dim) {}
         isize get_dim() const { return dim; }
         const std::string str() const override { return TransformOp::str() + ", dim: " + std::to_string(dim); }
         void backward() const override;
@@ -473,7 +473,7 @@ namespace ax::graph
         DtypePtr dtype;
 
     public:
-        AstypeOp(LazyArrayPtr array, OpPtr operand, DtypePtr dtype) : TransformOp(Opcode::ASTYPE, array, operand), dtype(dtype) {}
+        AstypeOp(LazyArrayPtr lazy, OpPtr operand, DtypePtr dtype) : TransformOp(Opcode::ASTYPE, lazy, operand), dtype(dtype) {}
         DtypePtr get_dtype() const { return dtype; }
         const std::string str() const override { return TransformOp::str() + ", dtype: " + dtype->str(); }
     };
@@ -481,34 +481,34 @@ namespace ax::graph
     struct SumOp : public ReduceOp
     {
     public:
-        SumOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::SUM, ReduceMode::VALUE, array, operand, dims, 0) {}
+        SumOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::SUM, ReduceMode::VALUE, lazy, operand, dims, 0) {}
         void backward() const override;
     };
 
     struct MaxOp : public ReduceOp
     {
     public:
-        MaxOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MAX, ReduceMode::VALUE, array, operand, dims, array->get_dtype()->min()) {}
+        MaxOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MAX, ReduceMode::VALUE, lazy, operand, dims, lazy->get_dtype()->min()) {}
         void backward() const override;
     };
 
     struct MinOp : public ReduceOp
     {
     public:
-        MinOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MIN, ReduceMode::VALUE, array, operand, dims, array->get_dtype()->max()) {}
+        MinOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MIN, ReduceMode::VALUE, lazy, operand, dims, lazy->get_dtype()->max()) {}
         void backward() const override;
     };
 
     struct ArgmaxOp : public ReduceOp
     {
     public:
-        ArgmaxOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMAX, ReduceMode::ARG, array, operand, dims, operand->get_array()->get_dtype()->min()) {}
+        ArgmaxOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMAX, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->min()) {}
     };
 
     struct ArgminOp : public ReduceOp
     {
     public:
-        ArgminOp(LazyArrayPtr array, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMIN, ReduceMode::ARG, array, operand, dims, operand->get_array()->get_dtype()->max()) {}
+        ArgminOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMIN, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->max()) {}
     };
 
     OpPtr detach(OpPtr op);
@@ -569,14 +569,14 @@ namespace ax::graph
     {
         if_scalar_is_numeric(c);
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        return full(in_op->get_array()->get_view(), dtype->get_value_as_int(c_ptr), dtype, device);
+        return full(in_op->get_lazy()->get_view(), dtype->get_value_as_int(c_ptr), dtype, device);
     }
 
     template <class T>
     OpPtr add(OpPtr lop, T c)
     {
         if_scalar_is_numeric(c);
-        LazyArrayPtr larr = lop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
         OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
@@ -587,7 +587,7 @@ namespace ax::graph
     OpPtr sub(OpPtr lop, T c)
     {
         if_scalar_is_numeric(c);
-        LazyArrayPtr larr = lop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
         OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
@@ -598,7 +598,7 @@ namespace ax::graph
     OpPtr mul(OpPtr lop, T c)
     {
         if_scalar_is_numeric(c);
-        LazyArrayPtr larr = lop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
         OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
@@ -609,7 +609,7 @@ namespace ax::graph
     OpPtr div(OpPtr lop, T c)
     {
         if_scalar_is_numeric(c);
-        LazyArrayPtr larr = lop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
         OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
@@ -620,8 +620,8 @@ namespace ax::graph
     OpPtr binary_ss(OpPtr lop, OpPtr rop)
     {
         O dummy_op(nullptr, nullptr, nullptr, false);
-        LazyArrayPtr larr = lop->get_array();
-        LazyArrayPtr rarr = rop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
+        LazyArrayPtr rarr = rop->get_lazy();
         const ShapeView &lview = larr->get_view();
         const ShapeView &rview = rarr->get_view();
         DtypePtr ldtype = larr->get_dtype();
@@ -644,7 +644,7 @@ namespace ax::graph
 
         OpPtr broadcasted_lop = broadcast(lop, rview);
         OpPtr broadcasted_rop = broadcast(rop, lview);
-        LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_array()->get_view()), ldtype, ldevice);
+        LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_lazy()->get_view()), ldtype, ldevice);
         OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop, false);
         return out_op;
     }
@@ -653,8 +653,8 @@ namespace ax::graph
     OpPtr self_binary_ss(OpPtr lop, OpPtr rop)
     {
         O dummy_op(nullptr, nullptr, nullptr, true);
-        LazyArrayPtr larr = lop->get_array();
-        LazyArrayPtr rarr = rop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
+        LazyArrayPtr rarr = rop->get_lazy();
         const Shape &lshape = larr->get_shape();
         const ShapeView &lview = larr->get_view();
         const ShapeView &rview = rarr->get_view();
@@ -685,7 +685,7 @@ namespace ax::graph
     template <class O>
     OpPtr unary_ss(OpPtr in_op, bool in_place)
     {
-        LazyArrayPtr in_arr = in_op->get_array();
+        LazyArrayPtr in_arr = in_op->get_lazy();
         DtypePtr in_dtype = in_arr->get_dtype();
 
         if (!float_dtype_by_dtype.contains(in_dtype))
@@ -703,7 +703,7 @@ namespace ax::graph
     OpPtr unary_ss_float(OpPtr in_op, bool in_place)
     {
         O dummy_op(nullptr, nullptr, in_place);
-        LazyArrayPtr in_arr = in_op->get_array();
+        LazyArrayPtr in_arr = in_op->get_lazy();
         DtypePtr in_dtype = in_arr->get_dtype();
 
         if (in_place)
@@ -731,8 +731,8 @@ namespace ax::graph
     OpPtr cmp(OpPtr lop, OpPtr rop, DtypePtrSet &valid_dtypes)
     {
         O dummy_op(nullptr, nullptr, nullptr);
-        LazyArrayPtr larr = lop->get_array();
-        LazyArrayPtr rarr = rop->get_array();
+        LazyArrayPtr larr = lop->get_lazy();
+        LazyArrayPtr rarr = rop->get_lazy();
         const ShapeView &lview = larr->get_view();
         const ShapeView &rview = rarr->get_view();
         DtypePtr ldtype = larr->get_dtype();
@@ -755,7 +755,7 @@ namespace ax::graph
 
         OpPtr broadcasted_lop = broadcast(lop, rview);
         OpPtr broadcasted_rop = broadcast(rop, lview);
-        LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_array()->get_view()), &b8, ldevice);
+        LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_lazy()->get_view()), &b8, ldevice);
         OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop);
         return out_op;
     }
@@ -763,7 +763,7 @@ namespace ax::graph
     template <class O>
     OpPtr reduce(OpPtr in_op, const ShapeDims &dims, DtypePtr result_dtype, DtypePtrSet &valid_dtypes)
     {
-        LazyArrayPtr in_arr = in_op->get_array();
+        LazyArrayPtr in_arr = in_op->get_lazy();
         const Shape &in_shape = in_arr->get_shape();
         DtypePtr in_dtype = in_arr->get_dtype();
         DevicePtr in_device = in_arr->get_device();

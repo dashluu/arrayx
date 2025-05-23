@@ -4,7 +4,7 @@ namespace ax::runtime::metal
 {
 	void MTLRunner::run_initializer_op(OpPtr op)
 	{
-		LazyArrayPtr arr = op->get_array();
+		LazyArrayPtr arr = op->get_lazy();
 		alloc(arr);
 		switch (op->get_opcode())
 		{
@@ -28,11 +28,11 @@ namespace ax::runtime::metal
 	void MTLRunner::run_unary_op(OpPtr op)
 	{
 		std::shared_ptr<UnaryOp> unary_op = std::static_pointer_cast<UnaryOp>(op);
-		LazyArrayPtr out_arr = unary_op->get_array();
+		LazyArrayPtr out_arr = unary_op->get_lazy();
 		OpPtr operand = unary_op->get_operand();
 		if (unary_op->is_in_place())
 		{
-			alloc(out_arr, operand->get_array());
+			alloc(out_arr, operand->get_lazy());
 		}
 		else
 		{
@@ -51,13 +51,13 @@ namespace ax::runtime::metal
 	void MTLRunner::run_binary_op(OpPtr op)
 	{
 		std::shared_ptr<BinaryOp> binary_op = std::static_pointer_cast<BinaryOp>(op);
-		LazyArrayPtr out_arr = binary_op->get_array();
+		LazyArrayPtr out_arr = binary_op->get_lazy();
 		OpPtr lop = binary_op->get_lhs();
 		OpPtr rop = binary_op->get_rhs();
 		if (binary_op->is_in_place())
 		{
 			// Share memory with lhs
-			alloc(out_arr, lop->get_array());
+			alloc(out_arr, lop->get_lazy());
 		}
 		else
 		{
@@ -71,7 +71,7 @@ namespace ax::runtime::metal
 		std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
 		OpPtr lop = matmul_op->get_lhs();
 		OpPtr rop = matmul_op->get_rhs();
-		alloc(matmul_op->get_array());
+		alloc(matmul_op->get_lazy());
 		run_matmul_kernel(lop, rop, op);
 	}
 
@@ -82,9 +82,9 @@ namespace ax::runtime::metal
 		case Opcode::RESHAPE:
 		{
 			std::shared_ptr<ReshapeOp> reshape_op = std::static_pointer_cast<ReshapeOp>(op);
-			LazyArrayPtr out_arr = reshape_op->get_array();
+			LazyArrayPtr out_arr = reshape_op->get_lazy();
 			OpPtr operand = reshape_op->get_operand();
-			LazyArrayPtr in_arr = operand->get_array();
+			LazyArrayPtr in_arr = operand->get_lazy();
 			if (!in_arr->copy_when_reshape(reshape_op->get_view()))
 			{
 				alloc(out_arr, in_arr);
@@ -125,7 +125,7 @@ namespace ax::runtime::metal
 		{
 			std::shared_ptr<AstypeOp> as_type_op = std::static_pointer_cast<AstypeOp>(op);
 			OpPtr operand = as_type_op->get_operand();
-			alloc(as_type_op->get_array());
+			alloc(as_type_op->get_lazy());
 			run_copy_kernel(operand, op);
 			break;
 		}
@@ -137,7 +137,7 @@ namespace ax::runtime::metal
 	void MTLRunner::run_reduce_op(OpPtr op)
 	{
 		std::shared_ptr<ReduceOp> reduce_op = std::static_pointer_cast<ReduceOp>(op);
-		LazyArrayPtr arr = reduce_op->get_array();
+		LazyArrayPtr arr = reduce_op->get_lazy();
 		OpPtr operand = reduce_op->get_operand();
 		alloc(arr);
 		int default_val = reduce_op->get_default_val();
