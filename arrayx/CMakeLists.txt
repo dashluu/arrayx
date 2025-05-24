@@ -3,12 +3,28 @@ project(arrayx)
 
 set(CMAKE_CXX_STANDARD 23)
 
+# Set up nanobind
+set(DEV_MODULE Development.Module)
+find_package(Python 3.12 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+# Detect the installed nanobind package and import it into CMake
+execute_process(
+    COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
+find_package(nanobind CONFIG REQUIRED)
+
 file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/device/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/array/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/python/*.h"
 )
 
 file(GLOB SRC_FILES
@@ -30,7 +46,15 @@ if(APPLE)
         "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.cpp"
     )
     # set(CMAKE_BUILD_TYPE Debug)
-    add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
+    # add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
+    nanobind_add_module(${PROJECT_NAME} python/bind.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
+    nanobind_add_stub(
+        arrayx_stub
+        MODULE arrayx
+        OUTPUT arrayx.pyi
+        PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
+        DEPENDS arrayx
+    )
     set(MTL_CPP "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/metal-cpp")
     target_include_directories(${PROJECT_NAME} PRIVATE ${MTL_CPP})
     target_link_libraries(${PROJECT_NAME} PRIVATE

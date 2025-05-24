@@ -445,7 +445,7 @@ namespace ax::core
 
         const std::string str() const override
         {
-            return "(" + vnumstr(view) + ")";
+            return "offset: " + std::to_string(offset) + ", view: " + vnumstr(view) + ", stride: " + vnumstr(stride);
         }
 
         ShapeView::const_iterator cbegin() const

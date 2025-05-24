@@ -58,6 +58,8 @@ namespace ax::device
     };
 
     using DevicePtr = std::shared_ptr<Device>;
+
+    const std::string default_device_name = "mps:0";
 }
 
 namespace std

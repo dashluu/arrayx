@@ -59,12 +59,13 @@ namespace ax::array
 		void backward();
 
 		// Initializer operations
-		static ArrayPtr full(const ShapeView &view, int c, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
-		static ArrayPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
-		static ArrayPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
-		static ArrayPtr ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
-		static ArrayPtr zeros_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
-		static ArrayPtr ones_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = "cpu");
+		static ArrayPtr full(const ShapeView &view, int c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr zeros_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr ones_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static ArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
 
 		// Element-wise operations
 		ArrayPtr add(ArrayPtr rhs) const;

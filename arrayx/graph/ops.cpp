@@ -286,17 +286,10 @@ namespace ax::graph
 		return op;
 	}
 
-	OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
+	OpPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
 	{
 		LazyArrayPtr arr = LazyArray::from_ptr(ptr, nbytes, shape, dtype, device);
 		OpPtr op = std::make_shared<BuffOp>(arr);
-		return op;
-	}
-
-	OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
-	{
-		LazyArrayPtr arr = LazyArray::from_ptr(ptr, nbytes, shape, dtype, device);
-		OpPtr op = std::make_shared<NumpyOp>(arr);
 		return op;
 	}
 

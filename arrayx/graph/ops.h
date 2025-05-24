@@ -16,7 +16,6 @@ namespace ax::graph
         ARANGE,
         FULL,
         BUFF,
-        NUMPY,
         ADD,
         SUB,
         MUL,
@@ -71,7 +70,6 @@ namespace ax::graph
         {Opcode::ARANGE, "arange"},
         {Opcode::FULL, "full"},
         {Opcode::BUFF, "buff"},
-        {Opcode::NUMPY, "numpy"},
         {Opcode::ADD, "add"},
         {Opcode::SUB, "sub"},
         {Opcode::MUL, "mul"},
@@ -189,13 +187,6 @@ namespace ax::graph
     {
     public:
         BuffOp(LazyArrayPtr lazy) : InitializerOp(Opcode::BUFF, lazy) {}
-        const std::string str() const override { return InitializerOp::str(); }
-    };
-
-    struct NumpyOp : public InitializerOp
-    {
-    public:
-        NumpyOp(LazyArrayPtr lazy) : InitializerOp(Opcode::NUMPY, lazy) {}
         const std::string str() const override { return InitializerOp::str(); }
     };
 
@@ -518,8 +509,7 @@ namespace ax::graph
     OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device);
     OpPtr ones_like(OpPtr in_op, DtypePtr dtype, DevicePtr device);
     OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, DevicePtr device);
-    OpPtr from_buff(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device);
-    OpPtr from_numpy(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device);
+    OpPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device);
     OpPtr broadcast(OpPtr op, const ShapeView &view);
     OpPtr broadcast_to(OpPtr op, const ShapeView &view);
     OpPtr slice(OpPtr in_op, const RangeVec &ranges);

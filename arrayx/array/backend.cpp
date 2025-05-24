@@ -36,7 +36,7 @@ namespace ax::array
 		DevicePtr device;
 		RunnerPtr runner;
 		std::shared_ptr<ax::runtime::metal::MTLContext> context;
-		const std::string &lib_path = "runtime/metal/kernels/kernels.metallib";
+		const std::string &lib_path = "../arrayx/build/runtime/metal/kernels/kernels.metallib";
 
 		for (NS::UInteger i = 0; i < mtl_devices->count(); ++i)
 		{
@@ -53,7 +53,7 @@ namespace ax::array
 #endif
 	}
 
-	void Backend::shutdown()
+	void Backend::cleanup()
 	{
 		backend.devices.clear();
 		backend.runners.clear();

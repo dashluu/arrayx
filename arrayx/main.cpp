@@ -10,6 +10,6 @@ int main()
 	auto x3 = x1->sum();
 	x3->eval();
 	std::cout << x3->str() << std::endl;
-	Backend::shutdown();
+	Backend::cleanup();
 	return 0;
 }

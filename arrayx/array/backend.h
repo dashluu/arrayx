@@ -22,7 +22,7 @@ namespace ax::array
 		RunnerPtr get_runner(const std::string &device_name) const;
 		size_t count_devices() const { return devices.size(); }
 		static void init();
-		static void shutdown();
+		static void cleanup();
 		static const Backend &instance();
 	};
 }

@@ -5,17 +5,18 @@ namespace ax::runtime::metal
 	void MTLRunner::run_initializer_op(OpPtr op)
 	{
 		LazyArrayPtr arr = op->get_lazy();
-		alloc(arr);
 		switch (op->get_opcode())
 		{
 		case Opcode::FULL:
 		{
+			alloc(arr);
 			std::shared_ptr<FullOp> full_op = std::static_pointer_cast<FullOp>(op);
 			run_full_kernel(op, full_op->get_const());
 			break;
 		}
 		case Opcode::ARANGE:
 		{
+			alloc(arr);
 			std::shared_ptr<ArangeOp> arange_op = std::static_pointer_cast<ArangeOp>(op);
 			run_arange_kernel(op, arange_op->get_start(), arange_op->get_step());
 			break;

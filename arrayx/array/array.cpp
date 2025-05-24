@@ -60,6 +60,13 @@ namespace ax::array
 		return std::make_shared<Array>(out_op);
 	}
 
+	ArrayPtr Array::from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, const std::string &device_name)
+	{
+		DevicePtr device = get_backend_device(device_name);
+		OpPtr out_op = ax::graph::from_ptr(ptr, nbytes, shape, dtype, device);
+		return std::make_shared<Array>(out_op);
+	}
+
 	ArrayPtr Array::add(ArrayPtr rhs) const
 	{
 		OpPtr out_op = ax::graph::add(op, rhs->op);
