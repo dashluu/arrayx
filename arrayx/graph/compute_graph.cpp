@@ -77,7 +77,7 @@ namespace ax::graph
     {
         if (fw_order.empty())
         {
-            throw MTLGraphNotForwardedException();
+            throw ComputeGraphNotForwardedException();
         }
         if (bw_order.empty())
         {
@@ -109,7 +109,7 @@ namespace ax::graph
     {
         if (fw_order.empty())
         {
-            throw MTLGraphNotForwardedException();
+            throw ComputeGraphNotForwardedException();
         }
         LazyArrayPtr arr;
         std::string s = "Forward:\n";

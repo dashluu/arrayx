@@ -5,10 +5,10 @@
 
 namespace ax::core
 {
-    class MTLGraphNotForwardedException : public std::runtime_error
+    class ComputeGraphNotForwardedException : public std::runtime_error
     {
     public:
-        MTLGraphNotForwardedException() : std::runtime_error("Graph has not been forwarded.") {}
+        ComputeGraphNotForwardedException() : std::runtime_error("Graph has not been forwarded.") {}
     };
 
     class IncompatShapesForOp : public std::invalid_argument
