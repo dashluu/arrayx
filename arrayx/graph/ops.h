@@ -119,14 +119,14 @@ namespace ax::graph
         const std::string &get_opcode_str() const { return str_by_opname.at(opcode); }
         Optype get_optype() const { return optype; }
         LazyArrayPtr get_lazy() const { return lazy; }
-        std::shared_ptr<Op> get_grad() const { return grad; }
-        std::shared_ptr<Op> get_gradroot() const { return gradroot; }
         virtual void backward() const {}
         void init_grad(bool with_zeros = true);
         void update_grad(std::shared_ptr<Op> grad, bool sub = false);
         const std::string str() const override
         {
-            return lazy->get_id().str() + ": opcode: " + get_opcode_str();
+            return lazy->get_id().str() +
+                   ": opcode: " + get_opcode_str() +
+                   ", shape: " + lazy->get_shape().str();
         }
     };
 
@@ -503,7 +503,7 @@ namespace ax::graph
     };
 
     OpPtr detach(OpPtr op);
-    OpPtr full(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device);
+    OpPtr full_impl(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device);
     OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device);
     OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device);
     OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device);
@@ -555,54 +555,51 @@ namespace ax::graph
     }
 
     template <class T>
-    OpPtr full_like(OpPtr in_op, T c, DtypePtr dtype, DevicePtr device)
+    OpPtr full(const ShapeView &view, T c, DtypePtr dtype, DevicePtr device)
     {
         if_scalar_is_numeric(c);
-        uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        return full(in_op->get_lazy()->get_view(), dtype->get_value_as_int(c_ptr), dtype, device);
+        return full_impl(view, dtype_cast(c, dtype), dtype, device);
+    }
+
+    template <class T>
+    OpPtr full_like(OpPtr in_op, T c, DtypePtr dtype, DevicePtr device)
+    {
+        return full(in_op->get_lazy()->get_view(), c, dtype, device);
     }
 
     template <class T>
     OpPtr add(OpPtr lop, T c)
     {
-        if_scalar_is_numeric(c);
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
         return add(lop, rop);
     }
 
     template <class T>
     OpPtr sub(OpPtr lop, T c)
     {
-        if_scalar_is_numeric(c);
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
         return sub(lop, rop);
     }
 
     template <class T>
     OpPtr mul(OpPtr lop, T c)
     {
-        if_scalar_is_numeric(c);
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
         return mul(lop, rop);
     }
 
     template <class T>
     OpPtr div(OpPtr lop, T c)
     {
-        if_scalar_is_numeric(c);
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        uint8_t *c_ptr = reinterpret_cast<uint8_t *>(&c);
-        OpPtr rop = full(larr->get_view(), ldtype->get_value_as_int(c_ptr), ldtype, larr->get_device());
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
         return div(lop, rop);
     }
 

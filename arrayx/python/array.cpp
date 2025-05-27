@@ -1,0 +1,230 @@
+#include "array.h"
+
+namespace ax::bind
+{
+	axc::isize get_pyidx(axc::isize len, axc::isize idx)
+	{
+		if (idx < -len || idx >= len)
+		{
+			throw axc::OutOfRange(idx, -len, len);
+		}
+		return idx < 0 ? idx + len : idx;
+	}
+
+	axc::Range pyslice_to_range(axc::isize len, const nb::object &obj)
+	{
+		// Note: no need to check for out-of-bounds indices when converting to range
+		// Shape does the checking eventually
+		if (!nb::isinstance<nb::slice>(obj))
+		{
+			throw axc::PybindInvalidArgumentType(get_pyclass(obj), "slice");
+		}
+		auto slice = nb::cast<nb::slice>(obj);
+		bool start_none = slice.attr("start").is_none();
+		bool stop_none = slice.attr("stop").is_none();
+		bool step_none = slice.attr("step").is_none();
+		axc::isize start, stop, step;
+		if (step_none)
+		{
+			start = start_none ? 0 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? len : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+			return axc::Range(start, stop, 1);
+		}
+		step = nb::cast<axc::isize>(slice.attr("step"));
+		if (step > 0)
+		{
+			start = start_none ? 0 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? len : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+		}
+		else
+		{
+			start = start_none ? len - 1 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? -1 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+		}
+		return axc::Range(start, stop, step);
+	}
+
+	std::vector<axc::Range> pyslices_to_ranges(const axr::Array &arr, const nb::object &obj)
+	{
+		std::vector<axc::Range> ranges;
+		const axc::Shape &shape = arr.get_shape();
+		// obj can be an int, a slice, or a sequence of ints or slices
+		if (nb::isinstance<nb::int_>(obj))
+		{
+			axc::isize idx = get_pyidx(shape[0], nb::cast<axc::isize>(obj));
+			ranges.emplace_back(idx, idx + 1, 1);
+			for (axc::isize i = 1; i < shape.get_ndim(); i++)
+			{
+				ranges.emplace_back(0, shape[i], 1);
+			}
+			return ranges;
+		}
+		else if (nb::isinstance<nb::slice>(obj))
+		{
+			ranges.push_back(pyslice_to_range(shape[0], obj));
+			for (axc::isize i = 1; i < shape.get_ndim(); i++)
+			{
+				ranges.emplace_back(0, shape[i], 1);
+			}
+			return ranges;
+		}
+		else if (nb::isinstance<nb::sequence>(obj) && !nb::isinstance<nb::str>(obj))
+		{
+			// Object is a sequence but not a string
+			auto sequence = nb::cast<nb::sequence>(obj);
+			size_t seq_len = nb::len(sequence);
+			if (seq_len > shape.get_ndim())
+			{
+				throw axc::OutOfRange(seq_len, 1, shape.get_ndim() + 1);
+			}
+			for (size_t i = 0; i < seq_len; i++)
+			{
+				auto elm = sequence[i];
+				// elm must be a sequence of ints or slices
+				if (nb::isinstance<nb::int_>(elm))
+				{
+					axc::isize idx = get_pyidx(shape[i], nb::cast<axc::isize>(elm));
+					ranges.emplace_back(idx, idx + 1, 1);
+				}
+				else if (nb::isinstance<nb::slice>(elm))
+				{
+					ranges.push_back(pyslice_to_range(shape[i], elm));
+				}
+				else
+				{
+					throw axc::PybindInvalidArgumentType(get_pyclass(elm), "int, slice");
+				}
+			}
+			for (axc::isize i = seq_len; i < shape.get_ndim(); i++)
+			{
+				ranges.emplace_back(0, shape[i], 1);
+			}
+			return ranges;
+		}
+		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "int, slice, sequence");
+	}
+
+	axc::DtypePtr dtype_from_nddtype(nb::dlpack::dtype nddtype)
+	{
+		if (nddtype == nb::dtype<float>())
+		{
+			return &axc::f32;
+		}
+		else if (nddtype == nb::dtype<int>())
+		{
+			return &axc::i32;
+		}
+		return &axc::b8;
+	}
+
+	nb::ndarray<nb::numpy> array_to_numpy(const axr::Array &arr)
+	{
+		switch (arr.get_dtype()->get_name())
+		{
+		case axc::DtypeName::F32:
+			return array_to_numpy_impl<float>(arr);
+		case axc::DtypeName::I32:
+			return array_to_numpy_impl<int>(arr);
+		default:
+			return array_to_numpy_impl<bool>(arr);
+		}
+	}
+
+	axr::ArrayPtr array_from_numpy(nb::ndarray<nb::numpy> &ndarr)
+	{
+		axc::ShapeView view;
+		axc::ShapeStride stride;
+
+		for (size_t i = 0; i < ndarr.ndim(); ++i)
+		{
+			view.push_back(ndarr.shape(i));
+			stride.push_back(ndarr.stride(i));
+		}
+
+		axc::Shape shape(0, view, stride);
+		uint8_t *ptr = reinterpret_cast<uint8_t *>(ndarr.data());
+		axc::DtypePtr dtype = dtype_from_nddtype(ndarr.dtype());
+		return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, axd::default_device_name);
+	}
+
+	nb::ndarray<nb::pytorch> array_to_torch(const axr::Array &arr)
+	{
+		switch (arr.get_dtype()->get_name())
+		{
+		case axc::DtypeName::F32:
+			return array_to_torch_impl<float>(arr);
+		case axc::DtypeName::I32:
+			return array_to_torch_impl<int>(arr);
+		default:
+			return array_to_torch_impl<bool>(arr);
+		}
+	}
+
+	axr::ArrayPtr full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
+	{
+		if (nb::isinstance<nb::float_>(obj))
+		{
+			return axr::Array::full(view, nb::cast<float>(obj), dtype, device_name);
+		}
+		else if (nb::isinstance<nb::int_>(obj))
+		{
+			return axr::Array::full(view, nb::cast<int>(obj), dtype, device_name);
+		}
+		else if (nb::isinstance<nb::bool_>(obj))
+		{
+			return axr::Array::full(view, nb::cast<bool>(obj), dtype, device_name);
+		}
+		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
+	}
+
+	axr::ArrayPtr full_like(axr::ArrayPtr other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
+	{
+		return full(other->get_view(), obj, dtype, device_name);
+	}
+
+	axr::ArrayPtr slice(axr::Array &arr, const nb::object &obj)
+	{
+		return arr.slice(axb::pyslices_to_ranges(arr, obj));
+	}
+
+	axr::ArrayPtr transpose(axr::ArrayPtr arr, axc::isize start_dim, axc::isize end_dim)
+	{
+		return arr->transpose(get_pyidx(arr->get_shape().get_ndim(), start_dim), get_pyidx(arr->get_shape().get_ndim(), end_dim));
+	}
+
+	axr::ArrayPtr flatten(axr::ArrayPtr arr, axc::isize start_dim, axc::isize end_dim)
+	{
+		return arr->flatten(get_pyidx(arr->get_shape().get_ndim(), start_dim), get_pyidx(arr->get_shape().get_ndim(), end_dim));
+	}
+
+	axr::ArrayPtr squeeze(axr::ArrayPtr arr, axc::isize dim)
+	{
+		return arr->squeeze(get_pyidx(arr->get_shape().get_ndim(), dim));
+	}
+
+	axr::ArrayPtr unsqueeze(axr::ArrayPtr arr, axc::isize dim)
+	{
+		return arr->unsqueeze(get_pyidx(arr->get_shape().get_ndim(), dim));
+	}
+
+	axr::ArrayPtr pyobj_to_arr(const nb::object &obj, const std::string &device_name)
+	{
+		if (nb::isinstance<axr::Array>(obj))
+		{
+			return nb::cast<axr::ArrayPtr>(obj);
+		}
+		else if (nb::isinstance<nb::float_>(obj))
+		{
+			return axr::Array::full({1}, nb::cast<float>(obj), &axc::f32, device_name);
+		}
+		else if (nb::isinstance<nb::int_>(obj))
+		{
+			return axr::Array::full({1}, nb::cast<int>(obj), &axc::i32, device_name);
+		}
+		else if (nb::isinstance<nb::bool_>(obj))
+		{
+			return axr::Array::full({1}, nb::cast<int>(obj), &axc::b8, device_name);
+		}
+		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
+	}
+}

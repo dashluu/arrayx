@@ -18,13 +18,6 @@ namespace ax::array
 		get_backend_runner()->backward(compute_graph);
 	}
 
-	ArrayPtr Array::full(const ShapeView &view, int c, DtypePtr dtype, const std::string &device_name)
-	{
-		DevicePtr device = get_backend_device(device_name);
-		OpPtr out_op = ax::graph::full(view, c, dtype, device);
-		return std::make_shared<Array>(out_op);
-	}
-
 	ArrayPtr Array::arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, const std::string &device_name)
 	{
 		DevicePtr device = get_backend_device(device_name);
@@ -112,6 +105,12 @@ namespace ax::array
 	ArrayPtr Array::self_div(ArrayPtr rhs) const
 	{
 		OpPtr out_op = ax::graph::self_div(op, rhs->op);
+		return std::make_shared<Array>(out_op);
+	}
+
+	ArrayPtr Array::matmul(ArrayPtr rhs) const
+	{
+		OpPtr out_op = ax::graph::matmul(op, rhs->op);
 		return std::make_shared<Array>(out_op);
 	}
 

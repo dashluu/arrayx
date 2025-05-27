@@ -11,7 +11,7 @@ namespace ax::core
 		std::vector<isize> idx(get_ndim());
 		isize carry = k;
 		isize tmp;
-		for (int i = get_ndim() - 1; i >= 0; i--)
+		for (isize i = get_ndim() - 1; i >= 0; i--)
 		{
 			tmp = carry;
 			idx[i] = tmp % shape[i];
@@ -32,13 +32,13 @@ namespace ax::core
 		iter->start();
 		bool next_elm_available = iter->has_next();
 		std::string s = "";
-		for (int i = 0; i < get_ndim(); i++)
+		for (isize i = 0; i < get_ndim(); i++)
 		{
 			s += "[";
 		}
 		if (!next_elm_available)
 		{
-			for (int i = 0; i < get_ndim(); i++)
+			for (isize i = 0; i < get_ndim(); i++)
 			{
 				s += "]";
 			}
@@ -52,7 +52,7 @@ namespace ax::core
 			uint8_t *ptr = iter->next();
 			// std::cout << std::hex << static_cast<void *>(ptr) << std::endl;
 			s += dtype->get_value_as_str(ptr);
-			for (int i = elms_per_dim.size() - 1; i >= 0; i--)
+			for (ssize_t i = elms_per_dim.size() - 1; i >= 0; i--)
 			{
 				if (iter->count() % elms_per_dim[i] == 0)
 				{

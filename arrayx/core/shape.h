@@ -23,7 +23,7 @@ namespace ax::core
                                             std::to_string(ranges.size()) + " and " +
                                             std::to_string(get_ndim()) + ".");
             }
-            for (int i = 0; i < ranges.size(); i++)
+            for (size_t i = 0; i < ranges.size(); i++)
             {
                 const Range range = ranges[i];
                 if (range.start < 0 || range.start >= static_cast<isize>(view[i]))
@@ -114,7 +114,7 @@ namespace ax::core
             this->view = view;
             stride.resize(view.size());
             isize s = 1;
-            for (int i = view.size() - 1; i >= 0; i--)
+            for (ssize_t i = view.size() - 1; i >= 0; i--)
             {
                 stride[i] = s;
                 s *= view[i];
@@ -158,7 +158,7 @@ namespace ax::core
         {
             ShapeStride contiguous_stride(get_ndim(), 0);
             isize s = 1;
-            for (int i = get_ndim() - 1; i >= 0; i--)
+            for (isize i = get_ndim() - 1; i >= 0; i--)
             {
                 contiguous_stride[i] = s;
                 s *= view[i];
@@ -170,7 +170,7 @@ namespace ax::core
         {
             std::vector<isize> elms_per_dim(get_ndim(), 0);
             isize n = 1;
-            for (int i = get_ndim() - 1; i >= 0; i--)
+            for (isize i = get_ndim() - 1; i >= 0; i--)
             {
                 n *= view[i];
                 elms_per_dim[i] = n;
@@ -256,7 +256,7 @@ namespace ax::core
             broadcast_view.insert(broadcast_view.begin(), ndim_diff, 1);
             Shape broadcast_shape(offset, broadcast_view);
             std::fill_n(broadcast_shape.stride.begin(), ndim_diff, 0);
-            for (int i = 0; i < target.size(); i++)
+            for (size_t i = 0; i < target.size(); i++)
             {
                 if (broadcast_view[i] < target[i])
                 {
@@ -289,7 +289,7 @@ namespace ax::core
             rview.insert(rview.begin(), rdiff, 1);
             Shape broadcast_shape(offset, lview);
             std::fill_n(broadcast_shape.stride.begin(), ldiff, 0);
-            for (int i = 0; i < ndim; i++)
+            for (size_t i = 0; i < ndim; i++)
             {
                 if (lview[i] < rview[i])
                 {
@@ -341,7 +341,7 @@ namespace ax::core
             isize ndim = get_ndim();
             ShapeView v(ndim, 0);
             ShapeStride s(ndim, 0);
-            for (int i = 0; i < ndim; i++)
+            for (isize i = 0; i < ndim; i++)
             {
                 v[i] = view[dims[i]];
                 s[i] = stride[dims[i]];
@@ -375,7 +375,7 @@ namespace ax::core
             */
             if_dims_make_valid_permutation(dims);
             ShapeView reverse_dims(dims.size());
-            for (int i = 0; i < dims.size(); i++)
+            for (size_t i = 0; i < dims.size(); i++)
             {
                 reverse_dims[dims[i]] = i;
             }
@@ -391,13 +391,13 @@ namespace ax::core
         {
             if_ranges_are_valid(ranges);
             isize o = offset;
-            for (int i = 0; i < ranges.size(); i++)
+            for (size_t i = 0; i < ranges.size(); i++)
             {
                 o += ranges[i].start * stride[i];
             }
             ShapeView v(get_ndim());
             ShapeStride s(get_ndim());
-            for (int i = 0; i < ranges.size(); i++)
+            for (size_t i = 0; i < ranges.size(); i++)
             {
                 const Range &range = ranges[i];
                 isize diff = std::abs(range.stop - range.start);
@@ -445,7 +445,7 @@ namespace ax::core
 
         const std::string str() const override
         {
-            return "offset: " + std::to_string(offset) + ", view: " + vnumstr(view) + ", stride: " + vnumstr(stride);
+            return "(offset: " + std::to_string(offset) + ", view: " + vnumstr(view) + ", stride: " + vnumstr(stride) + ")";
         }
 
         ShapeView::const_iterator cbegin() const

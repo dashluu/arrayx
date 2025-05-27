@@ -15,6 +15,7 @@ namespace ax::graph
 			DtypePtr grad_dtype = float_dtype_by_dtype.at(dtype);
 			DevicePtr device = lazy->get_device();
 			grad = with_zeros ? zeros(view, grad_dtype, device) : ones(view, grad_dtype, device);
+			gradroot = grad;
 		}
 	}
 
@@ -252,7 +253,7 @@ namespace ax::graph
 		return std::make_shared<NoopOp>(out_arr);
 	}
 
-	OpPtr full(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
+	OpPtr full_impl(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
 	{
 		LazyArrayPtr arr = LazyArray::empty(Shape(view), dtype, device);
 		OpPtr op = std::make_shared<FullOp>(arr, view, c, dtype);
@@ -261,22 +262,22 @@ namespace ax::graph
 
 	OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device)
 	{
-		return full(view, dtype->zero(), dtype, device);
+		return full(view, 0, dtype, device);
 	}
 
 	OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
 	{
-		return full_like(in_op, dtype->zero(), dtype, device);
+		return full_like(in_op, 0, dtype, device);
 	}
 
 	OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device)
 	{
-		return full(view, dtype->one(), dtype, device);
+		return full(view, 1, dtype, device);
 	}
 
 	OpPtr ones_like(OpPtr in_op, DtypePtr dtype, DevicePtr device)
 	{
-		return full_like(in_op, dtype->one(), dtype, device);
+		return full_like(in_op, 1, dtype, device);
 	}
 
 	OpPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype, DevicePtr device)

@@ -33,6 +33,7 @@ file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/array/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/python/*.cpp"
 )
 
 if(APPLE)
@@ -47,7 +48,7 @@ if(APPLE)
     )
     # set(CMAKE_BUILD_TYPE Debug)
     # add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
-    nanobind_add_module(${PROJECT_NAME} python/bind.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
+    nanobind_add_module(${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
     nanobind_add_stub(
         arrayx_stub
         MODULE arrayx

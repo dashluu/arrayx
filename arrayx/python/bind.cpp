@@ -1,4 +1,4 @@
-#include "bind.h"
+#include "array.h"
 
 NB_MODULE(arrayx, m)
 {
@@ -49,6 +49,7 @@ NB_MODULE(arrayx, m)
 		.def_prop_ro("shape", &axr::Array::get_shape, "Get array shape")
 		.def_prop_ro("dtype", &axr::Array::get_dtype, "Get array data type")
 		.def_prop_ro("device", &axr::Array::get_device, "Get array device")
+		.def_prop_ro("grad", &axr::Array::get_grad, "Get array gradient")
 		.def_prop_ro("ndim", &axr::Array::get_ndim, "Get number of dimensions")
 		.def_prop_ro("numel", &axr::Array::get_numel, "Get total number of elements")
 		.def_prop_ro("offset", &axr::Array::get_offset, "Get array offset")
@@ -60,16 +61,18 @@ NB_MODULE(arrayx, m)
 		.def_prop_ro("is_contiguous", &axr::Array::is_contiguous, "Check if array is contiguous")
 
 		// N-dimensional array
-		.def("numpy", &array_to_numpy, nb::rv_policy::reference_internal, "Convert array to numpy array")
-		.def("from_numpy", &array_from_numpy, "Convert numpy array to array")
+		.def("numpy", &axb::array_to_numpy, nb::rv_policy::reference_internal, "Convert array to numpy array")
+		.def("from_numpy", &axb::array_from_numpy, "Convert numpy array to array")
+		.def("torch", &axb::array_to_torch, nb::rv_policy::reference_internal, "Convert array to Pytorch tensor")
 
 		// Initializer operations
-		.def_static("full", &axr::Array::full, "view"_a, "value"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array filled with specified value")
-		.def_static("zeros", &axr::Array::zeros, "view"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array filled with zeros")
-		.def_static("ones", &axr::Array::ones, "view"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array filled with ones")
-		.def_static("arange", &axr::Array::arange, "view"_a, "start"_a, "step"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array with evenly spaced values")
-		.def_static("zeros_like", &axr::Array::zeros_like, "other"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array of zeros with same shape as input")
-		.def_static("ones_like", &axr::Array::ones_like, "other"_a, "dtype"_a = &axc::f32, "device"_a = "cpu", "Create a new array of ones with same shape as input")
+		.def_static("full", &axb::full, "view"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value")
+		.def_static("full_like", &axb::full_like, "other"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value with same shape as the input array")
+		.def_static("zeros", &axr::Array::zeros, "view"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with zeros")
+		.def_static("ones", &axr::Array::ones, "view"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with ones")
+		.def_static("arange", &axr::Array::arange, "view"_a, "start"_a, "step"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array with evenly spaced values")
+		.def_static("zeros_like", &axr::Array::zeros_like, "other"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array of zeros with same shape as input")
+		.def_static("ones_like", &axr::Array::ones_like, "other"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array of ones with same shape as input")
 
 		// Element-wise operations
 		.def("__add__", &axr::Array::add, "rhs"_a, "Add two arrays element-wise")
@@ -80,20 +83,22 @@ NB_MODULE(arrayx, m)
 		.def("__isub__", &axr::Array::self_sub, "rhs"_a, "In-place subtract two arrays element-wise")
 		.def("__imul__", &axr::Array::self_mul, "rhs"_a, "In-place multiply two arrays element-wise")
 		.def("__itruediv__", &axr::Array::self_div, "rhs"_a, "In-place divide two arrays element-wise")
+		.def("__matmul__", &axr::Array::matmul, "rhs"_a, "Matrix multiply two arrays")
 		.def("exp", &axr::Array::exp, "in_place"_a = false, "Compute exponential of array elements")
 		.def("log", &axr::Array::log, "in_place"_a = false, "Compute natural logarithm of array elements")
 		.def("sqrt", &axr::Array::sqrt, "in_place"_a = false, "Compute square root of array elements")
 		.def("sq", &axr::Array::sq, "in_place"_a = false, "Compute square of array elements")
 		.def("neg", &axr::Array::neg, "in_place"_a = false, "Compute negative of array elements")
+		.def("__neg__", &axr::Array::neg, "Compute negative of array elements")
 		.def("recip", &axr::Array::recip, "in_place"_a = false, "Compute reciprocal of array elements")
 
 		// Comparison operations
-		.def("eq", &axr::Array::eq, "rhs"_a, "Element-wise equality comparison")
-		.def("neq", &axr::Array::neq, "rhs"_a, "Element-wise inequality comparison")
-		.def("lt", &axr::Array::lt, "rhs"_a, "Element-wise less than comparison")
-		.def("gt", &axr::Array::gt, "rhs"_a, "Element-wise greater than comparison")
-		.def("leq", &axr::Array::leq, "rhs"_a, "Element-wise less than or equal comparison")
-		.def("geq", &axr::Array::geq, "rhs"_a, "Element-wise greater than or equal comparison")
+		.def("__eq__", &axr::Array::eq, "rhs"_a, "Element-wise equality comparison")
+		.def("__ne__", &axr::Array::neq, "rhs"_a, "Element-wise inequality comparison")
+		.def("__lt__", &axr::Array::lt, "rhs"_a, "Element-wise less than comparison")
+		.def("__gt__", &axr::Array::gt, "rhs"_a, "Element-wise greater than comparison")
+		.def("__le__", &axr::Array::leq, "rhs"_a, "Element-wise less than or equal comparison")
+		.def("__ge__", &axr::Array::geq, "rhs"_a, "Element-wise greater than or equal comparison")
 
 		// Reduction operations
 		.def("sum", &axr::Array::sum, "dims"_a = axc::ShapeDims{}, "Sum array elements along specified dimensions")
@@ -105,13 +110,13 @@ NB_MODULE(arrayx, m)
 		// Shape operations
 		.def("broadcast", &axr::Array::broadcast, "view"_a, "Broadcast array to new shape")
 		.def("broadcast_to", &axr::Array::broadcast_to, "view"_a, "Broadcast array to target shape")
-		// .def("slice", &axr::Array::slice, "ranges"_a, "Extract slice from array")
+		.def("__getitem__", &axb::slice, "index"_a, "Slice array along specified dimensions")
 		.def("reshape", &axr::Array::reshape, "view"_a, "Reshape array to new dimensions")
-		.def("flatten", &axr::Array::flatten, "start_dim"_a, "end_dim"_a, "Flatten dimensions from start to end")
-		.def("squeeze", &axr::Array::squeeze, "dim"_a, "Remove single-dimensional entry from array")
-		.def("unsqueeze", &axr::Array::unsqueeze, "dim"_a, "Add single-dimensional entry to array")
+		.def("flatten", &axb::flatten, "start_dim"_a, "end_dim"_a, "Flatten dimensions from start to end")
+		.def("squeeze", &axb::squeeze, "dim"_a, "Remove single-dimensional entry from array")
+		.def("unsqueeze", &axb::unsqueeze, "dim"_a, "Add single-dimensional entry to array")
 		.def("permute", &axr::Array::permute, "dims"_a, "Permute array dimensions")
-		.def("transpose", &axr::Array::transpose, "start_dim"_a = 0, "end_dim"_a = 1, "Transpose array dimensions")
+		.def("transpose", &axb::transpose, "start_dim"_a = 0, "end_dim"_a = 1, "Transpose array dimensions")
 
 		// Type operations
 		.def("astype", &axr::Array::astype, "dtype"_a, "Cast array to specified dtype")
@@ -122,34 +127,4 @@ NB_MODULE(arrayx, m)
 
 		// String representation
 		.def("__str__", &axr::Array::str, "String representation of array");
-}
-
-nb::ndarray<nb::numpy> array_to_numpy(const axr::Array &arr)
-{
-	switch (arr.get_dtype()->get_name())
-	{
-	case axc::DtypeName::F32:
-		return array_to_numpy_impl<float>(arr);
-	case axc::DtypeName::I32:
-		return array_to_numpy_impl<int>(arr);
-	default:
-		return array_to_numpy_impl<bool>(arr);
-	}
-}
-
-axr::ArrayPtr array_from_numpy(nb::ndarray<nb::numpy> &ndarr)
-{
-	axc::ShapeView view;
-	axc::ShapeStride stride;
-
-	for (size_t i = 0; i < ndarr.ndim(); ++i)
-	{
-		view.push_back(ndarr.shape(i));
-		stride.push_back(ndarr.stride(i));
-	}
-
-	axc::Shape shape(0, view, stride);
-	uint8_t *ptr = static_cast<uint8_t *>(ndarr.data());
-	axc::DtypePtr dtype = dtype_from_nddtype(ndarr.dtype());
-	return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, axd::default_device_name);
 }

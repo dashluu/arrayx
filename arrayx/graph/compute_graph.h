@@ -35,12 +35,12 @@ namespace ax::graph
 
 		const std::string str() const override;
 
-		std::vector<OpPtr>::const_iterator cbegin() const { return fw_order.begin(); }
+		std::vector<OpPtr>::const_iterator cbegin() const { return fw_order.cbegin(); }
 
-		std::vector<OpPtr>::const_iterator cend() const { return fw_order.end(); }
+		std::vector<OpPtr>::const_iterator cend() const { return fw_order.cend(); }
 
-		std::vector<OpPtr>::const_reverse_iterator crbegin() const { return bw_order.crbegin(); }
+		std::vector<OpPtr>::const_iterator crbegin() const { return bw_order.cbegin(); }
 
-		std::vector<OpPtr>::const_reverse_iterator crend() const { return bw_order.crend(); }
+		std::vector<OpPtr>::const_iterator crend() const { return bw_order.cend(); }
 	};
 }

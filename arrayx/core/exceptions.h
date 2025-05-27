@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include "../utils.h"
 
 namespace ax::core
 {
@@ -33,6 +34,12 @@ namespace ax::core
     {
     public:
         IncompatDevicesForOp(const std::string &op, const std::string lhs_device, const std::string rhs_device) : std::invalid_argument("Cannot run operator " + op + " on incompatible devices " + lhs_device + " and " + rhs_device + ".") {}
+    };
+
+    class OutOfRange : public std::out_of_range
+    {
+    public:
+        OutOfRange(isize idx, isize start, isize stop) : std::out_of_range(std::to_string(idx) + " is not in the range [" + std::to_string(start) + ", " + std::to_string(stop) + ")") {}
     };
 
     class PybindInvalidArgumentType : public std::invalid_argument

@@ -74,15 +74,9 @@ namespace ax::core
 
         virtual std::string get_value_as_str(int val) const = 0;
 
-        virtual int get_value_as_int(uint8_t *ptr) const = 0;
-
         virtual int max() const = 0;
 
         virtual int min() const = 0;
-
-        virtual int one() const = 0;
-
-        virtual int zero() const { return 0; }
     };
 
     template <class T>
@@ -101,11 +95,6 @@ namespace ax::core
                 return std::format("{:.4e}", val);
             }
             return std::format("{:.4f}", val);
-        }
-
-        int get_value_as_int(uint8_t *ptr) const override
-        {
-            return std::bit_cast<int>(*reinterpret_cast<T *>(ptr));
         }
 
         std::string get_value_as_str(int val) const override
@@ -131,11 +120,6 @@ namespace ax::core
             return std::to_string(*reinterpret_cast<T *>(ptr));
         }
 
-        int get_value_as_int(uint8_t *ptr) const override
-        {
-            return *reinterpret_cast<T *>(ptr);
-        }
-
         std::string get_value_as_str(int val) const override
         {
             return std::to_string(val);
@@ -144,8 +128,6 @@ namespace ax::core
         int max() const override { return std::numeric_limits<T>::max(); }
 
         int min() const override { return std::numeric_limits<T>::lowest(); }
-
-        int one() const override { return 1; }
     };
 
     struct F32 : public Float<float>
@@ -153,8 +135,6 @@ namespace ax::core
     public:
         F32() : Float<float>(DtypeName::F32, 4) {}
         F32(const F32 &dtype) : Float<float>(dtype) {}
-
-        int one() const override { return std::bit_cast<int>(1.0f); }
     };
 
     struct I8 : public Int<int8_t>
@@ -190,11 +170,6 @@ namespace ax::core
             return *ptr ? "True" : "False";
         }
 
-        int get_value_as_int(uint8_t *ptr) const override
-        {
-            return *reinterpret_cast<bool *>(ptr);
-        }
-
         std::string get_value_as_str(int val) const override
         {
             return std::to_string(static_cast<bool>(val));
@@ -203,8 +178,6 @@ namespace ax::core
         int max() const override { return std::numeric_limits<bool>::max(); }
 
         int min() const override { return std::numeric_limits<bool>::lowest(); }
-
-        int one() const override { return 1; }
     };
 
     inline const F32 f32;
@@ -249,4 +222,22 @@ namespace ax::core
     inline const std::unordered_map<DtypePtr, DtypePtr> float_dtype_by_dtype = {
         {&i32, &f32},
         {&f32, &f32}};
+
+    template <class T>
+    int dtype_cast(T c, DtypePtr dtype)
+    {
+        switch (dtype->get_type())
+        {
+        case DtypeType::FLOAT:
+            switch (dtype->get_name())
+            {
+            default:
+                return std::bit_cast<int>(static_cast<float>(c));
+            }
+        case DtypeType::INT:
+            return static_cast<int>(c);
+        default:
+            return static_cast<bool>(c);
+        }
+    }
 }

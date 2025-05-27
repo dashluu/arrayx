@@ -2,7 +2,7 @@
 
 uint strided_idx(uint id, constant const uint *ndim, constant const uint *shape, constant const int *stride)
 {
-    uint dim[MAX_NDIM];
+    uint dim[MAX_NDIM] = {0};
     uint carry = id;
     for (int i = *ndim - 1; i >= 0; i--)
     {

@@ -40,7 +40,7 @@ namespace ax::core
     inline const std::string vstr(const std::vector<T> &v, const std::function<std::string(T)> &f)
     {
         std::string s = "";
-        for (int i = 0; i < v.size(); i++)
+        for (size_t i = 0; i < v.size(); i++)
         {
             s += f(v[i]);
             if (i < v.size() - 1)

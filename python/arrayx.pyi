@@ -94,6 +94,10 @@ class Array:
         """Get array device"""
 
     @property
+    def grad(self) -> Array:
+        """Get array gradient"""
+
+    @property
     def ndim(self) -> int:
         """Get number of dimensions"""
 
@@ -135,28 +139,37 @@ class Array:
     def from_numpy(self) -> Array:
         """Convert numpy array to array"""
 
+    def torch(self) -> ArrayLike:
+        """Convert array to Pytorch tensor"""
+
     @staticmethod
-    def full(view: Sequence[int], value: int, dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array filled with specified value"""
 
     @staticmethod
-    def zeros(view: Sequence[int], dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def full_like(other: Array, c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
+        """
+        Create a new array filled with specified value with same shape as the input array
+        """
+
+    @staticmethod
+    def zeros(view: Sequence[int], dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array filled with zeros"""
 
     @staticmethod
-    def ones(view: Sequence[int], dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def ones(view: Sequence[int], dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array filled with ones"""
 
     @staticmethod
-    def arange(view: Sequence[int], start: int, step: int, dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def arange(view: Sequence[int], start: int, step: int, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array with evenly spaced values"""
 
     @staticmethod
-    def zeros_like(other: Array, dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def zeros_like(other: Array, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array of zeros with same shape as input"""
 
     @staticmethod
-    def ones_like(other: Array, dtype: Dtype = ..., device: str = 'cpu') -> Array:
+    def ones_like(other: Array, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array of ones with same shape as input"""
 
     def __add__(self, rhs: Array) -> Array:
@@ -183,6 +196,9 @@ class Array:
     def __itruediv__(self, rhs: Array) -> Array:
         """In-place divide two arrays element-wise"""
 
+    def __matmul__(self, rhs: Array) -> Array:
+        """Matrix multiply two arrays"""
+
     def exp(self, in_place: bool = False) -> Array:
         """Compute exponential of array elements"""
 
@@ -198,25 +214,28 @@ class Array:
     def neg(self, in_place: bool = False) -> Array:
         """Compute negative of array elements"""
 
+    def __neg__(self, arg: bool, /) -> Array:
+        """Compute negative of array elements"""
+
     def recip(self, in_place: bool = False) -> Array:
         """Compute reciprocal of array elements"""
 
-    def eq(self, rhs: Array) -> Array:
+    def __eq__(self, rhs: Array) -> Array:
         """Element-wise equality comparison"""
 
-    def neq(self, rhs: Array) -> Array:
+    def __ne__(self, rhs: Array) -> Array:
         """Element-wise inequality comparison"""
 
-    def lt(self, rhs: Array) -> Array:
+    def __lt__(self, rhs: Array) -> Array:
         """Element-wise less than comparison"""
 
-    def gt(self, rhs: Array) -> Array:
+    def __gt__(self, rhs: Array) -> Array:
         """Element-wise greater than comparison"""
 
-    def leq(self, rhs: Array) -> Array:
+    def __le__(self, rhs: Array) -> Array:
         """Element-wise less than or equal comparison"""
 
-    def geq(self, rhs: Array) -> Array:
+    def __ge__(self, rhs: Array) -> Array:
         """Element-wise greater than or equal comparison"""
 
     def sum(self, dims: Sequence[int] = []) -> Array:
@@ -239,6 +258,9 @@ class Array:
 
     def broadcast_to(self, view: Sequence[int]) -> Array:
         """Broadcast array to target shape"""
+
+    def __getitem__(self, index: object) -> Array:
+        """Slice array along specified dimensions"""
 
     def reshape(self, view: Sequence[int]) -> Array:
         """Reshape array to new dimensions"""

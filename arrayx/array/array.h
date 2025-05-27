@@ -42,6 +42,8 @@ namespace ax::array
 
 		DevicePtr get_device() const { return op->get_lazy()->get_device(); }
 
+		ArrayPtr get_grad() const { return std::make_shared<Array>(op->gradroot); }
+
 		isize get_numel() const { return op->get_lazy()->get_numel(); }
 
 		isize get_ndim() const { return op->get_lazy()->get_ndim(); }
@@ -59,7 +61,22 @@ namespace ax::array
 		void backward();
 
 		// Initializer operations
-		static ArrayPtr full(const ShapeView &view, int c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		template <typename T>
+		static ArrayPtr full(const ShapeView &view, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			OpPtr out_op = ax::graph::full(view, c, dtype, device);
+			return std::make_shared<Array>(out_op);
+		}
+
+		template <typename T>
+		static ArrayPtr full_like(ArrayPtr other, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			OpPtr out_op = ax::graph::full_like(other->op, c, dtype, device);
+			return std::make_shared<Array>(out_op);
+		}
+
 		static ArrayPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
 		static ArrayPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
 		static ArrayPtr ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
@@ -76,6 +93,7 @@ namespace ax::array
 		ArrayPtr self_sub(ArrayPtr rhs) const;
 		ArrayPtr self_mul(ArrayPtr rhs) const;
 		ArrayPtr self_div(ArrayPtr rhs) const;
+		ArrayPtr matmul(ArrayPtr rhs) const;
 		ArrayPtr exp(bool in_place = false) const;
 		ArrayPtr log(bool in_place = false) const;
 		ArrayPtr sqrt(bool in_place = false) const;

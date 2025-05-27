@@ -51,6 +51,10 @@ namespace ax::core
 
         const ShapeStride &get_stride() const { return shape.get_stride(); }
 
+        // Gets the buffer pointer without accounting for offset
+        uint8_t *get_buff_ptr() const { return buff->get_ptr(); }
+
+        // Gets the buffer pointer after accounting for offset
         uint8_t *get_ptr() const { return buff->get_ptr() + get_offset() * get_itemsize(); }
 
         DtypePtr get_dtype() const { return dtype; }
@@ -64,6 +68,10 @@ namespace ax::core
         isize get_ndim() const { return shape.get_ndim(); }
 
         isize get_itemsize() const { return dtype->get_size(); }
+
+        // Get the number of bytes of the buffer the array is working on
+        // Note: get_buff_nbytes() != get_nbytes()
+        isize get_buff_nbytes() const { return buff->get_nbytes(); }
 
         isize get_nbytes() const { return get_numel() * get_itemsize(); }
 

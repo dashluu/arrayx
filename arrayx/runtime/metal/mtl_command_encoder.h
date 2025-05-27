@@ -67,7 +67,7 @@ namespace ax::runtime::metal
             encoder->setBuffer(mtl_buff, 0, buff_idx++);
             if (tracked)
             {
-                buffs.push_back(static_cast<uint8_t *>(buff));
+                buffs.push_back(reinterpret_cast<uint8_t *>(buff));
             }
         }
 
@@ -101,7 +101,7 @@ namespace ax::runtime::metal
 
         void encode_array(LazyArrayPtr arr)
         {
-            encode_buffer(arr->get_ptr(), arr->get_nbytes(), false);
+            encode_buffer(arr->get_buff_ptr(), arr->get_buff_nbytes(), false);
         }
 
         void set_pipeline_state(const std::string &kernel_name)
