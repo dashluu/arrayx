@@ -37,7 +37,7 @@ namespace ax::bind
 		default:
 			// Try CPU for now
 			// TODO: change to metal later
-			device = nb::device::metal::value;
+			device = nb::device::cpu::value;
 			break;
 		}
 
