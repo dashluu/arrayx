@@ -1,5 +1,4 @@
 **/build
-**/metal-cpp
 .vscode
 **/.DS_Store
 **/*.so
