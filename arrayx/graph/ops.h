@@ -325,7 +325,7 @@ namespace ax::graph
         OpPtr get_lhs() const { return lhs; }
         OpPtr get_rhs() const { return rhs; }
         const std::string str() const override;
-        // void backward() const override;
+        void backward() const override;
     };
 
     struct SqOp : public UnaryOp

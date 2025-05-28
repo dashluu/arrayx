@@ -20,9 +20,9 @@ namespace ax::runtime::metal
         std::unordered_map<std::string, std::shared_ptr<MTLKernel>> kernel_by_name;
 
         void init_kernel(const std::string &name);
-        void init_kernels(const std::vector<std::string> &opstrs, DtypePtrSet &dtypes, const std::vector<std::string> &modes);
-        void init_kernels(const std::string &opstr, DtypePtrSet &dtypes, const std::vector<std::string> &modes);
+        void init_kernels(const std::vector<std::string> &opstrs, DtypePtrSet &dtypes);
         void init_kernels(const std::string &opstr, DtypePtrSet &dtypes);
+        void init_kernels(const std::string &opstr, DtypePtrSet &dtypes, const std::vector<std::string> &modes);
         void init_initializer_kernels();
         void init_unary_kernels();
         void init_binary_kernels();

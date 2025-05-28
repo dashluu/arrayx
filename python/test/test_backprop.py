@@ -79,11 +79,11 @@ class TestBackprop:
 
         # PyTorch implementation
         t1 = torch.from_numpy(nparr).requires_grad_(True)
-        t2 = torch.exp(t1)
+        t2 = t1.exp()
         t2.retain_grad()
         t3 = t2 * t1
         t3.retain_grad()
-        t4 = torch.log(t3)
+        t4 = t3.log()
         t4.retain_grad()
         t5 = t4 / t1
         t6 = t5.sum()
@@ -116,9 +116,9 @@ class TestBackprop:
         # PyTorch implementation
         t1 = torch.from_numpy(np1).requires_grad_(True)
         t2 = torch.from_numpy(np2).requires_grad_(True)
-        t3 = torch.log(t1)
+        t3 = t1.log()
         t3.retain_grad()
-        t4 = torch.exp(t2)
+        t4 = t2.exp()
         t4.retain_grad()
         t5 = t3 * t4
         t5.retain_grad()
@@ -161,13 +161,13 @@ class TestBackprop:
         t2 = torch.from_numpy(np2).requires_grad_(True)
         t3 = t1 / t2
         t3.retain_grad()
-        t4 = torch.exp(t3)
+        t4 = t3.exp()
         t4.retain_grad()
         t5 = 1.0 / t1
         t5.retain_grad()
         t6 = t4 * t5
         t6.retain_grad()
-        t7 = torch.log(t6)
+        t7 = t6.log()
         t7.retain_grad()
         t8 = t7.sum()
         t8.backward()
@@ -181,369 +181,369 @@ class TestBackprop:
         compare_grads(arr6.grad, t6.grad, "mul")
         compare_grads(arr7.grad, t7.grad, "log")
 
-    # def test_backprop_v5(self):
-    #     ctx = MTLContext(self.lib)
-    #     print("Testing square and sqrt operations:")
+    def test_backprop_v5(self):
+        print("Testing square and sqrt operations:")
+        shape = self.make_shape()
+        np1 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
 
-    #     shape = [3, 4, 2]
-    #     np1 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
+        # arrayx implementation: sqrt(x^2) + x^2/sqrt(x)
+        arr1 = Array.from_numpy(np1)
+        arr2 = arr1.sq()
+        arr3 = arr2.sqrt()
+        arr4 = arr1.sq()
+        arr5 = arr1.sqrt()
+        arr6 = arr4 / arr5
+        arr7 = arr3 + arr6
+        arr8 = arr7.sum()
+        arr8.eval()
+        arr8.backward()
 
-    #     # Xavier implementation: sqrt(x^2) + x^2/sqrt(x)
-    #     arr1 = Array.from_numpy(np1)
-    #     arr2 = arr1.sq()
-    #     arr3 = arr2.sqrt()
-    #     arr4 = arr1.sq()
-    #     arr5 = arr1.sqrt()
-    #     arr6 = arr4 / arr5
-    #     arr7 = arr3 + arr6
-    #     arr8 = arr7.sum()
-    #     g = MTLGraph(arr8, ctx)
-    #     g.forward()
-    #     g.backward()
+        # PyTorch implementation
+        t1 = torch.from_numpy(np1).requires_grad_(True)
+        t2 = t1 * t1
+        t2.retain_grad()
+        t3 = t2.sqrt()
+        t3.retain_grad()
+        t4 = t1 * t1
+        t4.retain_grad()
+        t5 = t1.sqrt()
+        t5.retain_grad()
+        t6 = t4 / t5
+        t6.retain_grad()
+        t7 = t3 + t6
+        t7.retain_grad()
+        t8 = t7.sum()
+        t8.backward()
 
-    #     # PyTorch implementation
-    #     t1 = torch.from_numpy(np1).requires_grad_(True)
-    #     t2 = t1 * t1
-    #     t2.retain_grad()
-    #     t3 = torch.sqrt(t2)
-    #     t3.retain_grad()
-    #     t4 = t1 * t1
-    #     t4.retain_grad()
-    #     t5 = torch.sqrt(t1)
-    #     t5.retain_grad()
-    #     t6 = t4 / t5
-    #     t6.retain_grad()
-    #     t7 = t3 + t6
-    #     t7.sum().backward()
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "input")
+        compare_grads(arr2.grad, t2.grad, "square1")
+        compare_grads(arr3.grad, t3.grad, "sqrt1")
+        compare_grads(arr4.grad, t4.grad, "square2")
+        compare_grads(arr5.grad, t5.grad, "sqrt2")
+        compare_grads(arr6.grad, t6.grad, "div")
+        compare_grads(arr7.grad, t7.grad, "add")
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "input")
-    #     compare_grads(arr2.grad, t2.grad, "square1")
-    #     compare_grads(arr3.grad, t3.grad, "sqrt1")
-    #     compare_grads(arr4.grad, t4.grad, "square2")
-    #     compare_grads(arr5.grad, t5.grad, "sqrt2")
-    #     compare_grads(arr6.grad, t6.grad, "div")
+    def test_backprop_twice(self):
+        print("Testing double backpropagation with complex operations:")
+        shape = self.make_shape()
+        np1 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
+        np2 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
 
-    # def test_backprop_twice(self):
-    #     ctx = MTLContext(self.lib)
-    #     print("Testing double backpropagation with complex operations:")
+        # arrayx implementation
+        # f(x1, x2) = log(sqrt(x1^2) * exp(x2/x1)) + (x1 * sqrt(x2))^2
+        arr1 = Array.from_numpy(np1)
+        arr2 = Array.from_numpy(np2)
+        arr3 = arr1.sq()
+        arr4 = arr3.sqrt()
+        arr5 = arr2 / arr1
+        arr6 = arr5.exp()
+        arr7 = arr4 * arr6
+        arr8 = arr7.log()
+        arr9 = arr2.sqrt()
+        arr10 = arr1 * arr9
+        arr11 = arr10.sq()
+        arr12 = arr8 + arr11
+        arr13 = arr12.sum()
 
-    #     shape = [2, 3, 4]
-    #     np1 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
-    #     np2 = np.random.uniform(0.1, 2.0, size=shape).astype(np.float32)
+        # First backward pass
+        arr13.eval()
+        arr13.backward()
 
-    #     # Xavier implementation
-    #     # f(x1, x2) = log(sqrt(x1^2) * exp(x2/x1)) + (x1 * sqrt(x2))^2
-    #     arr1 = Array.from_numpy(np1)
-    #     arr2 = Array.from_numpy(np2)
-    #     arr3 = arr1.sq()
-    #     arr4 = arr3.sqrt()
-    #     arr5 = arr2 / arr1
-    #     arr6 = arr5.exp()
-    #     arr7 = arr4 * arr6
-    #     arr8 = arr7.log()
-    #     arr9 = arr2.sqrt()
-    #     arr10 = arr1 * arr9
-    #     arr11 = arr10.sq()
-    #     arr12 = arr8 + arr11
-    #     arr13 = arr12.sum()
+        # PyTorch implementation
+        t1 = torch.from_numpy(np1).requires_grad_(True)
+        t2 = torch.from_numpy(np2).requires_grad_(True)
+        t3 = t1 * t1
+        t3.retain_grad()
+        t4 = t3.sqrt()
+        t4.retain_grad()
+        t5 = t2 / t1
+        t5.retain_grad()
+        t6 = t5.exp()
+        t6.retain_grad()
+        t7 = t4 * t6
+        t7.retain_grad()
+        t8 = t7.log()
+        t8.retain_grad()
+        t9 = t2.sqrt()
+        t9.retain_grad()
+        t10 = t1 * t9
+        t10.retain_grad()
+        t11 = t10 * t10
+        t11.retain_grad()
+        t12 = t8 + t11
+        t12.retain_grad()
+        t13 = t12.sum()
+        t13.backward(retain_graph=True)
 
-    #     # First backward pass
-    #     g = MTLGraph(arr13, ctx)
-    #     g.forward()
-    #     g.backward()
+        # Compare first backward pass gradients
+        print("\nChecking first backward pass:")
+        compare_grads(arr1.grad, t1.grad, "input1")
+        compare_grads(arr2.grad, t2.grad, "input2")
+        compare_grads(arr3.grad, t3.grad, "square1")
+        compare_grads(arr4.grad, t4.grad, "sqrt1")
+        compare_grads(arr5.grad, t5.grad, "div")
+        compare_grads(arr6.grad, t6.grad, "exp")
+        compare_grads(arr7.grad, t7.grad, "mul1")
+        compare_grads(arr8.grad, t8.grad, "log")
+        compare_grads(arr9.grad, t9.grad, "sqrt2")
+        compare_grads(arr10.grad, t10.grad, "mul2")
+        compare_grads(arr11.grad, t11.grad, "square2")
+        compare_grads(arr12.grad, t12.grad, "add")
 
-    #     # PyTorch implementation
-    #     t1 = torch.from_numpy(np1).requires_grad_(True)
-    #     t2 = torch.from_numpy(np2).requires_grad_(True)
-    #     t3 = t1 * t1
-    #     t3.retain_grad()
-    #     t4 = torch.sqrt(t3)
-    #     t4.retain_grad()
-    #     t5 = t2 / t1
-    #     t5.retain_grad()
-    #     t6 = torch.exp(t5)
-    #     t6.retain_grad()
-    #     t7 = t4 * t6
-    #     t7.retain_grad()
-    #     t8 = torch.log(t7)
-    #     t8.retain_grad()
-    #     t9 = torch.sqrt(t2)
-    #     t9.retain_grad()
-    #     t10 = t1 * t9
-    #     t10.retain_grad()
-    #     t11 = t10 * t10
-    #     t11.retain_grad()
-    #     t12 = t8 + t11
-    #     t13 = t12.sum()
-    #     t13.backward(retain_graph=True)
+        # Modify the result slightly and run backward again
+        # TODO: uncomment this after implementing backprop for broadcasting
+        # result = result * 2.0
+        # result.forward()
+        arr13.backward()
 
-    #     # Compare first backward pass gradients
-    #     print("\nChecking first backward pass:")
-    #     compare_grads(arr1.grad, t1.grad, "input1")
-    #     compare_grads(arr2.grad, t2.grad, "input2")
-    #     compare_grads(arr3.grad, t3.grad, "square1")
-    #     compare_grads(arr4.grad, t4.grad, "sqrt1")
-    #     compare_grads(arr5.grad, t5.grad, "div")
-    #     compare_grads(arr6.grad, t6.grad, "exp")
-    #     compare_grads(arr7.grad, t7.grad, "mul1")
-    #     compare_grads(arr8.grad, t8.grad, "log")
-    #     compare_grads(arr9.grad, t9.grad, "sqrt2")
-    #     compare_grads(arr10.grad, t10.grad, "mul2")
-    #     compare_grads(arr11.grad, t11.grad, "square2")
+        # PyTorch second pass
+        # TODO: uncomment this after implementing backprop for broadcasting
+        # torch_result = torch_result * 2.0
+        # Clear all gradients from PyTorch computation graph
+        t1.grad = None
+        t2.grad = None
+        t3.grad = None
+        t4.grad = None
+        t5.grad = None
+        t6.grad = None
+        t7.grad = None
+        t8.grad = None
+        t9.grad = None
+        t10.grad = None
+        t11.grad = None
+        t12.grad = None
+        t13.backward()
 
-    #     # Modify the result slightly and run backward again
-    #     # TODO: uncomment this after implementing backprop for broadcasting
-    #     # result = result * 2.0
-    #     # g = MTLGraph(result, ctx)
-    #     # g.forward()
-    #     g.backward()
+        # Compare second backward pass gradients
+        print("\nChecking second backward pass:")
+        compare_grads(arr1.grad, t1.grad, "input1 (2nd pass)")
+        compare_grads(arr2.grad, t2.grad, "input2 (2nd pass)")
+        compare_grads(arr3.grad, t3.grad, "square1 (2nd pass)")
+        compare_grads(arr4.grad, t4.grad, "sqrt1 (2nd pass)")
+        compare_grads(arr5.grad, t5.grad, "div (2nd pass)")
+        compare_grads(arr6.grad, t6.grad, "exp (2nd pass)")
+        compare_grads(arr7.grad, t7.grad, "mul1 (2nd pass)")
+        compare_grads(arr8.grad, t8.grad, "log (2nd pass)")
+        compare_grads(arr9.grad, t9.grad, "sqrt2 (2nd pass)")
+        compare_grads(arr10.grad, t10.grad, "mul2 (2nd pass)")
+        compare_grads(arr11.grad, t11.grad, "square2 (2nd pass)")
+        compare_grads(arr12.grad, t12.grad, "add (2nd pass)")
 
-    #     # PyTorch second pass
-    #     # TODO: uncomment this after implementing backprop for broadcasting
-    #     # tresult = tresult * 2.0
-    #     # Clear all gradients from PyTorch computation graph
-    #     t1.grad = None
-    #     t2.grad = None
-    #     t3.grad = None
-    #     t4.grad = None
-    #     t5.grad = None
-    #     t6.grad = None
-    #     t7.grad = None
-    #     t8.grad = None
-    #     t9.grad = None
-    #     t10.grad = None
-    #     t11.grad = None
-    #     t12.grad = None
-    #     t13.backward()
+    def test_permute_binary_backprop(self):
+        """Test backprop through permute and binary op"""
+        # Forward: (2,3,4) -> (4,2,3) * (4,2,3)
+        x = torch.randn(2, 3, 4, dtype=torch.float32)
+        y = torch.randn(4, 2, 3, dtype=torch.float32)
 
-    #     # Compare second backward pass gradients
-    #     print("\nChecking second backward pass:")
-    #     compare_grads(arr1.grad, t1.grad, "input1 (2nd pass)")
-    #     compare_grads(arr2.grad, t2.grad, "input2 (2nd pass)")
-    #     compare_grads(arr3.grad, t3.grad, "square1 (2nd pass)")
-    #     compare_grads(arr4.grad, t4.grad, "sqrt1 (2nd pass)")
-    #     compare_grads(arr5.grad, t5.grad, "div (2nd pass)")
-    #     compare_grads(arr6.grad, t6.grad, "exp (2nd pass)")
-    #     compare_grads(arr7.grad, t7.grad, "mul1 (2nd pass)")
-    #     compare_grads(arr8.grad, t8.grad, "log (2nd pass)")
-    #     compare_grads(arr9.grad, t9.grad, "sqrt2 (2nd pass)")
-    #     compare_grads(arr10.grad, t10.grad, "mul2 (2nd pass)")
-    #     compare_grads(arr11.grad, t11.grad, "square2 (2nd pass)")
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = Array.from_numpy(y.numpy())
+        arr3 = arr1.permute([2, 0, 1]) * arr2
+        arr4 = arr3.sum()
+        arr4.eval()
+        arr4.backward()
 
-    # def test_permute_binary_backprop(self):
-    #     """Test backprop through permute and binary op"""
-    #     ctx = MTLContext(self.lib)
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = y.requires_grad_(True)
+        t3 = t1.permute(2, 0, 1) * t2
+        t3.retain_grad()
+        t4 = t3.sum()
+        t4.backward()
 
-    #     # Forward: (2,3,4) -> (4,2,3) * (4,2,3)
-    #     x = torch.randn(2, 3, 4, dtype=torch.float32)
-    #     y = torch.randn(4, 2, 3, dtype=torch.float32)
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "permute+mul x grad")
+        compare_grads(arr2.grad, t2.grad, "permute+mul y grad")
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = Array.from_numpy(y.numpy())
-    #     arr3 = arr1.permute([2, 0, 1]) * arr2
-    #     arr4 = arr3.sum()
-    #     g = MTLGraph(arr4, ctx)
-    #     g.forward()
-    #     g.backward()
+    def test_backprop_v6(self):
+        """Test backprop through complex chain of operations"""
+        print("\nTesting complex chain backprop:")
+        # Forward: (2,3,4,5) -> permute -> reshape -> exp
+        x = torch.randn(2, 3, 4, 5, dtype=torch.float32)
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = y.requires_grad_(True)
-    #     t3 = t1.permute(2, 0, 1) * t2
-    #     t3.sum().backward()
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5])  # (2,4,3,5)  # (8,3,5)
+        arr3 = arr2.exp()
+        arr4 = arr3.sum()
+        arr4.eval()
+        arr4.backward()
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "permute+mul x grad")
-    #     compare_grads(arr2.grad, t2.grad, "permute+mul y grad")
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = t1.permute(0, 2, 1, 3).reshape(8, 3, 5)  # (2,4,3,5)  # (8,3,5)
+        t2.retain_grad()
+        t3 = t2.exp()
+        t3.retain_grad()
+        t4 = t3.sum()
+        t4.backward()
 
-    # def test_backprop_v6(self):
-    #     """Test backprop through complex chain of operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting complex chain backprop:")
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
 
-    #     # Forward: (2,3,4,5) -> permute -> reshape -> exp
-    #     x = torch.randn(2, 3, 4, 5, dtype=torch.float32)
+    def test_backprop_v7(self):
+        """Test backprop through complex chain of operations"""
+        print("\nTesting complex chain backprop:")
+        # Forward: (2,3,4,5) -> permute -> reshape -> matmul -> exp
+        x = torch.randn(2, 3, 4, 5, dtype=torch.float32)
+        # TODO: can try doing matmul with broadcast
+        y = torch.randn(8, 5, 2, dtype=torch.float32)
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5])  # (2,4,3,5)  # (8,3,5)
-    #     arr3 = arr2.exp()
-    #     arr4 = arr3.sum()
-    #     g = MTLGraph(arr4, ctx)
-    #     g.forward()
-    #     g.backward()
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = Array.from_numpy(y.numpy())
+        arr3 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5]) @ arr2  # (2,4,3,5)  # (8,3,5)  # (8,3,2)
+        arr4 = arr3.exp()
+        arr5 = arr4.sum()
+        arr5.eval()
+        arr5.backward()
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = t1.permute(0, 2, 1, 3).reshape(8, 3, 5)  # (2,4,3,5)  # (8,3,5)
-    #     t3 = torch.exp(t2)
-    #     t3.sum().backward()
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = y.requires_grad_(True)
+        t3 = t1.permute(0, 2, 1, 3).reshape(8, 3, 5) @ t2  # (2,4,3,5)  # (8,3,5)  # (8,3,2)
+        t3.retain_grad()
+        t4 = t3.exp()
+        t4.retain_grad()
+        t5 = t4.sum()
+        t5.backward()
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "complex chain x grad")
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
+        compare_grads(arr2.grad, t2.grad, "complex chain y grad")
 
-    # def test_backprop_v7(self):
-    #     """Test backprop through complex chain of operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting complex chain backprop:")
+    def test_slice_basic_backprop(self):
+        """Test basic slicing backpropagation"""
+        print("\nTesting basic slice backprop:")
+        x = torch.randn(4, 6, 8, dtype=torch.float32)
 
-    #     # Forward: (2,3,4,5) -> permute -> reshape -> matmul -> exp
-    #     x = torch.randn(2, 3, 4, 5, dtype=torch.float32)
-    #     # TODO: can try doing matmul with broadcast
-    #     y = torch.randn(8, 5, 2, dtype=torch.float32)
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = arr1[1:3, ::2, ::1]  # Basic slicing
+        arr3 = arr2.sum()
+        arr3.eval()
+        arr3.backward()
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = Array.from_numpy(y.numpy())
-    #     arr3 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5]) @ arr2  # (2,4,3,5)  # (8,3,5)  # (8,3,2)
-    #     arr4 = arr3.exp()
-    #     arr5 = arr4.sum()
-    #     g = MTLGraph(arr5, ctx)
-    #     g.forward()
-    #     g.backward()
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = t1[1:3, ::2, ::1]
+        t2.retain_grad()
+        t3 = t2.sum()
+        t3.backward()
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = y.requires_grad_(True)
-    #     t3 = t1.permute(0, 2, 1, 3).reshape(8, 3, 5) @ t2  # (2,4,3,5)  # (8,3,5)  # (8,3,2)
-    #     t4 = torch.exp(t3)
-    #     t4.sum().backward()
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "basic slice grad")
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "complex chain x grad")
-    #     compare_grads(arr2.grad, t2.grad, "complex chain y grad")
+    def test_slice_with_unary_backprop(self):
+        """Test slicing combined with unary operations"""
+        print("\nTesting slice with unary ops backprop:")
+        x = torch.randn(3, 4, 5, dtype=torch.float32)
 
-    # def test_slice_basic_backprop(self):
-    #     """Test basic slicing backpropagation"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting basic slice backprop:")
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = arr1[::2, 1:3]  # Slice first
+        arr3 = arr2.exp()  # Then unary op
+        arr4 = arr3.sum()
+        arr4.eval()
+        arr4.backward()
 
-    #     x = torch.randn(4, 6, 8, dtype=torch.float32)
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = t1[::2, 1:3]
+        t2.retain_grad()
+        t3 = t2.exp()
+        t3.retain_grad()
+        t4 = t3.sum()
+        t4.backward()
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = arr1[1:3, ::2, ::1]  # Basic slicing
-    #     arr3 = arr2.sum()
-    #     g = MTLGraph(arr3, ctx)
-    #     g.forward()
-    #     g.backward()
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "slice+unary grad")
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = t1[1:3, ::2, ::1]
-    #     t2.sum().backward()
+    def test_slice_with_binary_backprop(self):
+        """Test slicing combined with binary operations"""
+        print("\nTesting slice with binary ops backprop:")
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "basic slice grad")
+        x = torch.randn(4, 6, 8, dtype=torch.float32)
+        y = torch.randn(2, 6, 8, dtype=torch.float32)
 
-    # def test_slice_with_unary_backprop(self):
-    #     """Test slicing combined with unary operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting slice with unary ops backprop:")
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = Array.from_numpy(y.numpy())
+        arr3 = arr1[::2] * arr2  # Slice and multiply
+        arr4 = arr3.sum()
+        arr4.eval()
+        arr4.backward()
 
-    #     x = torch.randn(3, 4, 5, dtype=torch.float32)
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = y.requires_grad_(True)
+        t3 = t1[::2] * t2
+        t3.retain_grad()
+        t4 = t3.sum()
+        t4.backward()
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = arr1[::2, 1:3]  # Slice first
-    #     arr3 = arr2.exp()  # Then unary op
-    #     arr4 = arr3.sum()
-    #     g = MTLGraph(arr4, ctx)
-    #     g.forward()
-    #     g.backward()
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "slice+binary x grad")
+        compare_grads(arr2.grad, t2.grad, "slice+binary y grad")
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = t1[::2, 1:3]
-    #     t3 = torch.exp(t2)
-    #     t3.sum().backward()
+    def test_slice_chain_backprop(self):
+        """Test chain of slice operations"""
+        print("\nTesting slice chain backprop:")
+        x = torch.randn(5, 6, 7, dtype=torch.float32)
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "slice+unary grad")
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = arr1[1:4, ::2]  # First slice
+        arr3 = arr2[:, 1::2]  # Second slice
+        arr4 = arr3.sum()
+        arr4.eval()
+        arr4.backward()
 
-    # def test_slice_with_binary_backprop(self):
-    #     """Test slicing combined with binary operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting slice with binary ops backprop:")
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = t1[1:4, ::2]
+        t2.retain_grad()
+        t3 = t2[:, 1::2]
+        t3.retain_grad()
+        t4 = t3.sum()
+        t4.backward()
 
-    #     x = torch.randn(4, 6, 8, dtype=torch.float32)
-    #     y = torch.randn(2, 6, 8, dtype=torch.float32)
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "slice chain grad")
 
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = Array.from_numpy(y.numpy())
-    #     arr3 = arr1[::2] * arr2  # Slice and multiply
-    #     arr4 = arr3.sum()
-    #     g = MTLGraph(arr4, ctx)
-    #     g.forward()
-    #     g.backward()
+    def test_slice_complex_chain_backprop(self):
+        """Test complex chain with slicing, unary and binary operations"""
+        print("\nTesting complex slice chain backprop:")
 
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = y.requires_grad_(True)
-    #     t3 = t1[::2] * t2
-    #     t3.sum().backward()
+        x = torch.randn(4, 5, 6, dtype=torch.float32)
+        y = torch.randn(2, 5, 3, dtype=torch.float32)
 
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "slice+binary x grad")
-    #     compare_grads(arr2.grad, t2.grad, "slice+binary y grad")
+        # arrayx implementation
+        arr1 = Array.from_numpy(x.numpy())
+        arr2 = Array.from_numpy(y.numpy())
+        arr3 = arr1[::2, :, ::2]  # Initial slice
+        arr4 = arr3.exp()  # Unary op
+        arr5 = arr4 * arr2  # Binary op
+        arr6 = arr5[:, 1:4]  # Another slice
+        arr7 = arr6.sum()
+        arr7.eval()
+        arr7.backward()
 
-    # def test_slice_chain_backprop(self):
-    #     """Test chain of slice operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting slice chain backprop:")
+        # PyTorch implementation
+        t1 = x.requires_grad_(True)
+        t2 = y.requires_grad_(True)
+        t3 = t1[::2, :, ::2]
+        t3.retain_grad()
+        t4 = t3.exp()
+        t4.retain_grad()
+        t5 = t4 * t2
+        t5.retain_grad()
+        t6 = t5[:, 1:4]
+        t6.retain_grad()
+        t7 = t6.sum()
+        t7.backward()
 
-    #     x = torch.randn(5, 6, 7, dtype=torch.float32)
-
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = arr1[1:4, ::2]  # First slice
-    #     arr3 = arr2[:, 1::2]  # Second slice
-    #     arr4 = arr3.sum()
-    #     g = MTLGraph(arr4, ctx)
-    #     g.forward()
-    #     g.backward()
-
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = t1[1:4, ::2]
-    #     t3 = t2[:, 1::2]
-    #     t3.sum().backward()
-
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "slice chain grad")
-
-    # def test_slice_complex_chain_backprop(self):
-    #     """Test complex chain with slicing, unary and binary operations"""
-    #     ctx = MTLContext(self.lib)
-    #     print("\nTesting complex slice chain backprop:")
-
-    #     x = torch.randn(4, 5, 6, dtype=torch.float32)
-    #     y = torch.randn(2, 5, 3, dtype=torch.float32)
-
-    #     # Xavier implementation
-    #     arr1 = Array.from_numpy(x.numpy())
-    #     arr2 = Array.from_numpy(y.numpy())
-    #     arr3 = arr1[::2, :, ::2]  # Initial slice
-    #     arr4 = arr3.exp()  # Unary op
-    #     arr5 = arr4 * arr2  # Binary op
-    #     arr6 = arr5[:, 1:4]  # Another slice
-    #     arr7 = arr6.sum()
-    #     g = MTLGraph(arr7, ctx)
-    #     g.forward()
-    #     g.backward()
-
-    #     # PyTorch implementation
-    #     t1 = x.requires_grad_(True)
-    #     t2 = y.requires_grad_(True)
-    #     t3 = t1[::2, :, ::2]
-    #     t4 = torch.exp(t3)
-    #     t5 = t4 * t2
-    #     t6 = t5[:, 1:4]
-    #     t6.sum().backward()
-
-    #     # Compare gradients
-    #     compare_grads(arr1.grad, t1.grad, "complex chain x grad")
-    #     compare_grads(arr2.grad, t2.grad, "complex chain y grad")
+        # Compare gradients
+        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
+        compare_grads(arr2.grad, t2.grad, "complex chain y grad")

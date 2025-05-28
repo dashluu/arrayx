@@ -60,80 +60,31 @@ struct Geq
     bool operator()(T lhs, T rhs) { return lhs >= rhs; }
 };
 
-// Binary operations for scalar-scalar
 template <class Op, class T, class R>
-kernel void binary_ss_vv(
-    constant const uint *offset [[buffer(0)]],
-    device T *lhs [[buffer(1)]],
-    device T *rhs [[buffer(2)]],
-    device R *output [[buffer(3)]],
-    uint id [[thread_position_in_grid]])
-{
-    output[offset[2] + id] = Op()(lhs[offset[0] + id], rhs[offset[1] + id]);
-}
-
-template <class Op, class T, class R>
-kernel void binary_ss_sv(
+kernel void binary_ss(
     constant const uint *ndim [[buffer(0)]],
     constant const uint *offset [[buffer(1)]],
     constant const uint *shape [[buffer(2)]],
-    constant const int *output_stride [[buffer(3)]],
-    device T *lhs [[buffer(4)]],
-    device T *rhs [[buffer(5)]],
-    device R *output [[buffer(6)]],
+    constant const int *lstride [[buffer(3)]],
+    constant const int *rstride [[buffer(4)]],
+    constant const int *outstride [[buffer(5)]],
+    constant const bool *strided [[buffer(6)]],
+    device T *lhs [[buffer(7)]],
+    device T *rhs [[buffer(8)]],
+    device R *output [[buffer(9)]],
     uint id [[thread_position_in_grid]])
 {
-    uint output_idx = strided_idx(id, ndim, shape, output_stride);
-    output[offset[2] + output_idx] = Op()(lhs[offset[0] + id], rhs[offset[1] + id]);
-}
-
-template <class Op, class T, class R>
-kernel void binary_ss_vs(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *shape [[buffer(2)]],
-    constant const int *lhs_stride [[buffer(3)]],
-    constant const int *rhs_stride [[buffer(4)]],
-    device T *lhs [[buffer(5)]],
-    device T *rhs [[buffer(6)]],
-    device R *output [[buffer(7)]],
-    uint id [[thread_position_in_grid]])
-{
-    uint lhs_idx = strided_idx(id, ndim, shape, lhs_stride);
-    uint rhs_idx = strided_idx(id, ndim, shape, rhs_stride);
-    output[offset[2] + id] = Op()(lhs[offset[0] + lhs_idx], rhs[offset[1] + rhs_idx]);
-}
-
-template <class Op, class T, class R>
-kernel void binary_ss_ss(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *shape [[buffer(2)]],
-    constant const int *lhs_stride [[buffer(3)]],
-    constant const int *rhs_stride [[buffer(4)]],
-    constant const int *output_stride [[buffer(5)]],
-    device T *lhs [[buffer(6)]],
-    device T *rhs [[buffer(7)]],
-    device R *output [[buffer(8)]],
-    uint id [[thread_position_in_grid]])
-{
-    uint lhs_idx = strided_idx(id, ndim, shape, lhs_stride);
-    uint rhs_idx = strided_idx(id, ndim, shape, rhs_stride);
-    uint output_idx = strided_idx(id, ndim, shape, output_stride);
-    output[offset[2] + output_idx] = Op()(lhs[offset[0] + lhs_idx], rhs[offset[1] + rhs_idx]);
+    uint lidx = strided[0] ? strided_idx(id, ndim, shape, lstride) : id;
+    uint ridx = strided[1] ? strided_idx(id, ndim, shape, rstride) : id;
+    uint outidx = strided[2] ? strided_idx(id, ndim, shape, outstride) : id;
+    output[offset[2] + outidx] = Op()(lhs[offset[0] + lidx], rhs[offset[1] + ridx]);
 }
 
 #define make_binary(opname, op, dtype, T, R) \
-template [[host_name(#opname "_vv_" #dtype)]] [[kernel]] decltype(binary_ss_vv<op, T, R>) binary_ss_vv<op, T, R>;   \
-template [[host_name(#opname "_sv_" #dtype)]] [[kernel]] decltype(binary_ss_sv<op, T, R>) binary_ss_sv<op, T, R>;   \
-template [[host_name(#opname "_vs_" #dtype)]] [[kernel]] decltype(binary_ss_vs<op, T, R>) binary_ss_vs<op, T, R>;   \
-template [[host_name(#opname "_ss_" #dtype)]] [[kernel]] decltype(binary_ss_ss<op, T, R>) binary_ss_ss<op, T, R>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary_ss<op, T, R>) binary_ss<op, T, R>;
 
 #define make_cmp(opname, op, dtype, T) \
-template [[host_name(#opname "_vv_" #dtype)]] [[kernel]] decltype(binary_ss_vv<op, T, bool>) binary_ss_vv<op, T, bool>; \
-template [[host_name(#opname "_sv_" #dtype)]] [[kernel]] decltype(binary_ss_sv<op, T, bool>) binary_ss_sv<op, T, bool>; \
-template [[host_name(#opname "_vs_" #dtype)]] [[kernel]] decltype(binary_ss_vs<op, T, bool>) binary_ss_vs<op, T, bool>; \
-template [[host_name(#opname "_ss_" #dtype)]] [[kernel]] decltype(binary_ss_ss<op, T, bool>) binary_ss_ss<op, T, bool>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary_ss<op, T, bool>) binary_ss<op, T, bool>;
 
 #define binary(opname, op)                  \
 make_binary(opname, op, f32, float, float); \

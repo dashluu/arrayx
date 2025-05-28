@@ -18,6 +18,8 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
 find_package(nanobind CONFIG REQUIRED)
 
+add_definitions(-DPROJECT_ROOT="${CMAKE_SOURCE_DIR}/..")
+
 file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/device/*.h"
@@ -49,13 +51,6 @@ if(APPLE)
     # set(CMAKE_BUILD_TYPE Debug)
     # add_executable(${PROJECT_NAME} main.cpp ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
     nanobind_add_module(${PROJECT_NAME} ${SRC_FILES} ${HEADER_FILES} ${MTL_SRC_FILES} ${MTL_HEADER_FILES})
-    nanobind_add_stub(
-        arrayx_stub
-        MODULE arrayx
-        OUTPUT arrayx.pyi
-        PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
-        DEPENDS arrayx
-    )
     set(MTL_CPP "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/metal-cpp")
     target_include_directories(${PROJECT_NAME} PRIVATE ${MTL_CPP})
     target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -66,3 +61,25 @@ if(APPLE)
     # Ensure kernels are built before your executable
     add_dependencies(${PROJECT_NAME} mtl_kernels)
 endif()
+
+# Add stub file
+nanobind_add_stub(
+    arrayx_stub
+    MODULE arrayx
+    OUTPUT arrayx.pyi
+    PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
+    DEPENDS arrayx
+)
+# Define output directory for Python module
+set(PYTHON_MODULE_DIR "${CMAKE_SOURCE_DIR}/../python")
+message(STATUS "PYTHON_MODULE_DIR is set to: ${PYTHON_MODULE_DIR}")
+get_filename_component(PYTHON_MODULE_DIR_ABS "${PYTHON_MODULE_DIR}" ABSOLUTE)
+message(STATUS "Absolute path: ${PYTHON_MODULE_DIR_ABS}")
+# Add custom command to move files after build
+add_custom_target(move_files ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PYTHON_MODULE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE:${PROJECT_NAME}>" "${PYTHON_MODULE_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+    COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/arrayx.pyi" "${PYTHON_MODULE_DIR}/arrayx.pyi"
+    DEPENDS arrayx_stub  # Only depend on the stub, which already depends on arrayx
+    COMMENT "Moving Python module and stub files"
+)

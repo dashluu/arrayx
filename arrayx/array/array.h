@@ -42,7 +42,7 @@ namespace ax::array
 
 		DevicePtr get_device() const { return op->get_lazy()->get_device(); }
 
-		ArrayPtr get_grad() const { return std::make_shared<Array>(op->gradroot); }
+		ArrayPtr get_grad() const { return std::make_shared<Array>(op->grad); }
 
 		isize get_numel() const { return op->get_lazy()->get_numel(); }
 

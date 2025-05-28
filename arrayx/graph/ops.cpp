@@ -74,6 +74,19 @@ namespace ax::graph
 		rhs->update_grad(mul(grad, div(self, detach(rhs))), true);
 	}
 
+	void MatmulOp::backward() const
+	{
+		// Transpose the last two dimensions of lhs and rhs
+		// z = x @ y
+		// dx += dz @ y^T
+		// dy += x^T @ dz
+		isize ndim = lhs->get_lazy()->get_ndim();
+		lhs->init_grad();
+		lhs->update_grad(matmul(grad, transpose(rhs, ndim - 2, ndim - 1)));
+		rhs->init_grad();
+		rhs->update_grad(matmul(transpose(lhs, ndim - 2, ndim - 1), grad));
+	}
+
 	void SqOp::backward() const
 	{
 		// z = x**2

@@ -36,8 +36,12 @@ namespace ax::array
 		DevicePtr device;
 		RunnerPtr runner;
 		std::shared_ptr<ax::runtime::metal::MTLContext> context;
-		const std::string &lib_path = "../arrayx/build/runtime/metal/kernels/kernels.metallib";
-		// const std::string &lib_path = "runtime/metal/kernels/kernels.metallib";
+#ifdef PROJECT_ROOT
+		const std::string project_root = PROJECT_ROOT;
+#else
+		const std::string project_root = ".";
+#endif
+		const std::string lib_path = project_root + "/arrayx/build/runtime/metal/kernels/kernels.metallib";
 
 		for (NS::UInteger i = 0; i < mtl_devices->count(); ++i)
 		{

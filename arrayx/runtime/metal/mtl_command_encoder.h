@@ -87,6 +87,16 @@ namespace ax::runtime::metal
             encode_buffer(offset, sizeof(mtl_usize) * arrs.size(), true);
         }
 
+        void encode_strided(const LazyArrayPtrVec &arrs)
+        {
+            bool *strided = new bool[arrs.size()];
+            for (size_t i = 0; i < arrs.size(); i++)
+            {
+                strided[i] = !arrs[i]->is_contiguous();
+            }
+            encode_buffer(strided, sizeof(bool) * arrs.size(), true);
+        }
+
         void encode_view(LazyArrayPtr arr)
         {
             mtl_usize *view = vcast<isize, mtl_usize>(arr->get_view());
