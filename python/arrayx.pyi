@@ -136,11 +136,16 @@ class Array:
     def numpy(self) -> ArrayLike:
         """Convert array to numpy array"""
 
-    def from_numpy(self) -> Array:
+    @staticmethod
+    def from_numpy(array: ArrayLike) -> Array:
         """Convert numpy array to array"""
 
     def torch(self) -> ArrayLike:
         """Convert array to Pytorch tensor"""
+
+    @staticmethod
+    def from_torch(tensor: ArrayLike) -> Array:
+        """Convert Pytorch tensor to array"""
 
     @staticmethod
     def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:

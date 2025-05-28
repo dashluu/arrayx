@@ -79,11 +79,12 @@ with ax.context():
 - Automatic differentiation
 - Full computational graph forward and backward propagation
 - Well supported operations:
-  - Initialization operations: full, arange, ones, zeros, from_numpy, numpy, torch
-  - Array transformation operations: reshape, permute, slice, transpose
-  - Matrix multiplication matmul
-  - Element-wise operations: add, sub, mul, div, exp, log, neg(negation), recip(reciprocal), sqrt, sq(square)
+  - Initialization operations: `full`, `arange`, `ones`, `zeros`, `from_numpy`, `numpy`, `torch`
+  - Array transformation operations: `reshape`, `permute`, `slice`, `transpose`
+  - Matrix multiplication `matmul`
+  - Element-wise operations: `add`, `sub`, `mul`, `div`, `exp`, `log`, `neg`(negation), `recip`(reciprocal), `sqrt`, `sq`(square)
 - NumPy, PyTorch integration
+- The only data types currently supported are `f32`(float32), `i32`(int32), and `b8`(bool).
 
 ## Examples
 Check out the `python/tests` directory for example implementations of:

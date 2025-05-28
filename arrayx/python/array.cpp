@@ -17,7 +17,7 @@ namespace ax::bind
 		// Shape does the checking eventually
 		if (!nb::isinstance<nb::slice>(obj))
 		{
-			throw axc::PybindInvalidArgumentType(get_pyclass(obj), "slice");
+			throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "slice");
 		}
 		auto slice = nb::cast<nb::slice>(obj);
 		bool start_none = slice.attr("start").is_none();
@@ -92,7 +92,7 @@ namespace ax::bind
 				}
 				else
 				{
-					throw axc::PybindInvalidArgumentType(get_pyclass(elm), "int, slice");
+					throw axc::NanobindInvalidArgumentType(get_pyclass(elm), "int, slice");
 				}
 			}
 			for (axc::isize i = seq_len; i < shape.get_ndim(); i++)
@@ -101,20 +101,37 @@ namespace ax::bind
 			}
 			return ranges;
 		}
-		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "int, slice, sequence");
+		throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "int, slice, sequence");
 	}
 
-	axc::DtypePtr dtype_from_nddtype(nb::dlpack::dtype nddtype)
+	axc::DtypePtr dtype_from_nb_dtype(nb::dlpack::dtype nb_dtype)
 	{
-		if (nddtype == nb::dtype<float>())
+		if (nb_dtype == nb::dtype<float>())
 		{
 			return &axc::f32;
 		}
-		else if (nddtype == nb::dtype<int>())
+		else if (nb_dtype == nb::dtype<int>())
 		{
 			return &axc::i32;
 		}
-		return &axc::b8;
+		else if (nb_dtype == nb::dtype<bool>())
+		{
+			return &axc::b8;
+		}
+		throw nb::type_error("Nanobind data type cannot be converted to arrayx data type.");
+	}
+
+	const std::string device_from_nb_device(int nb_device_id, int nb_device_type)
+	{
+		if (nb_device_type == nb::device::cpu::value)
+		{
+			return "cpu:" + std::to_string(nb_device_id);
+		}
+		else if (nb_device_type == nb::device::metal::value)
+		{
+			return "mps:" + std::to_string(nb_device_id);
+		}
+		throw axc::UnsupportedNanobindDevice();
 	}
 
 	nb::ndarray<nb::numpy> array_to_numpy(const axr::Array &arr)
@@ -143,8 +160,26 @@ namespace ax::bind
 
 		axc::Shape shape(0, view, stride);
 		uint8_t *ptr = reinterpret_cast<uint8_t *>(ndarr.data());
-		axc::DtypePtr dtype = dtype_from_nddtype(ndarr.dtype());
+		axc::DtypePtr dtype = dtype_from_nb_dtype(ndarr.dtype());
 		return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, axd::default_device_name);
+	}
+
+	axr::ArrayPtr array_from_torch(nb::ndarray<nb::pytorch> &ndarr)
+	{
+		axc::ShapeView view;
+		axc::ShapeStride stride;
+
+		for (size_t i = 0; i < ndarr.ndim(); ++i)
+		{
+			view.push_back(ndarr.shape(i));
+			stride.push_back(ndarr.stride(i));
+		}
+
+		axc::Shape shape(0, view, stride);
+		uint8_t *ptr = reinterpret_cast<uint8_t *>(ndarr.data());
+		axc::DtypePtr dtype = dtype_from_nb_dtype(ndarr.dtype());
+		const std::string &device_name = device_from_nb_device(ndarr.device_id(), ndarr.device_type());
+		return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, device_name);
 	}
 
 	nb::ndarray<nb::pytorch> array_to_torch(const axr::Array &arr)
@@ -174,7 +209,7 @@ namespace ax::bind
 		{
 			return axr::Array::full(view, nb::cast<bool>(obj), dtype, device_name);
 		}
-		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
+		throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
 	}
 
 	axr::ArrayPtr full_like(axr::ArrayPtr other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
@@ -225,6 +260,6 @@ namespace ax::bind
 		{
 			return axr::Array::full({1}, nb::cast<int>(obj), &axc::b8, device_name);
 		}
-		throw axc::PybindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
+		throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
 	}
 }

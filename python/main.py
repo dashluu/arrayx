@@ -1,7 +1,6 @@
-from arrayx import Array, f32, Backend
+from arrayx import Array
 import ax
 import numpy as np
-import torch
 
 
 with ax.context():

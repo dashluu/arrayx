@@ -42,9 +42,15 @@ namespace ax::core
         OutOfRange(isize idx, isize start, isize stop) : std::out_of_range(std::to_string(idx) + " is not in the range [" + std::to_string(start) + ", " + std::to_string(stop) + ")") {}
     };
 
-    class PybindInvalidArgumentType : public std::invalid_argument
+    class NanobindInvalidArgumentType : public std::invalid_argument
     {
     public:
-        PybindInvalidArgumentType(const std::string curr_type, const std::string &expected_type) : std::invalid_argument("Expected an object of type " + expected_type + " but received an object of type " + curr_type + ".") {}
+        NanobindInvalidArgumentType(const std::string curr_type, const std::string &expected_type) : std::invalid_argument("Expected an object of type " + expected_type + " but received an object of type " + curr_type + ".") {}
+    };
+
+    class UnsupportedNanobindDevice : public std::runtime_error
+    {
+    public:
+        UnsupportedNanobindDevice() : std::runtime_error("Nanobind device is not supported in arrayx.") {}
     };
 }

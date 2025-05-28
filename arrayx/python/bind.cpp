@@ -62,8 +62,9 @@ NB_MODULE(arrayx, m)
 
 		// N-dimensional array
 		.def("numpy", &axb::array_to_numpy, nb::rv_policy::reference_internal, "Convert array to numpy array")
-		.def("from_numpy", &axb::array_from_numpy, "Convert numpy array to array")
+		.def_static("from_numpy", &axb::array_from_numpy, "array"_a, "Convert numpy array to array")
 		.def("torch", &axb::array_to_torch, nb::rv_policy::reference_internal, "Convert array to Pytorch tensor")
+		.def_static("from_torch", &axb::array_from_torch, "tensor"_a, "Convert Pytorch tensor to array")
 
 		// Initializer operations
 		.def_static("full", &axb::full, "view"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value")
