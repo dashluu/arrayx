@@ -52,6 +52,10 @@ namespace ax::array
 
 		isize get_nbytes() const { return op->get_lazy()->get_nbytes(); }
 
+		bool is_grad_enabled() const { return op->grad_enabled; }
+
+		void enable_grad(bool grad_enabled = true) { op->grad_enabled = grad_enabled; }
+
 		bool is_contiguous() const { return op->get_lazy()->is_contiguous(); }
 
 		const std::string str() const override { return op->get_lazy()->str(); }

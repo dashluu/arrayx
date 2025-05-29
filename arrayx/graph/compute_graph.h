@@ -12,7 +12,8 @@ namespace ax::graph
 		std::vector<OpPtr> fw_order;
 		std::vector<OpPtr> bw_order;
 
-		void toposort(OpPtr op, std::vector<OpPtr> &order);
+		void fw_toposort(OpPtr op);
+		void bw_toposort(OpPtr op);
 
 	public:
 		ComputeGraph(OpPtr output, const std::vector<OpPtr> &input = {}) : output(output)

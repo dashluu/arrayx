@@ -110,6 +110,9 @@ namespace ax::graph
     public:
         std::shared_ptr<Op> grad = nullptr;
         std::shared_ptr<Op> grad_root = nullptr;
+        // Note: grad_enabled cannot be used to set gradient flow
+        // once the computational graph is compiled
+        bool grad_enabled = true;
 
         Op(Opcode opcode, Optype optype, LazyArrayPtr lazy) : opcode(opcode), optype(optype), lazy(lazy) {}
         Op(const Op &) = delete;
@@ -572,8 +575,8 @@ namespace ax::graph
     {
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        // TODO: prevent gradient from flowing into rop
         OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
+        rop->grad_enabled = false;
         return op_func(lop, rop);
     }
 
@@ -582,8 +585,8 @@ namespace ax::graph
     {
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
-        // TODO: prevent gradient from flowing into rop
         OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
+        rop->grad_enabled = false;
         return op_func(lop, rop);
     }
 

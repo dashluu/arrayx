@@ -13,3 +13,4 @@ with ax.context():
     print(arr2.shape)
     print(arr2)
     print(arr4)
+    print(arr4.grad_enabled)

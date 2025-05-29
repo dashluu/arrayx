@@ -133,6 +133,13 @@ class Array:
     def is_contiguous(self) -> bool:
         """Check if array is contiguous"""
 
+    @property
+    def grad_enabled(self) -> bool:
+        """Get/set gradient tracking"""
+
+    @grad_enabled.setter
+    def grad_enabled(self, arg: bool, /) -> None: ...
+
     def numpy(self) -> ArrayLike:
         """Convert array to numpy array"""
 

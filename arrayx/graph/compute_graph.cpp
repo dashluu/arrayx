@@ -2,7 +2,7 @@
 
 namespace ax::graph
 {
-    void ComputeGraph::toposort(OpPtr op, std::vector<OpPtr> &order)
+    void ComputeGraph::fw_toposort(OpPtr op)
     {
         LazyArrayPtr arr = op->get_lazy();
         if (visited.contains(arr->get_id()))
@@ -14,15 +14,15 @@ namespace ax::graph
         {
         case Optype::INITIALIZER:
         {
-            order.push_back(op);
+            fw_order.push_back(op);
             break;
         }
         case Optype::UNARY:
         {
             std::shared_ptr<UnaryOp> unary_op = std::static_pointer_cast<UnaryOp>(op);
             OpPtr operand = unary_op->get_operand();
-            toposort(operand, order);
-            order.push_back(op);
+            fw_toposort(operand);
+            fw_order.push_back(op);
             break;
         }
         case Optype::BINARY:
@@ -30,9 +30,9 @@ namespace ax::graph
             std::shared_ptr<BinaryOp> binary_op = std::static_pointer_cast<BinaryOp>(op);
             OpPtr lhs = binary_op->get_lhs();
             OpPtr rhs = binary_op->get_rhs();
-            toposort(lhs, order);
-            toposort(rhs, order);
-            order.push_back(op);
+            fw_toposort(lhs);
+            fw_toposort(rhs);
+            fw_order.push_back(op);
             break;
         }
         case Optype::MATMUL:
@@ -40,17 +40,17 @@ namespace ax::graph
             std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
             OpPtr lhs = matmul_op->get_lhs();
             OpPtr rhs = matmul_op->get_rhs();
-            toposort(lhs, order);
-            toposort(rhs, order);
-            order.push_back(op);
+            fw_toposort(lhs);
+            fw_toposort(rhs);
+            fw_order.push_back(op);
             break;
         }
         case Optype::TRANSFORM:
         {
             std::shared_ptr<TransformOp> transform_op = std::static_pointer_cast<TransformOp>(op);
             OpPtr operand = transform_op->get_operand();
-            toposort(operand, order);
-            order.push_back(op);
+            fw_toposort(operand);
+            fw_order.push_back(op);
             break;
         }
         default:
@@ -58,8 +58,102 @@ namespace ax::graph
             // Reduce operation
             std::shared_ptr<ReduceOp> reduce_op = std::static_pointer_cast<ReduceOp>(op);
             OpPtr operand = reduce_op->get_operand();
-            toposort(operand, order);
-            order.push_back(op);
+            fw_toposort(operand);
+            fw_order.push_back(op);
+            break;
+        }
+        }
+    }
+
+    void ComputeGraph::bw_toposort(OpPtr op)
+    {
+        LazyArrayPtr arr = op->get_lazy();
+        if (visited.contains(arr->get_id()))
+        {
+            return;
+        }
+        visited.insert(arr->get_id());
+        switch (op->get_optype())
+        {
+        case Optype::INITIALIZER:
+        {
+            bw_order.push_back(op);
+            break;
+        }
+        case Optype::UNARY:
+        {
+            std::shared_ptr<UnaryOp> unary_op = std::static_pointer_cast<UnaryOp>(op);
+            OpPtr operand = unary_op->get_operand();
+
+            if (operand->grad_enabled)
+            {
+                bw_toposort(operand);
+            }
+
+            bw_order.push_back(op);
+            break;
+        }
+        case Optype::BINARY:
+        {
+            std::shared_ptr<BinaryOp> binary_op = std::static_pointer_cast<BinaryOp>(op);
+            OpPtr lhs = binary_op->get_lhs();
+            OpPtr rhs = binary_op->get_rhs();
+
+            if (lhs->grad_enabled)
+            {
+                bw_toposort(lhs);
+            }
+            if (rhs->grad_enabled)
+            {
+                bw_toposort(rhs);
+            }
+
+            bw_order.push_back(op);
+            break;
+        }
+        case Optype::MATMUL:
+        {
+            std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
+            OpPtr lhs = matmul_op->get_lhs();
+            OpPtr rhs = matmul_op->get_rhs();
+
+            if (lhs->grad_enabled)
+            {
+                bw_toposort(lhs);
+            }
+            if (rhs->grad_enabled)
+            {
+                bw_toposort(rhs);
+            }
+
+            bw_order.push_back(op);
+            break;
+        }
+        case Optype::TRANSFORM:
+        {
+            std::shared_ptr<TransformOp> transform_op = std::static_pointer_cast<TransformOp>(op);
+            OpPtr operand = transform_op->get_operand();
+
+            if (operand->grad_enabled)
+            {
+                bw_toposort(operand);
+            }
+
+            bw_order.push_back(op);
+            break;
+        }
+        default:
+        {
+            // Reduce operation
+            std::shared_ptr<ReduceOp> reduce_op = std::static_pointer_cast<ReduceOp>(op);
+            OpPtr operand = reduce_op->get_operand();
+
+            if (operand->grad_enabled)
+            {
+                bw_toposort(operand);
+            }
+
+            bw_order.push_back(op);
             break;
         }
         }
@@ -69,7 +163,7 @@ namespace ax::graph
     {
         if (fw_order.empty())
         {
-            toposort(output, fw_order);
+            fw_toposort(output);
         }
     }
 
@@ -99,7 +193,7 @@ namespace ax::graph
                 // grad is null when backward is not implemented for op
                 if (op->grad_root != nullptr)
                 {
-                    toposort(op->grad_root, bw_order);
+                    bw_toposort(op->grad_root);
                 }
             }
         }
