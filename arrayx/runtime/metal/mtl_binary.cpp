@@ -2,7 +2,7 @@
 
 namespace ax::runtime::metal
 {
-    void MTLRunner::run_binary_ss_kernel(const std::string &name, OpPtr lop, OpPtr rop, OpPtr out_op)
+    void MTLRunner::run_binary_kernel(const std::string &name, OpPtr lop, OpPtr rop, OpPtr out_op)
     {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);

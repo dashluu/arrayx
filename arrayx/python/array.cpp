@@ -2,13 +2,21 @@
 
 namespace ax::bind
 {
-	axc::isize get_pyidx(axc::isize len, axc::isize idx)
+	axc::isize get_pyindex(axc::isize len, axc::isize idx)
 	{
 		if (idx < -len || idx >= len)
 		{
 			throw axc::OutOfRange(idx, -len, len);
 		}
 		return idx < 0 ? idx + len : idx;
+	}
+
+	axc::ShapeDims get_pyindices(axc::isize len, const axc::ShapeDims &dims)
+	{
+		axc::ShapeDims indices(dims.size());
+		std::transform(dims.begin(), dims.end(), indices.begin(), [len](auto dim)
+					   { return get_pyindex(len, dim); });
+		return indices;
 	}
 
 	axc::Range pyslice_to_range(axc::isize len, const nb::object &obj)
@@ -26,20 +34,20 @@ namespace ax::bind
 		axc::isize start, stop, step;
 		if (step_none)
 		{
-			start = start_none ? 0 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
-			stop = stop_none ? len : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+			start = start_none ? 0 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? len : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
 			return axc::Range(start, stop, 1);
 		}
 		step = nb::cast<axc::isize>(slice.attr("step"));
 		if (step > 0)
 		{
-			start = start_none ? 0 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
-			stop = stop_none ? len : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+			start = start_none ? 0 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? len : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
 		}
 		else
 		{
-			start = start_none ? len - 1 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("start")));
-			stop = stop_none ? -1 : get_pyidx(len, nb::cast<axc::isize>(slice.attr("stop")));
+			start = start_none ? len - 1 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
+			stop = stop_none ? -1 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
 		}
 		return axc::Range(start, stop, step);
 	}
@@ -51,7 +59,7 @@ namespace ax::bind
 		// obj can be an int, a slice, or a sequence of ints or slices
 		if (nb::isinstance<nb::int_>(obj))
 		{
-			axc::isize idx = get_pyidx(shape[0], nb::cast<axc::isize>(obj));
+			axc::isize idx = get_pyindex(shape[0], nb::cast<axc::isize>(obj));
 			ranges.emplace_back(idx, idx + 1, 1);
 			for (axc::isize i = 1; i < shape.get_ndim(); i++)
 			{
@@ -83,7 +91,7 @@ namespace ax::bind
 				// elm must be a sequence of ints or slices
 				if (nb::isinstance<nb::int_>(elm))
 				{
-					axc::isize idx = get_pyidx(shape[i], nb::cast<axc::isize>(elm));
+					axc::isize idx = get_pyindex(shape[i], nb::cast<axc::isize>(elm));
 					ranges.emplace_back(idx, idx + 1, 1);
 				}
 				else if (nb::isinstance<nb::slice>(elm))
@@ -217,49 +225,147 @@ namespace ax::bind
 		return full(other->get_view(), obj, dtype, device_name);
 	}
 
-	axr::ArrayPtr slice(axr::Array &arr, const nb::object &obj)
+	axr::ArrayPtr add(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.add(b); });
+	}
+
+	axr::ArrayPtr self_add(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.self_add(b); });
+	}
+
+	axr::ArrayPtr sub(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.sub(b); });
+	}
+
+	axr::ArrayPtr self_sub(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.self_sub(b); });
+	}
+
+	axr::ArrayPtr mul(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.mul(b); });
+	}
+
+	axr::ArrayPtr self_mul(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.self_mul(b); });
+	}
+
+	axr::ArrayPtr div(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.div(b); });
+	}
+
+	axr::ArrayPtr self_div(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.self_div(b); });
+	}
+
+	axr::ArrayPtr eq(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.eq(b); });
+	}
+
+	axr::ArrayPtr neq(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.neq(b); });
+	}
+
+	axr::ArrayPtr lt(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.lt(b); });
+	}
+
+	axr::ArrayPtr gt(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.gt(b); });
+	}
+
+	axr::ArrayPtr leq(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.leq(b); });
+	}
+
+	axr::ArrayPtr geq(const axr::Array &arr, const nb::object &obj)
+	{
+		return binary(arr, obj, [](const auto &a, const auto &b)
+					  { return a.geq(b); });
+	}
+
+	axr::ArrayPtr slice(const axr::Array &arr, const nb::object &obj)
 	{
 		return arr.slice(axb::pyslices_to_ranges(arr, obj));
 	}
 
-	axr::ArrayPtr transpose(axr::ArrayPtr arr, axc::isize start_dim, axc::isize end_dim)
+	axr::ArrayPtr permute(const axr::Array &arr, const ax::core::ShapeDims &dims)
 	{
-		return arr->transpose(get_pyidx(arr->get_shape().get_ndim(), start_dim), get_pyidx(arr->get_shape().get_ndim(), end_dim));
+		return arr.permute(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr flatten(axr::ArrayPtr arr, axc::isize start_dim, axc::isize end_dim)
+	axr::ArrayPtr transpose(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
 	{
-		return arr->flatten(get_pyidx(arr->get_shape().get_ndim(), start_dim), get_pyidx(arr->get_shape().get_ndim(), end_dim));
+		return arr.transpose(get_pyindex(arr.get_shape().get_ndim(), start_dim), get_pyindex(arr.get_shape().get_ndim(), end_dim));
 	}
 
-	axr::ArrayPtr squeeze(axr::ArrayPtr arr, axc::isize dim)
+	axr::ArrayPtr flatten(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
 	{
-		return arr->squeeze(get_pyidx(arr->get_shape().get_ndim(), dim));
+		return arr.flatten(get_pyindex(arr.get_shape().get_ndim(), start_dim), get_pyindex(arr.get_shape().get_ndim(), end_dim));
 	}
 
-	axr::ArrayPtr unsqueeze(axr::ArrayPtr arr, axc::isize dim)
+	axr::ArrayPtr squeeze(const axr::Array &arr, const axc::ShapeDims &dims)
 	{
-		return arr->unsqueeze(get_pyidx(arr->get_shape().get_ndim(), dim));
+		return arr.squeeze(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr pyobj_to_arr(const nb::object &obj, const std::string &device_name)
+	axr::ArrayPtr unsqueeze(const axr::Array &arr, const axc::ShapeDims &dims)
 	{
-		if (nb::isinstance<axr::Array>(obj))
-		{
-			return nb::cast<axr::ArrayPtr>(obj);
-		}
-		else if (nb::isinstance<nb::float_>(obj))
-		{
-			return axr::Array::full({1}, nb::cast<float>(obj), &axc::f32, device_name);
-		}
-		else if (nb::isinstance<nb::int_>(obj))
-		{
-			return axr::Array::full({1}, nb::cast<int>(obj), &axc::i32, device_name);
-		}
-		else if (nb::isinstance<nb::bool_>(obj))
-		{
-			return axr::Array::full({1}, nb::cast<int>(obj), &axc::b8, device_name);
-		}
-		throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
+		return arr.unsqueeze(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr sum(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.sum(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr mean(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.mean(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr max(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.max(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr min(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.min(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr argmax(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.argmax(get_pyindices(arr.get_shape().get_ndim(), dims));
+	}
+
+	axr::ArrayPtr argmin(const axr::Array &arr, const axc::ShapeDims &dims)
+	{
+		return arr.argmin(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 }

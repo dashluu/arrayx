@@ -61,7 +61,7 @@ struct Geq
 };
 
 template <class Op, class T, class R>
-kernel void binary_ss(
+kernel void binary(
     constant const uint *ndim [[buffer(0)]],
     constant const uint *offset [[buffer(1)]],
     constant const uint *shape [[buffer(2)]],
@@ -81,10 +81,10 @@ kernel void binary_ss(
 }
 
 #define make_binary(opname, op, dtype, T, R) \
-template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary_ss<op, T, R>) binary_ss<op, T, R>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary<op, T, R>) binary<op, T, R>;
 
 #define make_cmp(opname, op, dtype, T) \
-template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary_ss<op, T, bool>) binary_ss<op, T, bool>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(binary<op, T, bool>) binary<op, T, bool>;
 
 #define binary(opname, op)                  \
 make_binary(opname, op, f32, float, float); \

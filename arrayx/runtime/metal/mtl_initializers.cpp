@@ -2,7 +2,7 @@
 
 namespace ax::runtime::metal
 {
-	void MTLRunner::run_full_kernel(OpPtr op, int c)
+	void MTLRunner::run_full_kernel(OpPtr op, isize c)
 	{
 		NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 		CommandEncoder encoder(ctx);
@@ -17,13 +17,13 @@ namespace ax::runtime::metal
 		pool->release();
 	}
 
-	void MTLRunner::run_arange_kernel(OpPtr op, int start, int step)
+	void MTLRunner::run_arange_kernel(OpPtr op, isize start, isize step)
 	{
 		NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
 		CommandEncoder encoder(ctx);
-		encoder.encode_buffer(&start, sizeof(start), false);
-		encoder.encode_buffer(&step, sizeof(step), false);
 		LazyArrayPtr arr = op->get_lazy();
+		encoder.encode_buffer(&start, sizeof(mtl_isize), false);
+		encoder.encode_buffer(&step, sizeof(mtl_isize), false);
 		encoder.encode_array(arr);
 		std::string kernel_name = "arange_" + arr->get_dtype()->str();
 		encoder.set_pipeline_state(kernel_name);

@@ -144,10 +144,6 @@ class Array:
         """Convert array to Pytorch tensor"""
 
     @staticmethod
-    def from_torch(tensor: ArrayLike) -> Array:
-        """Convert Pytorch tensor to array"""
-
-    @staticmethod
     def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array filled with specified value"""
 
@@ -177,28 +173,28 @@ class Array:
     def ones_like(other: Array, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array of ones with same shape as input"""
 
-    def __add__(self, rhs: Array) -> Array:
+    def __add__(self, rhs: object) -> Array:
         """Add two arrays element-wise"""
 
-    def __sub__(self, rhs: Array) -> Array:
+    def __sub__(self, rhs: object) -> Array:
         """Subtract two arrays element-wise"""
 
-    def __mul__(self, rhs: Array) -> Array:
+    def __mul__(self, rhs: object) -> Array:
         """Multiply two arrays element-wise"""
 
-    def __truediv__(self, rhs: Array) -> Array:
+    def __truediv__(self, rhs: object) -> Array:
         """Divide two arrays element-wise"""
 
-    def __iadd__(self, rhs: Array) -> Array:
+    def __iadd__(self, rhs: object) -> Array:
         """In-place add two arrays element-wise"""
 
-    def __isub__(self, rhs: Array) -> Array:
+    def __isub__(self, rhs: object) -> Array:
         """In-place subtract two arrays element-wise"""
 
-    def __imul__(self, rhs: Array) -> Array:
+    def __imul__(self, rhs: object) -> Array:
         """In-place multiply two arrays element-wise"""
 
-    def __itruediv__(self, rhs: Array) -> Array:
+    def __itruediv__(self, rhs: object) -> Array:
         """In-place divide two arrays element-wise"""
 
     def __matmul__(self, rhs: Array) -> Array:
@@ -225,26 +221,29 @@ class Array:
     def recip(self, in_place: bool = False) -> Array:
         """Compute reciprocal of array elements"""
 
-    def __eq__(self, rhs: Array) -> Array:
+    def __eq__(self, rhs: object) -> Array:
         """Element-wise equality comparison"""
 
-    def __ne__(self, rhs: Array) -> Array:
+    def __ne__(self, rhs: object) -> Array:
         """Element-wise inequality comparison"""
 
-    def __lt__(self, rhs: Array) -> Array:
+    def __lt__(self, rhs: object) -> Array:
         """Element-wise less than comparison"""
 
-    def __gt__(self, rhs: Array) -> Array:
+    def __gt__(self, rhs: object) -> Array:
         """Element-wise greater than comparison"""
 
-    def __le__(self, rhs: Array) -> Array:
+    def __le__(self, rhs: object) -> Array:
         """Element-wise less than or equal comparison"""
 
-    def __ge__(self, rhs: Array) -> Array:
+    def __ge__(self, rhs: object) -> Array:
         """Element-wise greater than or equal comparison"""
 
     def sum(self, dims: Sequence[int] = []) -> Array:
         """Sum array elements along specified dimensions"""
+
+    def mean(self, dims: Sequence[int] = []) -> Array:
+        """Mean value along specified dimensions"""
 
     def max(self, dims: Sequence[int] = []) -> Array:
         """Maximum value along specified dimensions"""
@@ -270,19 +269,19 @@ class Array:
     def reshape(self, view: Sequence[int]) -> Array:
         """Reshape array to new dimensions"""
 
-    def flatten(self, start_dim: int, end_dim: int) -> Array:
+    def flatten(self, start_dim: int = 0, end_dim: int = -1) -> Array:
         """Flatten dimensions from start to end"""
 
-    def squeeze(self, dim: int) -> Array:
+    def squeeze(self, dims: Sequence[int]) -> Array:
         """Remove single-dimensional entry from array"""
 
-    def unsqueeze(self, dim: int) -> Array:
+    def unsqueeze(self, dims: Sequence[int]) -> Array:
         """Add single-dimensional entry to array"""
 
     def permute(self, dims: Sequence[int]) -> Array:
         """Permute array dimensions"""
 
-    def transpose(self, start_dim: int = 0, end_dim: int = 1) -> Array:
+    def transpose(self, start_dim: int = -2, end_dim: int = -1) -> Array:
         """Transpose array dimensions"""
 
     def astype(self, dtype: Dtype) -> Array:

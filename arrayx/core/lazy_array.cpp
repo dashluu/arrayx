@@ -45,7 +45,7 @@ namespace ax::core
 			return s;
 		}
 		ShapeView elms_per_dim = shape.get_elms_per_dim();
-		int close = 0;
+		size_t close = 0;
 		while (next_elm_available)
 		{
 			close = 0;
@@ -71,7 +71,7 @@ namespace ax::core
 				{
 					s += ", ";
 				}
-				for (int i = 0; i < close; i++)
+				for (size_t i = 0; i < close; i++)
 				{
 					s += "[";
 				}

@@ -28,11 +28,11 @@ namespace ax::core
                 const Range range = ranges[i];
                 if (range.start < 0 || range.start >= static_cast<isize>(view[i]))
                 {
-                    throw std::invalid_argument("Start is not in the range [0, " + std::to_string(view[i]) + "): " + std::to_string(range.start) + ".");
+                    throw std::invalid_argument("Start " + std::to_string(range.start) + " is not in the range [0, " + std::to_string(view[i]) + ").");
                 }
                 if (range.stop < -1 || range.stop > static_cast<isize>(view[i]))
                 {
-                    throw std::invalid_argument("Stop is not in the range [-1, " + std::to_string(view[i]) + "]: " + std::to_string(range.stop) + ".");
+                    throw std::invalid_argument("Stop " + std::to_string(range.stop) + " is not in the range [-1, " + std::to_string(view[i]) + "].");
                 }
                 if (range.step == 0)
                 {
@@ -40,11 +40,11 @@ namespace ax::core
                 }
                 if (range.start < range.stop && range.step < 0)
                 {
-                    throw std::invalid_argument("Step is not positive when start " + std::to_string(range.start) + " < stop " + std::to_string(range.stop) + ": " + std::to_string(range.step) + ".");
+                    throw std::invalid_argument("Step " + std::to_string(range.step) + " is not positive when start " + std::to_string(range.start) + " < stop " + std::to_string(range.stop) + ".");
                 }
                 if (range.start > range.stop && range.step > 0)
                 {
-                    throw std::invalid_argument("Step is not negative when start " + std::to_string(range.start) + " > stop " + std::to_string(range.stop) + ": " + std::to_string(range.step) + ".");
+                    throw std::invalid_argument("Step " + std::to_string(range.step) + " is not negative when start " + std::to_string(range.start) + " > stop " + std::to_string(range.stop) + ".");
                 }
             }
         }
@@ -407,33 +407,70 @@ namespace ax::core
             return Shape(o, v, s);
         }
 
-        Shape unsqueeze(isize dim) const
+        Shape unsqueeze(const ShapeDims &dims) const
         {
-            if (dim > get_ndim())
+            // Check for duplicates
+            // Set is red black tree under the hood, which can be used for both sorting and checking for uniqueness
+            std::set<isize> unique_dims(dims.begin(), dims.end());
+            if (unique_dims.size() != dims.size())
             {
-                throw std::invalid_argument("Dimension " + std::to_string(dim) + " is out of range during unsqueeze: " + std::to_string(get_ndim()) + ".");
+                throw std::invalid_argument("Duplicate dimensions in unsqueeze.");
             }
+
+            // Check for invalid dimension
+            for (auto &dim : unique_dims)
+            {
+                if (dim < 0 || dim > get_ndim())
+                {
+                    throw std::invalid_argument("Dimension " + std::to_string(dim) + " is out of range [0, " + std::to_string(get_ndim()) + "] during unsqueeze.");
+                }
+            }
+
             ShapeView v = view;
             ShapeStride s = stride;
-            v.insert(v.begin() + dim, 1);
-            s.insert(s.begin() + dim, 0);
+
+            // Process in descending order using reverse iterator
+            for (auto iter = unique_dims.rbegin(); iter != unique_dims.rend(); ++iter)
+            {
+                v.insert(v.begin() + *iter, 1);
+                s.insert(s.begin() + *iter, 0);
+            }
+
             return Shape(offset, v, s);
         }
 
-        Shape squeeze(isize dim) const
+        Shape squeeze(const ShapeDims &dims) const
         {
-            if (dim >= get_ndim())
+            // Check for duplicates
+            std::set<isize> unique_dims(dims.begin(), dims.end());
+            if (unique_dims.size() != dims.size())
             {
-                throw std::invalid_argument("Dimension " + std::to_string(dim) + " is out of range: " + std::to_string(get_ndim()) + ".");
+                throw std::invalid_argument("Duplicate dimensions in squeeze.");
             }
-            if (view[dim] != 1)
+
+            // Check for invalid dimension
+            for (auto &dim : unique_dims)
             {
-                throw std::invalid_argument("Dimension " + std::to_string(dim) + " is not a singleton during squeeze: " + std::to_string(view[dim]) + ".");
+                if (dim < 0 || dim >= get_ndim())
+                {
+                    throw std::invalid_argument("Dimension " + std::to_string(dim) + " is out of range [0, " + std::to_string(get_ndim()) + ") during squeeze.");
+                }
+                if (view[dim] != 1)
+                {
+                    throw std::invalid_argument("Dimension " + std::to_string(dim) + " is " + std::to_string(view[dim]) + " but not a singleton during squeeze.");
+                }
             }
+
             ShapeView v = view;
             ShapeStride s = stride;
-            v.erase(v.begin() + dim);
-            s.erase(s.begin() + dim);
+
+            // Process in descending order using reverse iterator
+            for (auto iter = unique_dims.rbegin(); iter != unique_dims.rend(); ++iter)
+            {
+                v.erase(v.begin() + *iter);
+                s.erase(s.begin() + *iter);
+            }
+
             return Shape(offset, v, s);
         }
 

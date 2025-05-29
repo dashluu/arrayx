@@ -86,13 +86,77 @@ namespace ax::array
 
 		// Element-wise operations
 		ArrayPtr add(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr add(T c) const
+		{
+			OpPtr out_op = ax::graph::add(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr sub(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr sub(T c) const
+		{
+			OpPtr out_op = ax::graph::sub(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr mul(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr mul(T c) const
+		{
+			OpPtr out_op = ax::graph::mul(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr div(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr div(T c) const
+		{
+			OpPtr out_op = ax::graph::div(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr self_add(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr self_add(T c) const
+		{
+			OpPtr out_op = ax::graph::self_add(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr self_sub(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr self_sub(T c) const
+		{
+			OpPtr out_op = ax::graph::self_sub(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr self_mul(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr self_mul(T c) const
+		{
+			OpPtr out_op = ax::graph::self_mul(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr self_div(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr self_div(T c) const
+		{
+			OpPtr out_op = ax::graph::self_div(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr matmul(ArrayPtr rhs) const;
 		ArrayPtr exp(bool in_place = false) const;
 		ArrayPtr log(bool in_place = false) const;
@@ -103,14 +167,62 @@ namespace ax::array
 
 		// Comparison operations
 		ArrayPtr eq(ArrayPtr rhs) const;
+
+		template <NumericOrBool T>
+		ArrayPtr eq(T c) const
+		{
+			OpPtr out_op = ax::graph::eq(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr neq(ArrayPtr rhs) const;
+
+		template <NumericOrBool T>
+		ArrayPtr neq(T c) const
+		{
+			OpPtr out_op = ax::graph::neq(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr lt(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr lt(T c) const
+		{
+			OpPtr out_op = ax::graph::lt(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr gt(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr gt(T c) const
+		{
+			OpPtr out_op = ax::graph::gt(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr leq(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr leq(T c) const
+		{
+			OpPtr out_op = ax::graph::leq(op, c);
+			return std::make_shared<Array>(out_op);
+		}
+
 		ArrayPtr geq(ArrayPtr rhs) const;
+
+		template <Numeric T>
+		ArrayPtr geq(T c) const
+		{
+			OpPtr out_op = ax::graph::geq(op, c);
+			return std::make_shared<Array>(out_op);
+		}
 
 		// Reduction operations
 		ArrayPtr sum(const ShapeDims &dims = {}) const;
+		ArrayPtr mean(const ShapeDims &dims = {}) const;
 		ArrayPtr max(const ShapeDims &dims = {}) const;
 		ArrayPtr min(const ShapeDims &dims = {}) const;
 		ArrayPtr argmax(const ShapeDims &dims = {}) const;
@@ -122,8 +234,8 @@ namespace ax::array
 		ArrayPtr slice(const RangeVec &ranges) const;
 		ArrayPtr reshape(const ShapeView &view) const;
 		ArrayPtr flatten(isize start_dim, isize end_dim) const;
-		ArrayPtr squeeze(isize dim) const;
-		ArrayPtr unsqueeze(isize dim) const;
+		ArrayPtr squeeze(const ShapeDims &dims) const;
+		ArrayPtr unsqueeze(const ShapeDims &dims) const;
 		ArrayPtr permute(const ShapeDims &dims) const;
 		ArrayPtr transpose(isize start_dim, isize end_dim) const;
 

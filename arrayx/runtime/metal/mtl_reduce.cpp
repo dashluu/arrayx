@@ -2,7 +2,7 @@
 
 namespace ax::runtime::metal
 {
-    void MTLRunner::run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, int default_val)
+    void MTLRunner::run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val)
     {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
@@ -11,8 +11,8 @@ namespace ax::runtime::metal
         bool strided_input = !in_arr->is_contiguous();
 
         // Encode buffers
-        const isize numel = in_arr->get_numel();
-        encoder.encode_scalar(numel);
+        isize numel = in_arr->get_numel();
+        encoder.encode_buffer(&numel, sizeof(mtl_usize), false);
         if (strided_input)
         {
             encoder.encode_ndim(in_arr);
@@ -25,10 +25,10 @@ namespace ax::runtime::metal
         }
         encoder.encode_array(in_arr);
         encoder.encode_array(out_arr);
-        encoder.encode_scalar(default_val);
+        DtypePtr dtype = in_arr->get_dtype();
+        encoder.encode_buffer(&default_val, dtype->get_size(), false);
 
         // Configure kernel
-        DtypePtr dtype = in_arr->get_dtype();
         std::string mode = "v" + std::string(strided_input ? "s" : "v");
         std::string kernel_name = name + "_all_" + mode + "_" + dtype->str();
         encoder.set_pipeline_state(kernel_name);
@@ -49,7 +49,7 @@ namespace ax::runtime::metal
         pool->release();
     }
 
-    void MTLRunner::run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, int default_val)
+    void MTLRunner::run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val)
     {
         // Initialize Metal autorelease pool and encoder
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
@@ -71,10 +71,10 @@ namespace ax::runtime::metal
         }
         encoder.encode_array(in_arr);
         encoder.encode_array(out_arr);
-        encoder.encode_scalar(default_val);
+        DtypePtr dtype = in_arr->get_dtype();
+        encoder.encode_buffer(&default_val, dtype->get_size(), false);
 
         // Configure kernel
-        DtypePtr dtype = in_arr->get_dtype();
         std::string mode = "v" + std::string(strided_input ? "s" : "v");
         std::string kernel_name = name + "_col_" + mode + "_" + dtype->str();
         encoder.set_pipeline_state(kernel_name);

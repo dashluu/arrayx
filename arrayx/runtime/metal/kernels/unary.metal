@@ -55,7 +55,7 @@ struct Sq
 };
 
 template <class Op, class T, class R>
-kernel void unary_ss(
+kernel void unary(
     constant const uint *ndim [[buffer(0)]],
     constant const uint *offset [[buffer(1)]],
     constant const uint *shape [[buffer(2)]],
@@ -72,10 +72,10 @@ kernel void unary_ss(
 }
 
 #define make_unary_all(opname, op, dtype, T, R) \
-template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(unary_ss<op, T, R>) unary_ss<op, T, R>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(unary<op, T, R>) unary<op, T, R>;
 
 #define make_unary_float(opname, op, dtype, T) \
-template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(unary_ss<op, T, float>) unary_ss<op, T, float>;
+template [[host_name(#opname "_" #dtype)]] [[kernel]] decltype(unary<op, T, float>) unary<op, T, float>;
 
 #define unary_float(opname, op)             \
 make_unary_float(opname, op, f32, float);   \

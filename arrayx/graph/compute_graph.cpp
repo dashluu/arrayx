@@ -97,9 +97,9 @@ namespace ax::graph
             for (auto &op : std::views::reverse(fw_order))
             {
                 // grad is null when backward is not implemented for op
-                if (op->gradroot != nullptr)
+                if (op->grad_root != nullptr)
                 {
-                    toposort(op->gradroot, bw_order);
+                    toposort(op->grad_root, bw_order);
                 }
             }
         }

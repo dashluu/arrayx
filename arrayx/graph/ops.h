@@ -109,7 +109,7 @@ namespace ax::graph
 
     public:
         std::shared_ptr<Op> grad = nullptr;
-        std::shared_ptr<Op> gradroot = nullptr;
+        std::shared_ptr<Op> grad_root = nullptr;
 
         Op(Opcode opcode, Optype optype, LazyArrayPtr lazy) : opcode(opcode), optype(optype), lazy(lazy) {}
         Op(const Op &) = delete;
@@ -168,13 +168,13 @@ namespace ax::graph
     {
     private:
         ShapeView view;
-        int c;
+        isize c;
         DtypePtr dtype;
 
     public:
-        FullOp(LazyArrayPtr lazy, const ShapeView &view, int c, DtypePtr dtype) : InitializerOp(Opcode::FULL, lazy), view(view), c(c), dtype(dtype) {}
+        FullOp(LazyArrayPtr lazy, const ShapeView &view, isize c, DtypePtr dtype) : InitializerOp(Opcode::FULL, lazy), view(view), c(c), dtype(dtype) {}
         const ShapeView &get_view() const { return view; }
-        int get_const() const { return c; }
+        isize get_const() const { return c; }
         DtypePtr get_dtype() const { return dtype; }
         const std::string str() const override
         {
@@ -235,14 +235,14 @@ namespace ax::graph
         ReduceMode mode;
         OpPtr operand;
         ShapeDims dims;
-        int default_val;
+        isize default_val;
 
     public:
-        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims, int default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val) {}
+        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims, isize default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val) {}
         ReduceMode get_mode() const { return mode; }
         OpPtr get_operand() const { return operand; }
         const ShapeDims &get_dims() const { return dims; }
-        int get_default_val() const { return default_val; }
+        isize get_default_val() const { return default_val; }
         const std::string str() const override;
     };
 
@@ -437,24 +437,24 @@ namespace ax::graph
     struct SqueezeOp : public TransformOp
     {
     private:
-        isize dim;
+        ShapeDims dims;
 
     public:
-        SqueezeOp(LazyArrayPtr lazy, OpPtr operand, isize dim) : TransformOp(Opcode::SQUEEZE, lazy, operand), dim(dim) {}
-        isize get_dim() const { return dim; }
-        const std::string str() const override { return TransformOp::str() + ", dim: " + std::to_string(dim); }
+        SqueezeOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::SQUEEZE, lazy, operand), dims(dims) {}
+        const ShapeDims &get_dims() const { return dims; }
+        const std::string str() const override { return TransformOp::str() + ", dims: " + vnumstr(dims); }
         void backward() const override;
     };
 
     struct UnsqueezeOp : public TransformOp
     {
     private:
-        isize dim;
+        ShapeDims dims;
 
     public:
-        UnsqueezeOp(LazyArrayPtr lazy, OpPtr operand, isize dim) : TransformOp(Opcode::UNSQUEEZE, lazy, operand), dim(dim) {}
-        isize get_dim() const { return dim; }
-        const std::string str() const override { return TransformOp::str() + ", dim: " + std::to_string(dim); }
+        UnsqueezeOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::UNSQUEEZE, lazy, operand), dims(dims) {}
+        const ShapeDims &get_dims() const { return dims; }
+        const std::string str() const override { return TransformOp::str() + ", dims: " + vnumstr(dims); }
         void backward() const override;
     };
 
@@ -503,7 +503,7 @@ namespace ax::graph
     };
 
     OpPtr detach(OpPtr op);
-    OpPtr full_impl(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device);
+    OpPtr full_impl(const ShapeView &view, isize c, DtypePtr dtype, DevicePtr device);
     OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device);
     OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device);
     OpPtr ones(const ShapeView &view, DtypePtr dtype, DevicePtr device);
@@ -514,8 +514,8 @@ namespace ax::graph
     OpPtr broadcast_to(OpPtr op, const ShapeView &view);
     OpPtr slice(OpPtr in_op, const RangeVec &ranges);
     OpPtr astype(OpPtr in_op, DtypePtr dtype);
-    OpPtr unsqueeze(OpPtr in_op, isize dim);
-    OpPtr squeeze(OpPtr in_op, isize dim);
+    OpPtr unsqueeze(OpPtr in_op, const ShapeDims &dims);
+    OpPtr squeeze(OpPtr in_op, const ShapeDims &dims);
     OpPtr add(OpPtr lop, OpPtr rop);
     OpPtr sub(OpPtr lop, OpPtr rop);
     OpPtr mul(OpPtr lop, OpPtr rop);
@@ -543,21 +543,21 @@ namespace ax::graph
     OpPtr transpose(OpPtr in_op, isize start_dim, isize end_dim);
     OpPtr flatten(OpPtr in_op, isize start_dim, isize end_dim);
     OpPtr sum(OpPtr in_op, const ShapeDims &dims = {});
+    OpPtr mean(OpPtr in_op, const ShapeDims &dims = {});
     OpPtr max(OpPtr in_op, const ShapeDims &dims = {});
     OpPtr min(OpPtr in_op, const ShapeDims &dims = {});
     OpPtr argmax(OpPtr in_op, const ShapeDims &dims = {});
     OpPtr argmin(OpPtr in_op, const ShapeDims &dims = {});
 
-    template <class T>
-    void if_scalar_is_numeric(T c)
-    {
-        static_assert(std::is_arithmetic_v<T>, "Scalar type must be numeric");
-    }
+    template <typename T>
+    concept Numeric = std::is_arithmetic_v<T>;
 
-    template <class T>
+    template <typename T>
+    concept NumericOrBool = std::is_arithmetic_v<T> || std::is_same_v<T, bool>;
+
+    template <Numeric T>
     OpPtr full(const ShapeView &view, T c, DtypePtr dtype, DevicePtr device)
     {
-        if_scalar_is_numeric(c);
         return full_impl(view, dtype_cast(c, dtype), dtype, device);
     }
 
@@ -567,44 +567,112 @@ namespace ax::graph
         return full(in_op->get_lazy()->get_view(), c, dtype, device);
     }
 
-    template <class T>
+    template <Numeric T>
+    OpPtr binary_with_scalar(OpPtr lop, T c, OpPtr (*op_func)(OpPtr, OpPtr))
+    {
+        LazyArrayPtr larr = lop->get_lazy();
+        DtypePtr ldtype = larr->get_dtype();
+        // TODO: prevent gradient from flowing into rop
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
+        return op_func(lop, rop);
+    }
+
+    template <NumericOrBool T>
+    OpPtr eq_with_scalar(OpPtr lop, T c, OpPtr (*op_func)(OpPtr, OpPtr))
+    {
+        LazyArrayPtr larr = lop->get_lazy();
+        DtypePtr ldtype = larr->get_dtype();
+        // TODO: prevent gradient from flowing into rop
+        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
+        return op_func(lop, rop);
+    }
+
+    template <Numeric T>
     OpPtr add(OpPtr lop, T c)
     {
-        LazyArrayPtr larr = lop->get_lazy();
-        DtypePtr ldtype = larr->get_dtype();
-        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        return add(lop, rop);
+        return binary_with_scalar(lop, c, add);
     }
 
-    template <class T>
+    template <Numeric T>
+    OpPtr self_add(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, self_add);
+    }
+
+    template <Numeric T>
     OpPtr sub(OpPtr lop, T c)
     {
-        LazyArrayPtr larr = lop->get_lazy();
-        DtypePtr ldtype = larr->get_dtype();
-        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        return sub(lop, rop);
+        return binary_with_scalar(lop, c, sub);
     }
 
-    template <class T>
+    template <Numeric T>
+    OpPtr self_sub(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, self_sub);
+    }
+
+    template <Numeric T>
     OpPtr mul(OpPtr lop, T c)
     {
-        LazyArrayPtr larr = lop->get_lazy();
-        DtypePtr ldtype = larr->get_dtype();
-        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        return mul(lop, rop);
+        return binary_with_scalar(lop, c, mul);
     }
 
-    template <class T>
+    template <Numeric T>
+    OpPtr self_mul(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, self_mul);
+    }
+
+    template <Numeric T>
     OpPtr div(OpPtr lop, T c)
     {
-        LazyArrayPtr larr = lop->get_lazy();
-        DtypePtr ldtype = larr->get_dtype();
-        OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        return div(lop, rop);
+        return binary_with_scalar(lop, c, div);
+    }
+
+    template <Numeric T>
+    OpPtr self_div(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, self_div);
+    }
+
+    template <NumericOrBool T>
+    OpPtr eq(OpPtr lop, T c)
+    {
+        return eq_with_scalar(lop, c, eq);
+    }
+
+    template <NumericOrBool T>
+    OpPtr neq(OpPtr lop, T c)
+    {
+        return eq_with_scalar(lop, c, neq);
+    }
+
+    template <Numeric T>
+    OpPtr lt(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, lt);
+    }
+
+    template <Numeric T>
+    OpPtr gt(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, gt);
+    }
+
+    template <Numeric T>
+    OpPtr leq(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, leq);
+    }
+
+    template <Numeric T>
+    OpPtr geq(OpPtr lop, T c)
+    {
+        return binary_with_scalar(lop, c, geq);
     }
 
     template <class O>
-    OpPtr binary_ss(OpPtr lop, OpPtr rop)
+    OpPtr binary(OpPtr lop, OpPtr rop)
     {
         O dummy_op(nullptr, nullptr, nullptr, false);
         LazyArrayPtr larr = lop->get_lazy();
@@ -637,7 +705,7 @@ namespace ax::graph
     }
 
     template <class O>
-    OpPtr self_binary_ss(OpPtr lop, OpPtr rop)
+    OpPtr self_binary(OpPtr lop, OpPtr rop)
     {
         O dummy_op(nullptr, nullptr, nullptr, true);
         LazyArrayPtr larr = lop->get_lazy();
@@ -670,7 +738,7 @@ namespace ax::graph
     }
 
     template <class O>
-    OpPtr unary_ss(OpPtr in_op, bool in_place)
+    OpPtr unary(OpPtr in_op, bool in_place)
     {
         LazyArrayPtr in_arr = in_op->get_lazy();
         DtypePtr in_dtype = in_arr->get_dtype();
@@ -687,7 +755,7 @@ namespace ax::graph
     }
 
     template <class O>
-    OpPtr unary_ss_float(OpPtr in_op, bool in_place)
+    OpPtr unary_float(OpPtr in_op, bool in_place)
     {
         O dummy_op(nullptr, nullptr, in_place);
         LazyArrayPtr in_arr = in_op->get_lazy();

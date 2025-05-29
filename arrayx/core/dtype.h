@@ -72,11 +72,11 @@ namespace ax::core
 
         virtual std::string get_value_as_str(uint8_t *ptr) const = 0;
 
-        virtual std::string get_value_as_str(int val) const = 0;
+        virtual std::string get_value_as_str(isize val) const = 0;
 
-        virtual int max() const = 0;
+        virtual isize max() const = 0;
 
-        virtual int min() const = 0;
+        virtual isize min() const = 0;
     };
 
     template <class T>
@@ -96,15 +96,6 @@ namespace ax::core
             }
             return std::format("{:.4f}", val);
         }
-
-        std::string get_value_as_str(int val) const override
-        {
-            return std::to_string(std::bit_cast<T>(val));
-        }
-
-        int max() const override { return std::bit_cast<int>(std::numeric_limits<T>::max()); }
-
-        int min() const override { return std::bit_cast<int>(std::numeric_limits<T>::lowest()); }
     };
 
     template <class T>
@@ -120,14 +111,14 @@ namespace ax::core
             return std::to_string(*reinterpret_cast<T *>(ptr));
         }
 
-        std::string get_value_as_str(int val) const override
+        std::string get_value_as_str(isize val) const override
         {
             return std::to_string(val);
         }
 
-        int max() const override { return std::numeric_limits<T>::max(); }
+        isize max() const override { return std::numeric_limits<T>::max(); }
 
-        int min() const override { return std::numeric_limits<T>::lowest(); }
+        isize min() const override { return std::numeric_limits<T>::lowest(); }
     };
 
     struct F32 : public Float<float>
@@ -135,6 +126,15 @@ namespace ax::core
     public:
         F32() : Float<float>(DtypeName::F32, 4) {}
         F32(const F32 &dtype) : Float<float>(dtype) {}
+
+        std::string get_value_as_str(isize val) const override
+        {
+            return std::to_string(std::bit_cast<float>(static_cast<int>(val)));
+        }
+
+        isize max() const override { return std::bit_cast<int>(std::numeric_limits<float>::max()); }
+
+        isize min() const override { return std::bit_cast<int>(std::numeric_limits<float>::lowest()); }
     };
 
     struct I8 : public Int<int8_t>
@@ -170,14 +170,14 @@ namespace ax::core
             return *ptr ? "True" : "False";
         }
 
-        std::string get_value_as_str(int val) const override
+        std::string get_value_as_str(isize val) const override
         {
             return std::to_string(static_cast<bool>(val));
         }
 
-        int max() const override { return std::numeric_limits<bool>::max(); }
+        isize max() const override { return std::numeric_limits<bool>::max(); }
 
-        int min() const override { return std::numeric_limits<bool>::lowest(); }
+        isize min() const override { return std::numeric_limits<bool>::lowest(); }
     };
 
     inline const F32 f32;
@@ -224,7 +224,7 @@ namespace ax::core
         {&f32, &f32}};
 
     template <class T>
-    int dtype_cast(T c, DtypePtr dtype)
+    isize dtype_cast(T c, DtypePtr dtype)
     {
         switch (dtype->get_type())
         {
@@ -235,7 +235,7 @@ namespace ax::core
                 return std::bit_cast<int>(static_cast<float>(c));
             }
         case DtypeType::INT:
-            return static_cast<int>(c);
+            return static_cast<isize>(c);
         default:
             return static_cast<bool>(c);
         }

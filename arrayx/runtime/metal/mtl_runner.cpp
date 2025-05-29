@@ -45,7 +45,7 @@ namespace ax::runtime::metal
 		}
 		else
 		{
-			run_unary_ss_kernel(unary_op->get_opcode_str(), operand, op);
+			run_unary_kernel(unary_op->get_opcode_str(), operand, op);
 		}
 	}
 
@@ -64,7 +64,7 @@ namespace ax::runtime::metal
 		{
 			alloc(out_arr);
 		}
-		run_binary_ss_kernel(binary_op->get_opcode_str(), lop, rop, op);
+		run_binary_kernel(binary_op->get_opcode_str(), lop, rop, op);
 	}
 
 	void MTLRunner::run_matmul_op(OpPtr op)
@@ -141,7 +141,7 @@ namespace ax::runtime::metal
 		LazyArrayPtr arr = reduce_op->get_lazy();
 		OpPtr operand = reduce_op->get_operand();
 		alloc(arr);
-		int default_val = reduce_op->get_default_val();
+		isize default_val = reduce_op->get_default_val();
 		if (reduce_op->get_mode() == ReduceMode::VALUE)
 		{
 			// Fill up array with default value

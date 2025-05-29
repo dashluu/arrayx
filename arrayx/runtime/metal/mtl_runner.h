@@ -10,21 +10,21 @@ namespace ax::runtime::metal
 	protected:
 		std::shared_ptr<MTLContext> ctx;
 
-		void run_full_kernel(OpPtr op, int c) override;
+		void run_full_kernel(OpPtr op, isize c) override;
 
-		void run_arange_kernel(OpPtr op, int start, int step) override;
+		void run_arange_kernel(OpPtr op, isize start, isize step) override;
 
-		void run_binary_ss_kernel(const std::string &name, OpPtr lop, OpPtr rop, OpPtr out_op) override;
+		void run_binary_kernel(const std::string &name, OpPtr lop, OpPtr rop, OpPtr out_op) override;
 
 		void run_matmul_kernel(OpPtr lop, OpPtr rop, OpPtr out_op) override;
 
-		void run_unary_ss_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) override;
+		void run_unary_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) override;
 
 		void run_copy_kernel(OpPtr in_op, OpPtr out_op) override;
 
-		void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, int default_val) override;
+		void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) override;
 
-		void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, int default_val) override;
+		void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) override;
 
 		void run_initializer_op(OpPtr op) override;
 

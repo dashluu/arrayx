@@ -192,6 +192,12 @@ namespace ax::array
 		return std::make_shared<Array>(out_op);
 	}
 
+	ArrayPtr Array::mean(const ShapeDims &dims) const
+	{
+		OpPtr out_op = ax::graph::mean(op, dims);
+		return std::make_shared<Array>(out_op);
+	}
+
 	ArrayPtr Array::max(const ShapeDims &dims) const
 	{
 		OpPtr out_op = ax::graph::max(op, dims);
@@ -246,15 +252,15 @@ namespace ax::array
 		return std::make_shared<Array>(out_op);
 	}
 
-	ArrayPtr Array::squeeze(isize dim) const
+	ArrayPtr Array::squeeze(const ShapeDims &dims) const
 	{
-		OpPtr out_op = ax::graph::squeeze(op, dim);
+		OpPtr out_op = ax::graph::squeeze(op, dims);
 		return std::make_shared<Array>(out_op);
 	}
 
-	ArrayPtr Array::unsqueeze(isize dim) const
+	ArrayPtr Array::unsqueeze(const ShapeDims &dims) const
 	{
-		OpPtr out_op = ax::graph::unsqueeze(op, dim);
+		OpPtr out_op = ax::graph::unsqueeze(op, dims);
 		return std::make_shared<Array>(out_op);
 	}
 

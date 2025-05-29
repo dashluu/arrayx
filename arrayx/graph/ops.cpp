@@ -15,14 +15,14 @@ namespace ax::graph
 			DtypePtr grad_dtype = float_dtype_by_dtype.at(dtype);
 			DevicePtr device = lazy->get_device();
 			grad = with_zeros ? zeros(view, grad_dtype, device) : ones(view, grad_dtype, device);
-			gradroot = grad;
+			grad_root = grad;
 		}
 	}
 
 	void Op::update_grad(std::shared_ptr<Op> grad, bool sub)
 	{
 		this->grad = sub ? self_sub(this->grad, grad) : self_add(this->grad, grad);
-		this->gradroot = this->grad;
+		this->grad_root = this->grad;
 	}
 
 	void AddOp::backward() const
@@ -154,8 +154,8 @@ namespace ax::graph
 	void SliceOp::backward() const
 	{
 		operand->init_grad();
-		operand->gradroot = slice(operand->grad, ranges);
-		operand->gradroot = self_add(operand->gradroot, grad);
+		operand->grad_root = slice(operand->grad, ranges);
+		operand->grad_root = self_add(operand->grad_root, grad);
 	}
 
 	void ReshapeOp::backward() const
@@ -195,13 +195,13 @@ namespace ax::graph
 	void SqueezeOp::backward() const
 	{
 		operand->init_grad();
-		operand->update_grad(unsqueeze(grad, dim));
+		operand->update_grad(unsqueeze(grad, dims));
 	}
 
 	void UnsqueezeOp::backward() const
 	{
 		operand->init_grad();
-		operand->update_grad(squeeze(grad, dim));
+		operand->update_grad(squeeze(grad, dims));
 	}
 
 	void SumOp::backward() const
@@ -266,7 +266,7 @@ namespace ax::graph
 		return std::make_shared<NoopOp>(out_arr);
 	}
 
-	OpPtr full_impl(const ShapeView &view, int c, DtypePtr dtype, DevicePtr device)
+	OpPtr full_impl(const ShapeView &view, isize c, DtypePtr dtype, DevicePtr device)
 	{
 		LazyArrayPtr arr = LazyArray::empty(Shape(view), dtype, device);
 		OpPtr op = std::make_shared<FullOp>(arr, view, c, dtype);
@@ -373,40 +373,40 @@ namespace ax::graph
 		return out_op;
 	}
 
-	OpPtr unsqueeze(OpPtr in_op, isize dim)
+	OpPtr unsqueeze(OpPtr in_op, const ShapeDims &dims)
 	{
 		LazyArrayPtr in_arr = in_op->get_lazy();
-		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().unsqueeze(dim), in_arr->get_dtype(), in_arr->get_device());
-		OpPtr out_op = std::make_shared<UnsqueezeOp>(out_arr, in_op, dim);
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().unsqueeze(dims), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<UnsqueezeOp>(out_arr, in_op, dims);
 		return out_op;
 	}
 
-	OpPtr squeeze(OpPtr in_op, isize dim)
+	OpPtr squeeze(OpPtr in_op, const ShapeDims &dims)
 	{
 		LazyArrayPtr in_arr = in_op->get_lazy();
-		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().squeeze(dim), in_arr->get_dtype(), in_arr->get_device());
-		OpPtr out_op = std::make_shared<SqueezeOp>(out_arr, in_op, dim);
+		LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape().squeeze(dims), in_arr->get_dtype(), in_arr->get_device());
+		OpPtr out_op = std::make_shared<SqueezeOp>(out_arr, in_op, dims);
 		return out_op;
 	}
 
 	OpPtr add(OpPtr lop, OpPtr rop)
 	{
-		return binary_ss<AddOp>(lop, rop);
+		return binary<AddOp>(lop, rop);
 	}
 
 	OpPtr sub(OpPtr lop, OpPtr rop)
 	{
-		return binary_ss<SubOp>(lop, rop);
+		return binary<SubOp>(lop, rop);
 	}
 
 	OpPtr mul(OpPtr lop, OpPtr rop)
 	{
-		return binary_ss<MulOp>(lop, rop);
+		return binary<MulOp>(lop, rop);
 	}
 
 	OpPtr div(OpPtr lop, OpPtr rop)
 	{
-		return binary_ss<DivOp>(lop, rop);
+		return binary<DivOp>(lop, rop);
 	}
 
 	OpPtr matmul(OpPtr lop, OpPtr rop)
@@ -485,22 +485,22 @@ namespace ax::graph
 
 	OpPtr self_add(OpPtr lop, OpPtr rop)
 	{
-		return self_binary_ss<AddOp>(lop, rop);
+		return self_binary<AddOp>(lop, rop);
 	}
 
 	OpPtr self_sub(OpPtr lop, OpPtr rop)
 	{
-		return self_binary_ss<SubOp>(lop, rop);
+		return self_binary<SubOp>(lop, rop);
 	}
 
 	OpPtr self_mul(OpPtr lop, OpPtr rop)
 	{
-		return self_binary_ss<MulOp>(lop, rop);
+		return self_binary<MulOp>(lop, rop);
 	}
 
 	OpPtr self_div(OpPtr lop, OpPtr rop)
 	{
-		return self_binary_ss<DivOp>(lop, rop);
+		return self_binary<DivOp>(lop, rop);
 	}
 
 	OpPtr eq(OpPtr lop, OpPtr rop)
@@ -535,17 +535,17 @@ namespace ax::graph
 
 	OpPtr sq(OpPtr in_op, bool in_place)
 	{
-		return unary_ss<SqOp>(in_op, in_place);
+		return unary<SqOp>(in_op, in_place);
 	}
 
 	OpPtr sqrt(OpPtr in_op, bool in_place)
 	{
-		return unary_ss_float<SqrtOp>(in_op, in_place);
+		return unary_float<SqrtOp>(in_op, in_place);
 	}
 
 	OpPtr neg(OpPtr in_op, bool in_place)
 	{
-		return unary_ss<NegOp>(in_op, in_place);
+		return unary<NegOp>(in_op, in_place);
 	}
 
 	OpPtr identity(OpPtr in_op, bool in_place)
@@ -558,17 +558,17 @@ namespace ax::graph
 
 	OpPtr exp(OpPtr in_op, bool in_place)
 	{
-		return unary_ss_float<ExpOp>(in_op, in_place);
+		return unary_float<ExpOp>(in_op, in_place);
 	}
 
 	OpPtr log(OpPtr in_op, bool in_place)
 	{
-		return unary_ss_float<LogOp>(in_op, in_place);
+		return unary_float<LogOp>(in_op, in_place);
 	}
 
 	OpPtr recip(OpPtr in_op, bool in_place)
 	{
-		return unary_ss_float<RecipOp>(in_op, in_place);
+		return unary_float<RecipOp>(in_op, in_place);
 	}
 
 	OpPtr reshape(OpPtr in_op, const ShapeView &view)
@@ -610,6 +610,13 @@ namespace ax::graph
 	OpPtr sum(OpPtr in_op, const ShapeDims &dims)
 	{
 		return reduce<SumOp>(in_op, dims, in_op->get_lazy()->get_dtype(), numeric_dtypes);
+	}
+
+	OpPtr mean(OpPtr in_op, const ShapeDims &dims)
+	{
+		OpPtr sum_op = sum(in_op, dims);
+		isize numel = dims.empty() ? in_op->get_lazy()->get_numel() : std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<isize>());
+		return div(sum_op, numel);
 	}
 
 	OpPtr max(OpPtr in_op, const ShapeDims &dims)
