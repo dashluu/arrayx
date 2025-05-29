@@ -83,6 +83,7 @@ with ax.context():
   - Array transformation operations: `reshape`, `permute`, `slice`, `transpose`
   - Matrix multiplication `matmul`
   - Element-wise operations: `add`, `sub`, `mul`, `div`, `exp`, `log`, `neg`(negation), `recip`(reciprocal), `sqrt`, `sq`(square)
+  - Reduction operations: `sum`, `mean`, `max`, `min`, `argmax`, `argmin`
 - NumPy, PyTorch integration
 - The only data types currently supported are `f32`(float32), `i32`(int32), and `b8`(bool).
 
