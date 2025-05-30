@@ -6,14 +6,14 @@ class TestTransform:
     @classmethod
     def setup_class(cls):
         """Run once before all tests in the class"""
-        print("\nSetting up TestInitializers class...")
+        print("\nSetting up TestTransform class...")
         # Add any setup code here
         Backend.init()
 
     @classmethod
     def teardown_class(cls):
         """Run once after all tests in the class"""
-        print("\nTearing down TestInitializers class...")
+        print("\nTearing down TestTransform class...")
         # Add any cleanup code here
         Backend.cleanup()
 
