@@ -1,16 +1,14 @@
-from arrayx import Array
+from arrayx import Array, f32
 import ax
 import numpy as np
+import torch
 
 
 with ax.context():
-    arr1 = Array.ones([2, 1, 5, 1, 6])
-    arr2 = arr1.squeeze([1, 3])
-    arr2 += 1
-    arr3 = arr2 < 0
-    arr4 = arr2.mean()
-    arr4.eval()
-    print(arr2.shape)
-    print(arr2)
-    print(arr4)
-    print(arr4.grad_enabled)
+    x = torch.randn(2, 3, dtype=torch.float32)
+    arr1 = Array.from_numpy(x.numpy())
+    arr2 = arr1.mean([0])
+    arr3 = (arr1 > 0).astype(f32)
+    arr3.eval()
+    print(arr1)
+    print(arr3)

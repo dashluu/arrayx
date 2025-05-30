@@ -1,4 +1,5 @@
 import torch
+import torch.testing
 import numpy as np
 from python.arrayx import Array, Backend
 
@@ -19,19 +20,24 @@ class TestReduce:
         Backend.cleanup()
 
     @staticmethod
-    def check_err(a: np.ndarray, b: np.ndarray, rtol=5e-3, atol=1e-6):
-        result = np.allclose(a, b, rtol=rtol, atol=atol)
-        if not result:
-            # print(a.shape, b.shape)
-            # Find indices where values aren't close
-            close_mask = np.isclose(a, b, rtol=rtol, atol=atol)
+    def check_err(a: torch.Tensor, b: torch.Tensor, rtol=1e-3, atol=1e-4):
+        try:
+            torch.testing.assert_close(a, b, rtol=rtol, atol=atol)
+        except AssertionError as e:
+            print(f"Tensors not close: {e}")
+            # Find mismatched indices
+            close_mask = torch.isclose(a, b, rtol=rtol, atol=atol)
             if a.ndim > 1:
-                entry = np.where(~close_mask)
-                print(a[entry], b[entry])
+                entry = torch.where(~close_mask)
+                print("Mismatched values:")
+                print("a:", a[entry].double())
+                print("b:", b[entry].double())
             else:
-                entry = np.where(~close_mask)[0]
-                print(a[entry], b[entry])
-        assert result
+                entry = torch.where(~close_mask)[0]
+                print("Mismatched values:")
+                print("a:", a[entry].double())
+                print("b:", b[entry].double())
+            raise  # Re-raise the assertion error
 
     def reduce_basic(self, op1, op2):
         # Create test data
@@ -44,7 +50,7 @@ class TestReduce:
             arr2: Array = op1(arr1)
             arr2.eval()
             expected: torch.Tensor = op2(x)
-            self.check_err(arr2.numpy(), expected.numpy())
+            self.check_err(arr2.torch(), expected)
 
     def reduce_2d(self, op1, op2):
         # Test cases with different dimensions
@@ -57,7 +63,7 @@ class TestReduce:
                 arr2: Array = op1(arr1, [dim])
                 arr2.eval()
                 expected: torch.Tensor = op2(x, dim)
-                self.check_err(arr2.numpy(), expected.numpy())
+                self.check_err(arr2.torch(), expected)
 
     def reduce_multidim(self, op1, op2):
         # Test cases with different shapes
@@ -78,7 +84,7 @@ class TestReduce:
             arr2: Array = op1(arr1, dim)
             arr2.eval()
             expected: torch.Tensor = op2(x, dim)
-            self.check_err(arr2.numpy(), expected.numpy())
+            self.check_err(arr2.torch(), expected)
 
     def arg_reduce_dim_in_multidim_arr(self, op1, op2):
         # Test cases with different shapes
@@ -99,12 +105,12 @@ class TestReduce:
             arr2: Array = op1(arr1, dim)
             arr2.eval()
             expected: torch.Tensor = op2(x, dim=dim[0])
-            self.check_err(arr2.numpy(), expected.numpy())
+            self.check_err(arr2.torch(), expected)
 
     def test_reduce_sum_basic(self):
         """Test basic sum reduction without specified dimensions"""
         print("\nTesting basic sum reduction:")
-        self.reduce_basic(lambda x: x.sum(), lambda x: x.sum())
+        self.reduce_basic(lambda x: x.sum(), lambda x: x.sum().unsqueeze(dim=-1))
 
     def test_reduce_sum_2d(self):
         """Test sum reduction along the row and column dimension"""
@@ -116,10 +122,25 @@ class TestReduce:
         print("\nTesting sum reduction along multiple dimensions:")
         self.reduce_multidim(lambda x, dim: x.sum(dim), lambda x, dim: x.sum(dim=dim).unsqueeze(dim=-1))
 
+    def test_reduce_mean_basic(self):
+        """Test basic mean reduction without specified dimensions"""
+        print("\nTesting basic mean reduction:")
+        self.reduce_basic(lambda x: x.mean(), lambda x: x.mean().unsqueeze(dim=-1))
+
+    def test_reduce_mean_2d(self):
+        """Test mean reduction along the row and column dimension"""
+        print("\nTesting mean reduction along the row and column dimension:")
+        self.reduce_2d(lambda x, dim: x.mean(dim), lambda x, dim: x.mean(dim=dim).unsqueeze(dim=-1))
+
+    def test_reduce_mean_multidim(self):
+        """Test mean reduction along multiple dimensions"""
+        print("\nTesting mean reduction along multiple dimensions:")
+        self.reduce_multidim(lambda x, dim: x.mean(dim), lambda x, dim: x.mean(dim=dim).unsqueeze(dim=-1))
+
     def test_reduce_max_basic(self):
         """Test basic max reduction without specified dimensions"""
         print("\nTesting basic max reduction:")
-        self.reduce_basic(lambda x: x.max(), lambda x: x.max())
+        self.reduce_basic(lambda x: x.max(), lambda x: x.max().unsqueeze(dim=-1))
 
     def test_reduce_max_2d(self):
         """Test max reduction along the column dimension"""
@@ -134,7 +155,7 @@ class TestReduce:
     def test_reduce_min_basic(self):
         """Test basic min reduction without specified dimensions"""
         print("\nTesting basic min reduction:")
-        self.reduce_basic(lambda x: x.min(), lambda x: x.min())
+        self.reduce_basic(lambda x: x.min(), lambda x: x.min().unsqueeze(dim=-1))
 
     def test_reduce_min_2d(self):
         """Test min reduction along the column dimension"""
@@ -149,33 +170,37 @@ class TestReduce:
     def test_reduce_argmax_basic(self):
         """Test basic argmax reduction without specified dimensions"""
         print("\nTesting basic argmax reduction:")
-        self.reduce_basic(lambda x: x.argmax(), lambda x: x.argmax())
+        self.reduce_basic(lambda x: x.argmax(), lambda x: x.argmax().unsqueeze(dim=-1).type(torch.int32))
 
     def test_reduce_argmax_2d(self):
         """Test argmax reduction along the column dimension"""
         print("\nTesting argmax reduction along the column dimension:")
-        self.reduce_2d(lambda x, dim: x.argmax(dim), lambda x, dim: x.argmax(dim=dim).unsqueeze(dim=-1))
+        self.reduce_2d(
+            lambda x, dim: x.argmax(dim), lambda x, dim: x.argmax(dim=dim).unsqueeze(dim=-1).type(torch.int32)
+        )
 
     def test_reduce_argmax_multidim(self):
         """Test argmax reduction along multiple dimensions"""
         print("\nTesting argmax reduction along multiple dimensions:")
         self.arg_reduce_dim_in_multidim_arr(
-            lambda x, dim: x.argmax(dim), lambda x, dim: x.argmax(dim=dim).unsqueeze(dim=-1)
+            lambda x, dim: x.argmax(dim), lambda x, dim: x.argmax(dim=dim).unsqueeze(dim=-1).type(torch.int32)
         )
 
     def test_reduce_argmin_basic(self):
         """Test basic argmin reduction without specified dimensions"""
         print("\nTesting basic argmin reduction:")
-        self.reduce_basic(lambda x: x.argmin(), lambda x: x.argmin())
+        self.reduce_basic(lambda x: x.argmin(), lambda x: x.argmin().unsqueeze(dim=-1).type(torch.int32))
 
     def test_reduce_argmin_2d(self):
         """Test argmin reduction along the column dimension"""
         print("\nTesting argmin reduction along the column dimension:")
-        self.reduce_2d(lambda x, dim: x.argmin(dim), lambda x, dim: x.argmin(dim=dim).unsqueeze(dim=-1))
+        self.reduce_2d(
+            lambda x, dim: x.argmin(dim), lambda x, dim: x.argmin(dim=dim).unsqueeze(dim=-1).type(torch.int32)
+        )
 
     def test_reduce_argmin_multidim(self):
         """Test argmin reduction along multiple dimensions"""
         print("\nTesting argmin reduction along multiple dimensions:")
         self.arg_reduce_dim_in_multidim_arr(
-            lambda x, dim: x.argmin(dim), lambda x, dim: x.argmin(dim=dim).unsqueeze(dim=-1)
+            lambda x, dim: x.argmin(dim), lambda x, dim: x.argmin(dim=dim).unsqueeze(dim=-1).type(torch.int32)
         )

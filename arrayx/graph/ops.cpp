@@ -615,7 +615,20 @@ namespace ax::graph
 	OpPtr mean(OpPtr in_op, const ShapeDims &dims)
 	{
 		OpPtr sum_op = sum(in_op, dims);
-		isize numel = dims.empty() ? in_op->get_lazy()->get_numel() : std::accumulate(dims.begin(), dims.end(), 1, std::multiplies<isize>());
+		isize numel;
+
+		if (dims.empty())
+		{
+			numel = in_op->get_lazy()->get_numel();
+		}
+		else
+		{
+			ShapeView view(dims.size());
+			std::transform(dims.begin(), dims.end(), view.begin(), [&](isize dim)
+						   { return in_op->get_lazy()->get_shape()[dim]; });
+			numel = std::accumulate(view.begin(), view.end(), 1, std::multiplies<isize>());
+		}
+
 		return div(sum_op, numel);
 	}
 
