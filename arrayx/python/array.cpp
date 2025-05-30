@@ -225,6 +225,11 @@ namespace ax::bind
 		return full(other->get_view(), obj, dtype, device_name);
 	}
 
+	axr::ArrayPtr neg(const axr::Array &arr)
+	{
+		return arr.neg();
+	}
+
 	axr::ArrayPtr add(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)

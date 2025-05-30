@@ -93,6 +93,7 @@ namespace ax::bind
 	nb::ndarray<nb::pytorch> array_to_torch(const axr::Array &arr);
 	axr::ArrayPtr full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name = axd::default_device_name);
 	axr::ArrayPtr full_like(axr::ArrayPtr other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name = axd::default_device_name);
+	axr::ArrayPtr neg(const axr::Array &arr);
 	axr::ArrayPtr add(const axr::Array &arr, const nb::object &obj);
 	axr::ArrayPtr self_add(const axr::Array &arr, const nb::object &obj);
 	axr::ArrayPtr sub(const axr::Array &arr, const nb::object &obj);

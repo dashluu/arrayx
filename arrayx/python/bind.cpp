@@ -91,7 +91,7 @@ NB_MODULE(arrayx, m)
 		.def("sqrt", &axr::Array::sqrt, "in_place"_a = false, "Compute square root of array elements")
 		.def("sq", &axr::Array::sq, "in_place"_a = false, "Compute square of array elements")
 		.def("neg", &axr::Array::neg, "in_place"_a = false, "Compute negative of array elements")
-		.def("__neg__", &axr::Array::neg, "Compute negative of array elements")
+		.def("__neg__", &axb::neg, "Compute negative of array elements")
 		.def("recip", &axr::Array::recip, "in_place"_a = false, "Compute reciprocal of array elements")
 
 		// Comparison operations
