@@ -92,6 +92,10 @@ class Backend:
 
 class Array:
     @property
+    def id(self) -> str:
+        """Get array's ID"""
+
+    @property
     def shape(self) -> Shape:
         """Get array's shape"""
 

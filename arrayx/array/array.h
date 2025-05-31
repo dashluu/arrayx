@@ -28,6 +28,8 @@ namespace ax::array
 
 		Array &operator=(const Array &) = delete;
 
+		const Id &get_id() const { return op->get_lazy()->get_id(); }
+
 		const Shape &get_shape() const { return op->get_lazy()->get_shape(); }
 
 		isize get_offset() const { return op->get_lazy()->get_offset(); }

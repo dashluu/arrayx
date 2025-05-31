@@ -52,6 +52,8 @@ NB_MODULE(arrayx, m)
 	// Array class
 	nb::class_<axr::Array>(m, "Array")
 		// Properties
+		.def_prop_ro("id", [](const axr::Array &arr)
+					 { return arr.get_id().str(); }, "Get array's ID")
 		.def_prop_ro("shape", &axr::Array::get_shape, "Get array's shape")
 		.def_prop_ro("dtype", &axr::Array::get_dtype, "Get array's data type")
 		.def_prop_ro("device", &axr::Array::get_device, "Get array's device")
