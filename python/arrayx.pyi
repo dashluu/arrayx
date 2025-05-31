@@ -305,7 +305,7 @@ class Array:
     def squeeze(self, dims: Sequence[int] = []) -> Array:
         """Remove single-dimensional entry from array"""
 
-    def unsqueeze(self, dims: Sequence[int]) -> Array:
+    def unsqueeze(self, dims: Sequence[int] = []) -> Array:
         """Add single-dimensional entry to array"""
 
     def permute(self, dims: Sequence[int]) -> Array:

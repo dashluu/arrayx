@@ -126,7 +126,7 @@ NB_MODULE(arrayx, m)
 		.def("reshape", &axr::Array::reshape, "view"_a, "Reshape array to new dimensions")
 		.def("flatten", &axb::flatten, "start_dim"_a = 0, "end_dim"_a = -1, "Flatten dimensions from start to end")
 		.def("squeeze", &axb::squeeze, "dims"_a = axc::ShapeDims{}, "Remove single-dimensional entry from array")
-		.def("unsqueeze", &axb::unsqueeze, "dims"_a, "Add single-dimensional entry to array")
+		.def("unsqueeze", &axb::unsqueeze, "dims"_a = axc::ShapeDims{}, "Add single-dimensional entry to array")
 		.def("permute", &axb::permute, "dims"_a, "Permute array dimensions")
 		.def("transpose", &axb::transpose, "start_dim"_a = -2, "end_dim"_a = -1, "Transpose array dimensions")
 
