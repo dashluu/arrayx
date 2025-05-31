@@ -243,7 +243,7 @@ namespace ax::array
 		ArrayPtr reshape(const ShapeView &view) const;
 		ArrayPtr flatten(isize start_dim, isize end_dim) const;
 		ArrayPtr squeeze(const ShapeDims &dims = {}) const;
-		ArrayPtr unsqueeze(const ShapeDims &dims) const;
+		ArrayPtr unsqueeze(const ShapeDims &dims = {}) const;
 		ArrayPtr permute(const ShapeDims &dims) const;
 		ArrayPtr transpose(isize start_dim, isize end_dim) const;
 

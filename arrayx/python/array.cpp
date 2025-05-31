@@ -13,6 +13,10 @@ namespace ax::bind
 
 	axc::ShapeDims get_pyindices(axc::isize len, const axc::ShapeDims &dims)
 	{
+		if (dims.empty())
+		{
+			return dims;
+		}
 		axc::ShapeDims indices(dims.size());
 		std::transform(dims.begin(), dims.end(), indices.begin(), [len](auto dim)
 					   { return get_pyindex(len, dim); });

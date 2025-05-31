@@ -409,6 +409,16 @@ namespace ax::core
 
         Shape unsqueeze(const ShapeDims &dims) const
         {
+            ShapeView v = view;
+            ShapeStride s = stride;
+
+            if (dims.empty())
+            {
+                v.push_back(1);
+                s.push_back(1);
+                return Shape(offset, v, s);
+            }
+
             // Check for duplicates
             // Set is red black tree under the hood, which can be used for both sorting and checking for uniqueness
             std::set<isize> unique_dims(dims.begin(), dims.end());
@@ -425,9 +435,6 @@ namespace ax::core
                     throw std::invalid_argument("Dimension " + std::to_string(dim) + " is out of range [0, " + std::to_string(get_ndim()) + "] during unsqueeze.");
                 }
             }
-
-            ShapeView v = view;
-            ShapeStride s = stride;
 
             // Process in descending order using reverse iterator
             for (auto iter = unique_dims.rbegin(); iter != unique_dims.rend(); ++iter)
