@@ -279,7 +279,7 @@ class Array:
     def flatten(self, start_dim: int = 0, end_dim: int = -1) -> Array:
         """Flatten dimensions from start to end"""
 
-    def squeeze(self, dims: Sequence[int]) -> Array:
+    def squeeze(self, dims: Sequence[int] = []) -> Array:
         """Remove single-dimensional entry from array"""
 
     def unsqueeze(self, dims: Sequence[int]) -> Array:
