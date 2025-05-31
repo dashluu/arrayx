@@ -203,6 +203,22 @@ namespace ax::bind
 		}
 	}
 
+	nb::object item(const axr::Array &arr)
+	{
+		axc::isize value = arr.item();
+		axc::DtypePtr dtype = arr.get_dtype();
+
+		switch (dtype->get_name())
+		{
+		case axc::DtypeName::F32:
+			return nb::cast<float>(std::bit_cast<float>(static_cast<int32_t>(value)));
+		case axc::DtypeName::I32:
+			return nb::cast<int>(value);
+		default:
+			return nb::cast<bool>(value);
+		}
+	}
+
 	axr::ArrayPtr full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
 	{
 		if (nb::isinstance<nb::float_>(obj))

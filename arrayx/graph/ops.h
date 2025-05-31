@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../utils.h"
-#include "../core/lazy_array.h"
+#include "../core/iter.h"
 #include "../device/device.h"
 
 namespace ax::graph
@@ -558,10 +558,12 @@ namespace ax::graph
     template <typename T>
     concept NumericOrBool = std::is_arithmetic_v<T> || std::is_same_v<T, bool>;
 
+    isize item(OpPtr op);
+
     template <Numeric T>
     OpPtr full(const ShapeView &view, T c, DtypePtr dtype, DevicePtr device)
     {
-        return full_impl(view, dtype_cast(c, dtype), dtype, device);
+        return full_impl(view, dtype_cast_down(c, dtype), dtype, device);
     }
 
     template <class T>

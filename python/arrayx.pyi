@@ -12,12 +12,15 @@ class DtypeType(enum.Enum):
     FLOAT = 0
 
 class Dtype:
+    @property
     def name(self) -> str:
         """Get data type's name as string"""
 
+    @property
     def size(self) -> int:
         """Get data type's size in bytes"""
 
+    @property
     def type(self) -> DtypeType:
         """Get data type's type"""
 
@@ -37,7 +40,7 @@ f32: F32 = ...
 
 i32: I32 = ...
 
-bool: Bool = ...
+b8: Bool = ...
 
 class Shape:
     @property
@@ -69,12 +72,15 @@ class DeviceType(enum.Enum):
     MPS = 1
 
 class Device:
+    @property
     def type(self) -> DeviceType:
         """Get device's type"""
 
+    @property
     def id(self) -> int:
         """Get device's ID"""
 
+    @property
     def name(self) -> str:
         """Get device's name"""
 
@@ -163,6 +169,9 @@ class Array:
 
     def torch(self) -> ArrayLike:
         """Convert array to Pytorch tensor"""
+
+    def item(self) -> object:
+        """Get array's only value"""
 
     @staticmethod
     def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:

@@ -266,6 +266,23 @@ namespace ax::graph
 		return std::make_shared<NoopOp>(out_arr);
 	}
 
+	isize item(OpPtr op)
+	{
+		LazyArrayPtr arr = op->get_lazy();
+
+		if (arr->get_numel() != 1)
+		{
+			throw std::runtime_error("Array " + arr->get_id().str() +
+									 " must have exactly one element but has " +
+									 std::to_string(arr->get_numel()) + " elements.");
+		}
+
+		auto iter = std::make_unique<ArrayIter>(arr);
+		iter->start();
+		uint8_t *ptr = iter->next();
+		return arr->get_dtype()->get_low_level_value(ptr);
+	}
+
 	OpPtr full_impl(const ShapeView &view, isize c, DtypePtr dtype, DevicePtr device)
 	{
 		LazyArrayPtr arr = LazyArray::empty(Shape(view), dtype, device);

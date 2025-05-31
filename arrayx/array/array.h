@@ -62,6 +62,8 @@ namespace ax::array
 
 		const std::string str() const override { return op->get_lazy()->str(); }
 
+		isize item() const { return ax::graph::item(op); }
+
 		void eval();
 
 		void backward();

@@ -9,9 +9,9 @@ NB_MODULE(arrayx, m)
 		.value("FLOAT", axc::DtypeType::FLOAT);
 
 	nb::class_<axc::Dtype>(m, "Dtype")
-		.def("name", &axc::Dtype::get_name_str, "Get data type's name as string")
-		.def("size", &axc::Dtype::get_size, "Get data type's size in bytes")
-		.def("type", &axc::Dtype::get_type, "Get data type's type")
+		.def_prop_ro("name", &axc::Dtype::get_name_str, "Get data type's name as string")
+		.def_prop_ro("size", &axc::Dtype::get_size, "Get data type's size in bytes")
+		.def_prop_ro("type", &axc::Dtype::get_type, "Get data type's type")
 		.def("__str__", &axc::Dtype::str, "String representation of dtype");
 
 	// Derived dtype classes
@@ -22,7 +22,7 @@ NB_MODULE(arrayx, m)
 	// Global dtype instances
 	m.attr("f32") = &axc::f32;
 	m.attr("i32") = &axc::i32;
-	m.attr("bool") = &axc::b8;
+	m.attr("b8") = &axc::b8;
 
 	// Shape class
 	nb::class_<axc::Shape>(m, "Shape")
@@ -39,9 +39,9 @@ NB_MODULE(arrayx, m)
 		.value("MPS", axd::DeviceType::MPS);
 
 	nb::class_<axd::Device>(m, "Device")
-		.def("type", &axd::Device::get_type, "Get device's type")
-		.def("id", &axd::Device::get_id, "Get device's ID")
-		.def("name", &axd::Device::get_name, "Get device's name")
+		.def_prop_ro("type", &axd::Device::get_type, "Get device's type")
+		.def_prop_ro("id", &axd::Device::get_id, "Get device's ID")
+		.def_prop_ro("name", &axd::Device::get_name, "Get device's name")
 		.def("__str__", &axd::Device::str, "String representation of device");
 
 	// Backend class
@@ -74,6 +74,7 @@ NB_MODULE(arrayx, m)
 		.def_static("from_numpy", &axb::array_from_numpy, "array"_a, "Convert numpy array to array")
 		.def("torch", &axb::array_to_torch, nb::rv_policy::reference_internal, "Convert array to Pytorch tensor")
 		// .def_static("from_torch", &axb::array_from_torch, "tensor"_a, "Convert Pytorch tensor to array")
+		.def("item", &axb::item, "Get array's only value")
 
 		// Initializer operations
 		.def_static("full", &axb::full, "view"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value")

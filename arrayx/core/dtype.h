@@ -74,6 +74,8 @@ namespace ax::core
 
         virtual std::string get_value_as_str(uint8_t *ptr) const = 0;
 
+        virtual isize get_low_level_value(uint8_t *ptr) const = 0;
+
         virtual std::string get_value_as_str(isize val) const = 0;
 
         virtual isize max() const = 0;
@@ -118,6 +120,11 @@ namespace ax::core
             return std::to_string(val);
         }
 
+        isize get_low_level_value(uint8_t *ptr) const override
+        {
+            return *reinterpret_cast<T *>(ptr);
+        }
+
         isize max() const override { return std::numeric_limits<T>::max(); }
 
         isize min() const override { return std::numeric_limits<T>::lowest(); }
@@ -134,6 +141,11 @@ namespace ax::core
             return std::to_string(std::bit_cast<float>(static_cast<int>(val)));
         }
 
+        isize get_low_level_value(uint8_t *ptr) const override
+        {
+            return std::bit_cast<int>(*reinterpret_cast<float *>(ptr));
+        }
+
         isize max() const override { return std::bit_cast<int>(std::numeric_limits<float>::max()); }
 
         isize min() const override { return std::bit_cast<int>(std::numeric_limits<float>::lowest()); }
@@ -148,6 +160,11 @@ namespace ax::core
         std::string get_value_as_str(isize val) const override
         {
             return std::to_string(std::bit_cast<double>(static_cast<int64_t>(val)));
+        }
+
+        isize get_low_level_value(uint8_t *ptr) const override
+        {
+            return std::bit_cast<int64_t>(*reinterpret_cast<double *>(ptr));
         }
 
         isize max() const override { return std::bit_cast<int64_t>(std::numeric_limits<double>::max()); }
@@ -198,6 +215,11 @@ namespace ax::core
         std::string get_value_as_str(isize val) const override
         {
             return std::to_string(static_cast<bool>(val));
+        }
+
+        isize get_low_level_value(uint8_t *ptr) const override
+        {
+            return *ptr;
         }
 
         isize max() const override { return std::numeric_limits<bool>::max(); }
@@ -251,7 +273,7 @@ namespace ax::core
         {&f32, &f32}};
 
     template <class T>
-    isize dtype_cast(T c, DtypePtr dtype)
+    isize dtype_cast_down(T c, DtypePtr dtype)
     {
         switch (dtype->get_type())
         {
