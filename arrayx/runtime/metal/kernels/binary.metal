@@ -62,13 +62,13 @@ struct Geq
 
 template <class Op, class T, class R>
 kernel void binary(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *shape [[buffer(2)]],
-    constant const int *lstride [[buffer(3)]],
-    constant const int *rstride [[buffer(4)]],
-    constant const int *outstride [[buffer(5)]],
-    constant const bool *strided [[buffer(6)]],
+    const constant uint &ndim [[buffer(0)]],
+    const constant uint *offset [[buffer(1)]],
+    const constant uint *shape [[buffer(2)]],
+    const constant int *lstride [[buffer(3)]],
+    const constant int *rstride [[buffer(4)]],
+    const constant int *outstride [[buffer(5)]],
+    const constant bool *strided [[buffer(6)]],
     device T *lhs [[buffer(7)]],
     device T *rhs [[buffer(8)]],
     device R *output [[buffer(9)]],

@@ -441,6 +441,23 @@ namespace ax::core
 
         Shape squeeze(const ShapeDims &dims) const
         {
+            ShapeView v = view;
+            ShapeStride s = stride;
+
+            if (dims.empty())
+            {
+                for (ssize_t i = view.size() - 1; i >= 0; i--)
+                {
+                    if (view[i] == 1)
+                    {
+                        v.erase(v.begin() + i);
+                        s.erase(s.begin() + i);
+                    }
+                }
+
+                return Shape(offset, v, s);
+            }
+
             // Check for duplicates
             std::set<isize> unique_dims(dims.begin(), dims.end());
             if (unique_dims.size() != dims.size())
@@ -460,9 +477,6 @@ namespace ax::core
                     throw std::invalid_argument("Dimension " + std::to_string(dim) + " is " + std::to_string(view[dim]) + " but not a singleton during squeeze.");
                 }
             }
-
-            ShapeView v = view;
-            ShapeStride s = stride;
 
             // Process in descending order using reverse iterator
             for (auto iter = unique_dims.rbegin(); iter != unique_dims.rend(); ++iter)

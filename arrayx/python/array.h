@@ -112,7 +112,7 @@ namespace ax::bind
 	axr::ArrayPtr permute(const axr::Array &arr, const ax::core::ShapeDims &dims);
 	axr::ArrayPtr transpose(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim);
 	axr::ArrayPtr flatten(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim);
-	axr::ArrayPtr squeeze(const axr::Array &arr, const axc::ShapeDims &dims);
+	axr::ArrayPtr squeeze(const axr::Array &arr, const axc::ShapeDims &dims = {});
 	axr::ArrayPtr unsqueeze(const axr::Array &arr, const axc::ShapeDims &dims);
 	axr::ArrayPtr sum(const axr::Array &arr, const axc::ShapeDims &dims);
 	axr::ArrayPtr mean(const axr::Array &arr, const axc::ShapeDims &dims);

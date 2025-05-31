@@ -222,7 +222,7 @@ class Array:
     def neg(self, in_place: bool = False) -> Array:
         """Compute negative of array elements"""
 
-    def __neg__(self, arg: bool, /) -> Array:
+    def __neg__(self) -> Array:
         """Compute negative of array elements"""
 
     def recip(self, in_place: bool = False) -> Array:

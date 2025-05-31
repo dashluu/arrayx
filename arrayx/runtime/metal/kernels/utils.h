@@ -4,4 +4,4 @@
 
 #define MAX_NDIM 8
 
-uint strided_idx(uint id, constant const uint *ndim, constant const uint *shape, constant const int *stride);
+uint strided_idx(const uint id, const uint ndim, const constant uint *shape, const constant int *stride);

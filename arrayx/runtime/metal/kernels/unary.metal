@@ -56,12 +56,12 @@ struct Sq
 
 template <class Op, class T, class R>
 kernel void unary(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *shape [[buffer(2)]],
-    constant const int *instride [[buffer(3)]],
-    constant const int *outstride [[buffer(4)]],
-    constant const bool *strided [[buffer(5)]],
+    const constant uint &ndim [[buffer(0)]],
+    const constant uint *offset [[buffer(1)]],
+    const constant uint *shape [[buffer(2)]],
+    const constant int *instride [[buffer(3)]],
+    const constant int *outstride [[buffer(4)]],
+    const constant bool *strided [[buffer(5)]],
     device T *input [[buffer(6)]],
     device R *output [[buffer(7)]],
     uint id [[thread_position_in_grid]])

@@ -2,9 +2,9 @@
 
 template <class T, class R>
 kernel void matmul_vv(
-    constant const uint *offset [[buffer(0)]],
-    constant const uint *lhs_shape [[buffer(1)]],
-    constant const uint *rhs_shape [[buffer(2)]],
+    const constant uint *offset [[buffer(0)]],
+    const constant uint *lhs_shape [[buffer(1)]],
+    const constant uint *rhs_shape [[buffer(2)]],
     device T *lhs [[buffer(3)]],
     device T *rhs [[buffer(4)]],
     device R *output [[buffer(5)]],
@@ -36,12 +36,12 @@ kernel void matmul_vv(
 
 template <class T, class R>
 kernel void matmul_vs(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *lhs_shape [[buffer(2)]],
-    constant const uint *rhs_shape [[buffer(3)]],
-    constant const int *lhs_stride [[buffer(4)]],
-    constant const int *rhs_stride [[buffer(5)]],
+    const constant uint &ndim [[buffer(0)]],
+    const constant uint *offset [[buffer(1)]],
+    const constant uint *lhs_shape [[buffer(2)]],
+    const constant uint *rhs_shape [[buffer(3)]],
+    const constant int *lhs_stride [[buffer(4)]],
+    const constant int *rhs_stride [[buffer(5)]],
     device T *lhs [[buffer(6)]],
     device T *rhs [[buffer(7)]],
     device R *output [[buffer(8)]],

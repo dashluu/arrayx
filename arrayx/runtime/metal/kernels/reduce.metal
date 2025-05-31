@@ -92,8 +92,8 @@ struct AtomicMinFloat
 
 template <class Op, class AtomicOp, class T, class R>
 kernel void reduce_all_vv(
-    constant const uint *numel [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
+    const constant uint &numel [[buffer(0)]],
+    const constant uint *offset [[buffer(1)]],
     const device T *input [[buffer(2)]],
     device metal::_atomic<R> *output [[buffer(3)]],
     const device R *default_val_ptr [[buffer(4)]],
@@ -117,7 +117,7 @@ kernel void reduce_all_vv(
         // Each thread gets the value from another thread offset lanes above it.
         // Threads with index < offset lanes keep their original values.
         for (uint lanes = simd_size/2; lanes > 0; lanes /= 2) {
-            if (gid + lanes < *numel) {
+            if (gid + lanes < numel) {
                 op(val, metal::simd_shuffle_down(val, lanes), &val);
             }
         }
@@ -131,7 +131,7 @@ kernel void reduce_all_vv(
     }
     // Perform final per-SIMD partial reduction to calculate the threadgroup partial reduction result.
     for (uint lanes = simd_size/2; lanes > 0; lanes /= 2) {
-        if (gid + lanes < *numel) {
+        if (gid + lanes < numel) {
             op(val, metal::simd_shuffle_down(val, lanes), &val);
         }
     }
@@ -143,11 +143,11 @@ kernel void reduce_all_vv(
 
 template <class Op, class AtomicOp, class T, class R>
 kernel void reduce_all_vs(
-    constant const uint *numel [[buffer(0)]],
-    constant const uint *ndim [[buffer(1)]],
-    constant const uint *offset [[buffer(2)]],
-    constant const uint *shape [[buffer(3)]],
-    constant const int *stride [[buffer(4)]],
+    const constant uint &numel [[buffer(0)]],
+    const constant uint &ndim [[buffer(1)]],
+    const constant uint *offset [[buffer(2)]],
+    const constant uint *shape [[buffer(3)]],
+    const constant int *stride [[buffer(4)]],
     const device T *input [[buffer(5)]],
     device metal::_atomic<R> *output [[buffer(6)]],
     const device R *default_val_ptr [[buffer(7)]],
@@ -168,7 +168,7 @@ kernel void reduce_all_vs(
     for (uint s = (lsize + simd_size - 1) / simd_size; s > 1; s /= simd_size)
     {
         for (uint lanes = simd_size/2; lanes > 0; lanes /= 2) {
-            if (gid + lanes < *numel) {
+            if (gid + lanes < numel) {
                 op(val, metal::simd_shuffle_down(val, lanes), &val);
             }
         }
@@ -179,7 +179,7 @@ kernel void reduce_all_vs(
         val = (lid < s) ? ldata[lid] : default_val;
     }
     for (uint lanes = simd_size/2; lanes > 0; lanes /= 2) {
-        if (gid + lanes < *numel) {
+        if (gid + lanes < numel) {
             op(val, metal::simd_shuffle_down(val, lanes), &val);
         }
     }
@@ -190,8 +190,8 @@ kernel void reduce_all_vs(
 
 template <class Op, class AtomicOp, class T, class R>
 kernel void reduce_col_vv(
-    constant const uint *offset [[buffer(0)]],
-    constant const uint *shape [[buffer(1)]],
+    const constant uint *offset [[buffer(0)]],
+    const constant uint *shape [[buffer(1)]],
     const device T *input [[buffer(2)]],
     device metal::_atomic<R> *output [[buffer(3)]],
     device R *default_val_ptr [[buffer(4)]],
@@ -236,10 +236,10 @@ kernel void reduce_col_vv(
 
 template <class Op, class AtomicOp, class T, class R>
 kernel void reduce_col_vs(
-    constant const uint *ndim [[buffer(0)]],
-    constant const uint *offset [[buffer(1)]],
-    constant const uint *shape [[buffer(2)]],
-    constant const int *stride [[buffer(3)]],
+    const constant uint &ndim [[buffer(0)]],
+    const constant uint *offset [[buffer(1)]],
+    const constant uint *shape [[buffer(2)]],
+    const constant int *stride [[buffer(3)]],
     const device T *input [[buffer(4)]],
     device metal::_atomic<R> *output [[buffer(5)]],
     const device R *default_val_ptr [[buffer(6)]],

@@ -7,9 +7,11 @@ namespace ax::core
     enum struct DtypeName
     {
         F32,
+        F64,
         I8,
         I16,
         I32,
+        I64,
         B8
     };
 
@@ -137,6 +139,22 @@ namespace ax::core
         isize min() const override { return std::bit_cast<int>(std::numeric_limits<float>::lowest()); }
     };
 
+    struct F64 : public Float<double>
+    {
+    public:
+        F64() : Float<double>(DtypeName::F64, 8) {}
+        F64(const F64 &dtype) : Float<double>(dtype) {}
+
+        std::string get_value_as_str(isize val) const override
+        {
+            return std::to_string(std::bit_cast<double>(static_cast<int64_t>(val)));
+        }
+
+        isize max() const override { return std::bit_cast<int64_t>(std::numeric_limits<double>::max()); }
+
+        isize min() const override { return std::bit_cast<int64_t>(std::numeric_limits<double>::lowest()); }
+    };
+
     struct I8 : public Int<int8_t>
     {
     public:
@@ -156,6 +174,13 @@ namespace ax::core
     public:
         I32() : Int<int32_t>(DtypeName::I32, 4) {}
         I32(const I32 &dtype) : Int<int32_t>(dtype) {}
+    };
+
+    struct I64 : public Int<int64_t>
+    {
+    public:
+        I64() : Int<int64_t>(DtypeName::I64, 8) {}
+        I64(const I64 &dtype) : Int<int64_t>(dtype) {}
     };
 
     struct Bool : public Dtype
@@ -181,9 +206,11 @@ namespace ax::core
     };
 
     inline const F32 f32;
+    inline const F64 f64;
     inline const I8 i8;
     inline const I16 i16;
     inline const I32 i32;
+    inline const I64 i64;
     inline const Bool b8;
 
     using DtypePtr = const Dtype *;
@@ -229,7 +256,7 @@ namespace ax::core
         switch (dtype->get_type())
         {
         case DtypeType::FLOAT:
-            switch (dtype->get_name())
+            switch (dtype->get_size())
             {
             default:
                 return std::bit_cast<int>(static_cast<float>(c));
