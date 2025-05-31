@@ -3,9 +3,15 @@
 NB_MODULE(arrayx, m)
 {
 	// Dtype class and operations
+	nb::enum_<axc::DtypeType>(m, "DtypeType")
+		.value("BOOL", axc::DtypeType::BOOL)
+		.value("INT", axc::DtypeType::INT)
+		.value("FLOAT", axc::DtypeType::FLOAT);
+
 	nb::class_<axc::Dtype>(m, "Dtype")
-		.def("name", &axc::Dtype::get_name_str, "Get dtype name as string")
-		.def("size", &axc::Dtype::get_size, "Get size in bytes")
+		.def("name", &axc::Dtype::get_name_str, "Get data type's name as string")
+		.def("size", &axc::Dtype::get_size, "Get data type's size in bytes")
+		.def("type", &axc::Dtype::get_type, "Get data type's type")
 		.def("__str__", &axc::Dtype::str, "String representation of dtype");
 
 	// Derived dtype classes
@@ -20,11 +26,11 @@ NB_MODULE(arrayx, m)
 
 	// Shape class
 	nb::class_<axc::Shape>(m, "Shape")
-		.def_prop_ro("offset", &axc::Shape::get_offset, "Get shape offset")
-		.def_prop_ro("view", &axc::Shape::get_view, "Get shape view")
-		.def_prop_ro("stride", &axc::Shape::get_stride, "Get shape stride")
-		.def_prop_ro("ndim", &axc::Shape::get_ndim, "Get number of dimensions")
-		.def_prop_ro("numel", &axc::Shape::get_numel, "Get total number of elements")
+		.def_prop_ro("offset", &axc::Shape::get_offset, "Get shape's offset")
+		.def_prop_ro("view", &axc::Shape::get_view, "Get shape's view")
+		.def_prop_ro("stride", &axc::Shape::get_stride, "Get shape's stride")
+		.def_prop_ro("ndim", &axc::Shape::get_ndim, "Get shape's number of dimensions")
+		.def_prop_ro("numel", &axc::Shape::get_numel, "Get shape's total number of elements")
 		.def("__str__", &axc::Shape::str, "String representation of shape");
 
 	// Device class
@@ -33,9 +39,9 @@ NB_MODULE(arrayx, m)
 		.value("MPS", axd::DeviceType::MPS);
 
 	nb::class_<axd::Device>(m, "Device")
-		.def("type", &axd::Device::get_type, "Get device type")
-		.def("id", &axd::Device::get_id, "Get device ID")
-		.def("name", &axd::Device::get_name, "Get device name")
+		.def("type", &axd::Device::get_type, "Get device's type")
+		.def("id", &axd::Device::get_id, "Get device's ID")
+		.def("name", &axd::Device::get_name, "Get device's name")
 		.def("__str__", &axd::Device::str, "String representation of device");
 
 	// Backend class
@@ -46,20 +52,20 @@ NB_MODULE(arrayx, m)
 	// Array class
 	nb::class_<axr::Array>(m, "Array")
 		// Properties
-		.def_prop_ro("shape", &axr::Array::get_shape, "Get array shape")
-		.def_prop_ro("dtype", &axr::Array::get_dtype, "Get array data type")
-		.def_prop_ro("device", &axr::Array::get_device, "Get array device")
-		.def_prop_ro("grad", &axr::Array::get_grad, "Get array gradient")
-		.def_prop_ro("ndim", &axr::Array::get_ndim, "Get number of dimensions")
-		.def_prop_ro("numel", &axr::Array::get_numel, "Get total number of elements")
-		.def_prop_ro("offset", &axr::Array::get_offset, "Get array offset")
-		.def_prop_ro("view", &axr::Array::get_view, "Get array view")
-		.def_prop_ro("stride", &axr::Array::get_stride, "Get array stride")
-		.def_prop_ro("ptr", &axr::Array::get_ptr, "Get raw data pointer")
-		.def_prop_ro("itemsize", &axr::Array::get_itemsize, "Get size of each element in bytes")
-		.def_prop_ro("nbytes", &axr::Array::get_nbytes, "Get total size in bytes")
+		.def_prop_ro("shape", &axr::Array::get_shape, "Get array's shape")
+		.def_prop_ro("dtype", &axr::Array::get_dtype, "Get array's data type")
+		.def_prop_ro("device", &axr::Array::get_device, "Get array's device")
+		.def_prop_ro("grad", &axr::Array::get_grad, "Get array's gradient")
+		.def_prop_ro("ndim", &axr::Array::get_ndim, "Get array's number of dimensions")
+		.def_prop_ro("numel", &axr::Array::get_numel, "Get array's total number of elements")
+		.def_prop_ro("offset", &axr::Array::get_offset, "Get array's offset")
+		.def_prop_ro("view", &axr::Array::get_view, "Get array's view")
+		.def_prop_ro("stride", &axr::Array::get_stride, "Get array's stride")
+		.def_prop_ro("ptr", &axr::Array::get_ptr, "Get array's raw data pointer")
+		.def_prop_ro("itemsize", &axr::Array::get_itemsize, "Get array's element size in bytes")
+		.def_prop_ro("nbytes", &axr::Array::get_nbytes, "Get array's total size in bytes")
 		.def_prop_ro("is_contiguous", &axr::Array::is_contiguous, "Check if array is contiguous")
-		.def_prop_rw("grad_enabled", &axr::Array::is_grad_enabled, &axr::Array::enable_grad, "Get/set gradient tracking")
+		.def_prop_rw("grad_enabled", &axr::Array::is_grad_enabled, &axr::Array::enable_grad, "Get/set array's gradient tracking")
 
 		// N-dimensional array
 		.def("numpy", &axb::array_to_numpy, nb::rv_policy::reference_internal, "Convert array to numpy array")

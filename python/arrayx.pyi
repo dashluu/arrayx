@@ -4,12 +4,22 @@ import enum
 from numpy.typing import ArrayLike
 
 
+class DtypeType(enum.Enum):
+    BOOL = 2
+
+    INT = 1
+
+    FLOAT = 0
+
 class Dtype:
     def name(self) -> str:
-        """Get dtype name as string"""
+        """Get data type's name as string"""
 
     def size(self) -> int:
-        """Get size in bytes"""
+        """Get data type's size in bytes"""
+
+    def type(self) -> DtypeType:
+        """Get data type's type"""
 
     def __str__(self) -> str:
         """String representation of dtype"""
@@ -32,23 +42,23 @@ bool: Bool = ...
 class Shape:
     @property
     def offset(self) -> int:
-        """Get shape offset"""
+        """Get shape's offset"""
 
     @property
     def view(self) -> list[int]:
-        """Get shape view"""
+        """Get shape's view"""
 
     @property
     def stride(self) -> list[int]:
-        """Get shape stride"""
+        """Get shape's stride"""
 
     @property
     def ndim(self) -> int:
-        """Get number of dimensions"""
+        """Get shape's number of dimensions"""
 
     @property
     def numel(self) -> int:
-        """Get total number of elements"""
+        """Get shape's total number of elements"""
 
     def __str__(self) -> str:
         """String representation of shape"""
@@ -60,13 +70,13 @@ class DeviceType(enum.Enum):
 
 class Device:
     def type(self) -> DeviceType:
-        """Get device type"""
+        """Get device's type"""
 
     def id(self) -> int:
-        """Get device ID"""
+        """Get device's ID"""
 
     def name(self) -> str:
-        """Get device name"""
+        """Get device's name"""
 
     def __str__(self) -> str:
         """String representation of device"""
@@ -83,51 +93,51 @@ class Backend:
 class Array:
     @property
     def shape(self) -> Shape:
-        """Get array shape"""
+        """Get array's shape"""
 
     @property
     def dtype(self) -> Dtype:
-        """Get array data type"""
+        """Get array's data type"""
 
     @property
     def device(self) -> Device:
-        """Get array device"""
+        """Get array's device"""
 
     @property
     def grad(self) -> Array:
-        """Get array gradient"""
+        """Get array's gradient"""
 
     @property
     def ndim(self) -> int:
-        """Get number of dimensions"""
+        """Get array's number of dimensions"""
 
     @property
     def numel(self) -> int:
-        """Get total number of elements"""
+        """Get array's total number of elements"""
 
     @property
     def offset(self) -> int:
-        """Get array offset"""
+        """Get array's offset"""
 
     @property
     def view(self) -> list[int]:
-        """Get array view"""
+        """Get array's view"""
 
     @property
     def stride(self) -> list[int]:
-        """Get array stride"""
+        """Get array's stride"""
 
     @property
     def ptr(self) -> int:
-        """Get raw data pointer"""
+        """Get array's raw data pointer"""
 
     @property
     def itemsize(self) -> int:
-        """Get size of each element in bytes"""
+        """Get array's element size in bytes"""
 
     @property
     def nbytes(self) -> int:
-        """Get total size in bytes"""
+        """Get array's total size in bytes"""
 
     @property
     def is_contiguous(self) -> bool:
@@ -135,7 +145,7 @@ class Array:
 
     @property
     def grad_enabled(self) -> bool:
-        """Get/set gradient tracking"""
+        """Get/set array's gradient tracking"""
 
     @grad_enabled.setter
     def grad_enabled(self, arg: bool, /) -> None: ...
