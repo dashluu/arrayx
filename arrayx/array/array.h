@@ -64,6 +64,8 @@ namespace ax::array
 
 		isize item() const { return ax::graph::item(op); }
 
+		ArrayPtr detach() const { return std::make_shared<Array>(ax::graph::detach(op)); }
+
 		void eval();
 
 		void backward();
