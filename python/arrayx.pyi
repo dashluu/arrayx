@@ -230,6 +230,9 @@ class Array:
     def __matmul__(self, rhs: Array) -> Array:
         """Matrix multiply two arrays"""
 
+    def detach(self) -> Array:
+        """Detach array from computation graph"""
+
     def exp(self, in_place: bool = False) -> Array:
         """Compute exponential of array elements"""
 
