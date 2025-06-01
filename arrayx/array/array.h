@@ -62,6 +62,8 @@ namespace ax::array
 
 		const std::string str() const override { return op->get_lazy()->str(); }
 
+		const std::string graph() { return compute_graph->str(); }
+
 		isize item() const { return ax::graph::item(op); }
 
 		ArrayPtr detach() const { return std::make_shared<Array>(ax::graph::detach(op)); }

@@ -75,6 +75,7 @@ NB_MODULE(arrayx, m)
 		.def("torch", &axb::array_to_torch, nb::rv_policy::reference_internal, "Convert array to Pytorch tensor")
 		// .def_static("from_torch", &axb::array_from_torch, "tensor"_a, "Convert Pytorch tensor to array")
 		.def("item", &axb::item, "Get array's only value")
+		.def("graph", &axr::Array::graph, "Get array's computation graph")
 
 		// Initializer operations
 		.def_static("full", &axb::full, "view"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value")

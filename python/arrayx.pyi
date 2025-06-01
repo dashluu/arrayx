@@ -173,6 +173,9 @@ class Array:
     def item(self) -> object:
         """Get array's only value"""
 
+    def graph(self) -> str:
+        """Get array's computation graph"""
+
     @staticmethod
     def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:
         """Create a new array filled with specified value"""
