@@ -98,7 +98,8 @@ namespace ax::graph
         {Opcode::MAX, "max"},
         {Opcode::MIN, "min"},
         {Opcode::ARGMAX, "argmax"},
-        {Opcode::ARGMIN, "argmin"}};
+        {Opcode::ARGMIN, "argmin"},
+        {Opcode::ASTYPE, "astype"}};
 
     struct Op : public std::enable_shared_from_this<Op>, public IStr
     {
