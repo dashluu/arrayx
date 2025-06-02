@@ -215,6 +215,9 @@ class Array:
     def __mul__(self, rhs: object) -> Array:
         """Multiply two arrays element-wise"""
 
+    def __rmul__(self, rhs: object) -> Array:
+        """Multiply two arrays element-wise"""
+
     def __truediv__(self, rhs: object) -> Array:
         """Divide two arrays element-wise"""
 

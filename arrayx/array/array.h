@@ -21,6 +21,8 @@ namespace ax::array
 
 		RunnerPtr get_backend_runner() const { return Backend::instance().get_runner(op->get_lazy()->get_device_name()); }
 
+		std::function<std::shared_ptr<ComputeGraph>(OpPtr)> get_backend_graph_builder() { return Backend::instance().get_graph_builder(op->get_lazy()->get_device_name()); }
+
 	public:
 		Array(OpPtr op) : op(op) {}
 

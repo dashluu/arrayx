@@ -2,12 +2,13 @@
 
 #include "../../core/dtype.h"
 #include "../../device/metal/mtl_allocator.h"
+#include "../../graph/metal/mtl_kernel.h"
 #include "../runner_context.h"
-#include "mtl_kernel.h"
 
 namespace ax::runtime::metal
 {
     using namespace ax::core;
+    using namespace ax::graph::metal;
     using namespace ax::device::metal;
 
     class MTLContext : public RunnerContext

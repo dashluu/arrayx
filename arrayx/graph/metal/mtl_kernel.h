@@ -4,23 +4,19 @@
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
 #include "../../utils.h"
+#include "../compute_primitive.h"
 
-namespace ax::runtime::metal
+namespace ax::graph::metal
 {
-    struct MTLKernel : public std::enable_shared_from_this<MTLKernel>
+    class MTLKernel : public std::enable_shared_from_this<MTLKernel>, public ComputeKernel
     {
     private:
-        std::string name;
         // shared ptr gets released once kernel is released
         NS::SharedPtr<MTL::Function> function;
         NS::SharedPtr<MTL::ComputePipelineState> state;
 
     public:
-        MTLKernel(const std::string &name) : name(name) {}
-
-        MTLKernel(const MTLKernel &other) = delete;
-
-        MTLKernel &operator=(const MTLKernel &other) = delete;
+        MTLKernel(const std::string &name) : ComputeKernel(name) {}
 
         void init(NS::SharedPtr<MTL::Device> device, NS::SharedPtr<MTL::Library> lib)
         {
@@ -32,8 +28,6 @@ namespace ax::runtime::metal
             state = NS::TransferPtr<MTL::ComputePipelineState>(device->newComputePipelineState(function.get(), &error));
             pool->release();
         }
-
-        const std::string &get_name() const { return name; }
 
         NS::SharedPtr<MTL::Function> get_function() const { return function; }
 

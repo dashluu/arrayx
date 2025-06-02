@@ -4,6 +4,7 @@
 #define NS_PRIVATE_IMPLEMENTATION
 #define MTL_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
+#include "../graph/metal/mtl_graph.h"
 #include "../runtime/metal/mtl_runner.h"
 #endif
 
@@ -51,6 +52,9 @@ namespace ax::array
 			runner = std::make_shared<ax::runtime::metal::MTLRunner>(context);
 			backend.devices.emplace(device->get_name(), device);
 			backend.runners.emplace(device->get_name(), runner);
+			backend.graph_builders.emplace(device->get_name(),
+										   [](OpPtr op) -> std::shared_ptr<ComputeGraph>
+										   { return std::make_shared<ax::graph::metal::MTLGraph>(op); });
 			std::cout << "Initializing device " << device->get_name() << "..." << std::endl;
 		}
 
@@ -71,11 +75,28 @@ namespace ax::array
 
 	DevicePtr Backend::get_device(const std::string &name) const
 	{
-		return devices.find(name) == devices.end() ? nullptr : devices.at(name);
+		if (devices.find(name) == devices.end())
+		{
+			throw std::runtime_error("No device named " + name + ".");
+		}
+		return devices.at(name);
 	}
 
 	RunnerPtr Backend::get_runner(const std::string &device_name) const
 	{
-		return runners.find(device_name) == runners.end() ? nullptr : runners.at(device_name);
+		if (runners.find(device_name) == runners.end())
+		{
+			throw std::runtime_error("No runner found for device " + device_name + ".");
+		}
+		return runners.at(device_name);
+	}
+
+	std::function<std::shared_ptr<ComputeGraph>(OpPtr)> Backend::get_graph_builder(const std::string &device_name) const
+	{
+		if (graph_builders.find(device_name) == graph_builders.end())
+		{
+			throw std::runtime_error("No graph builder found for device " + device_name + ".");
+		}
+		return graph_builders.at(device_name);
 	}
 }

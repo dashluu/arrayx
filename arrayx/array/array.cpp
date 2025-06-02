@@ -6,7 +6,7 @@ namespace ax::array
 	{
 		if (compute_graph == nullptr)
 		{
-			compute_graph = std::make_shared<ComputeGraph>(op);
+			compute_graph = get_backend_graph_builder()(op);
 			compute_graph->forward();
 			get_backend_runner()->forward(compute_graph);
 		}

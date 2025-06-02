@@ -5,11 +5,10 @@
 
 namespace ax::runtime::metal
 {
-    using namespace ax::device::metal;
     using mtl_usize = uint32_t;
     using mtl_isize = int32_t;
 
-    struct CommandEncoder
+    class CommandEncoder
     {
     private:
         std::shared_ptr<MTLContext> ctx;
