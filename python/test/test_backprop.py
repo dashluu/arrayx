@@ -88,10 +88,10 @@ class TestBackprop:
         t6.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "input")
-        compare_grads(arr2.grad, t2.grad, "exp")
-        compare_grads(arr3.grad, t3.grad, "mul")
-        compare_grads(arr4.grad, t4.grad, "log")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
+        compare_grads(arr4.grad, t4.grad, "arr4")
 
     def test_backprop_v3(self):
         print("Testing branched operations:")
@@ -127,13 +127,13 @@ class TestBackprop:
         t8.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "input1")
-        compare_grads(arr2.grad, t2.grad, "input2")
-        compare_grads(arr3.grad, t3.grad, "log")
-        compare_grads(arr4.grad, t4.grad, "exp")
-        compare_grads(arr5.grad, t5.grad, "mul")
-        compare_grads(arr6.grad, t6.grad, "div")
-        compare_grads(arr7.grad, t7.grad, "add")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
+        compare_grads(arr4.grad, t4.grad, "arr4")
+        compare_grads(arr5.grad, t5.grad, "arr5")
+        compare_grads(arr6.grad, t6.grad, "arr6")
+        compare_grads(arr7.grad, t7.grad, "arr7")
 
     def test_backprop_v4(self):
         print("Testing nested operations:")
@@ -169,13 +169,13 @@ class TestBackprop:
         t8.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "input1")
-        compare_grads(arr2.grad, t2.grad, "input2")
-        compare_grads(arr3.grad, t3.grad, "div")
-        compare_grads(arr4.grad, t4.grad, "exp")
-        compare_grads(arr5.grad, t5.grad, "recip")
-        compare_grads(arr6.grad, t6.grad, "mul")
-        compare_grads(arr7.grad, t7.grad, "log")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
+        compare_grads(arr4.grad, t4.grad, "arr4")
+        compare_grads(arr5.grad, t5.grad, "arr5")
+        compare_grads(arr6.grad, t6.grad, "arr6")
+        compare_grads(arr7.grad, t7.grad, "arr7")
 
     def test_backprop_v5(self):
         print("Testing square and sqrt operations:")
@@ -211,13 +211,13 @@ class TestBackprop:
         t8.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "input")
-        compare_grads(arr2.grad, t2.grad, "square1")
-        compare_grads(arr3.grad, t3.grad, "sqrt1")
-        compare_grads(arr4.grad, t4.grad, "square2")
-        compare_grads(arr5.grad, t5.grad, "sqrt2")
-        compare_grads(arr6.grad, t6.grad, "div")
-        compare_grads(arr7.grad, t7.grad, "add")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
+        compare_grads(arr4.grad, t4.grad, "arr4")
+        compare_grads(arr5.grad, t5.grad, "arr5")
+        compare_grads(arr6.grad, t6.grad, "arr6")
+        compare_grads(arr7.grad, t7.grad, "arr7")
 
     def test_backprop_twice(self):
         print("Testing double backpropagation with complex operations:")
@@ -271,18 +271,18 @@ class TestBackprop:
 
         # Compare first backward pass gradients
         print("\nChecking first backward pass:")
-        compare_grads(arr1.grad, t1.grad, "input1")
-        compare_grads(arr2.grad, t2.grad, "input2")
-        compare_grads(arr3.grad, t3.grad, "square1")
-        compare_grads(arr4.grad, t4.grad, "sqrt1")
-        compare_grads(arr5.grad, t5.grad, "div")
-        compare_grads(arr6.grad, t6.grad, "exp")
-        compare_grads(arr7.grad, t7.grad, "mul1")
-        compare_grads(arr8.grad, t8.grad, "log")
-        compare_grads(arr9.grad, t9.grad, "sqrt2")
-        compare_grads(arr10.grad, t10.grad, "mul2")
-        compare_grads(arr11.grad, t11.grad, "square2")
-        compare_grads(arr12.grad, t12.grad, "add")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
+        compare_grads(arr4.grad, t4.grad, "arr4")
+        compare_grads(arr5.grad, t5.grad, "arr5")
+        compare_grads(arr6.grad, t6.grad, "arr6")
+        compare_grads(arr7.grad, t7.grad, "arr7")
+        compare_grads(arr8.grad, t8.grad, "arr8")
+        compare_grads(arr9.grad, t9.grad, "arr9")
+        compare_grads(arr10.grad, t10.grad, "arr10")
+        compare_grads(arr11.grad, t11.grad, "arr11")
+        compare_grads(arr12.grad, t12.grad, "arr12")
 
         # Modify the result slightly and run backward again
         # TODO: uncomment this after implementing backprop for broadcasting
@@ -310,18 +310,18 @@ class TestBackprop:
 
         # Compare second backward pass gradients
         print("\nChecking second backward pass:")
-        compare_grads(arr1.grad, t1.grad, "input1 (2nd pass)")
-        compare_grads(arr2.grad, t2.grad, "input2 (2nd pass)")
-        compare_grads(arr3.grad, t3.grad, "square1 (2nd pass)")
-        compare_grads(arr4.grad, t4.grad, "sqrt1 (2nd pass)")
-        compare_grads(arr5.grad, t5.grad, "div (2nd pass)")
-        compare_grads(arr6.grad, t6.grad, "exp (2nd pass)")
-        compare_grads(arr7.grad, t7.grad, "mul1 (2nd pass)")
-        compare_grads(arr8.grad, t8.grad, "log (2nd pass)")
-        compare_grads(arr9.grad, t9.grad, "sqrt2 (2nd pass)")
-        compare_grads(arr10.grad, t10.grad, "mul2 (2nd pass)")
-        compare_grads(arr11.grad, t11.grad, "square2 (2nd pass)")
-        compare_grads(arr12.grad, t12.grad, "add (2nd pass)")
+        compare_grads(arr1.grad, t1.grad, "arr1 (2nd pass)")
+        compare_grads(arr2.grad, t2.grad, "arr2 (2nd pass)")
+        compare_grads(arr3.grad, t3.grad, "arr3 (2nd pass)")
+        compare_grads(arr4.grad, t4.grad, "arr4 (2nd pass)")
+        compare_grads(arr5.grad, t5.grad, "arr5 (2nd pass)")
+        compare_grads(arr6.grad, t6.grad, "arr6 (2nd pass)")
+        compare_grads(arr7.grad, t7.grad, "arr7 (2nd pass)")
+        compare_grads(arr8.grad, t8.grad, "arr8 (2nd pass)")
+        compare_grads(arr9.grad, t9.grad, "arr9 (2nd pass)")
+        compare_grads(arr10.grad, t10.grad, "arr10 (2nd pass)")
+        compare_grads(arr11.grad, t11.grad, "arr11 (2nd pass)")
+        compare_grads(arr12.grad, t12.grad, "arr12 (2nd pass)")
 
     def test_permute_binary_backprop(self):
         """Test backprop through permute and binary op"""
@@ -345,8 +345,8 @@ class TestBackprop:
         t4.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "permute+mul x grad")
-        compare_grads(arr2.grad, t2.grad, "permute+mul y grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
 
     def test_backprop_v6(self):
         """Test backprop through complex chain of operations"""
@@ -371,7 +371,7 @@ class TestBackprop:
         t4.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
 
     def test_backprop_v7(self):
         """Test backprop through complex chain of operations"""
@@ -400,8 +400,8 @@ class TestBackprop:
         t5.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
-        compare_grads(arr2.grad, t2.grad, "complex chain y grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
 
     def test_slice_basic_backprop(self):
         """Test basic slicing backpropagation"""
@@ -422,7 +422,7 @@ class TestBackprop:
         t3.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "basic slice grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
 
     def test_slice_with_unary_backprop(self):
         """Test slicing combined with unary operations"""
@@ -446,7 +446,7 @@ class TestBackprop:
         t4.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "slice+unary grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
 
     def test_slice_with_binary_backprop(self):
         """Test slicing combined with binary operations"""
@@ -471,8 +471,8 @@ class TestBackprop:
         t4.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "slice+binary x grad")
-        compare_grads(arr2.grad, t2.grad, "slice+binary y grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
 
     def test_slice_chain_backprop(self):
         """Test chain of slice operations"""
@@ -496,7 +496,7 @@ class TestBackprop:
         t4.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "slice chain grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
 
     def test_slice_complex_chain_backprop(self):
         """Test complex chain with slicing, unary and binary operations"""
@@ -530,5 +530,29 @@ class TestBackprop:
         t7.backward()
 
         # Compare gradients
-        compare_grads(arr1.grad, t1.grad, "complex chain x grad")
-        compare_grads(arr2.grad, t2.grad, "complex chain y grad")
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+
+    def test_linear_backprop(self):
+        """Test backprop through matmul"""
+        print("\nTesting matmul backprop:")
+        np1 = np.random.randn(64, 784).astype(np.float32)
+        np2 = np.random.randn(10, 784).astype(np.float32)
+        np3 = np.random.randn(10).astype(np.float32)
+        arr1 = Array.from_numpy(np1)
+        arr2 = Array.from_numpy(np2)
+        arr3 = Array.from_numpy(np3)
+        arr4 = arr1 @ arr2.transpose(-2, -1) + arr3
+        arr5 = arr4.sum()
+        arr5.backward()
+        t1 = torch.from_numpy(np1).requires_grad_(True)
+        t2 = torch.from_numpy(np2).requires_grad_(True)
+        t3 = torch.from_numpy(np3).requires_grad_(True)
+        t4 = t1 @ t2.T + t3
+        t4.retain_grad()
+        t5 = t4.sum()
+        t5.backward()
+        assert torch.allclose(arr4.torch(), t4, atol=1e-3, rtol=0)
+        compare_grads(arr1.grad, t1.grad, "arr1")
+        compare_grads(arr2.grad, t2.grad, "arr2")
+        compare_grads(arr3.grad, t3.grad, "arr3")
