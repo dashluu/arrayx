@@ -48,7 +48,6 @@ class TestReduce:
             x = torch.randn(shape, dtype=torch.float32)
             arr1 = Array.from_numpy(x.numpy())
             arr2: Array = op1(arr1)
-            arr2.eval()
             expected: torch.Tensor = op2(x)
             self.check_err(arr2.torch(), expected)
 
@@ -61,7 +60,6 @@ class TestReduce:
                 x = torch.randn(*shape, dtype=torch.float32)
                 arr1 = Array.from_numpy(x.numpy())
                 arr2: Array = op1(arr1, [dim])
-                arr2.eval()
                 expected: torch.Tensor = op2(x, dim)
                 self.check_err(arr2.torch(), expected)
 
@@ -82,7 +80,6 @@ class TestReduce:
             x = torch.randn(*shape, dtype=torch.float32)
             arr1 = Array.from_numpy(x.numpy())
             arr2: Array = op1(arr1, dim)
-            arr2.eval()
             expected: torch.Tensor = op2(x, dim)
             self.check_err(arr2.torch(), expected)
 
@@ -103,7 +100,6 @@ class TestReduce:
             x = torch.randn(*shape, dtype=torch.float32)
             arr1 = Array.from_numpy(x.numpy())
             arr2: Array = op1(arr1, dim)
-            arr2.eval()
             expected: torch.Tensor = op2(x, dim=dim[0])
             self.check_err(arr2.torch(), expected)
 

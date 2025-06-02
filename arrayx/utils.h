@@ -25,12 +25,6 @@ namespace ax::core
     using LazyArrayPtr = std::shared_ptr<LazyArray>;
     using isize = int64_t;
 
-    class IStr
-    {
-    public:
-        virtual const std::string str() const = 0;
-    };
-
     template <class T>
     inline uint64_t vsize(const std::vector<T> &v)
     {

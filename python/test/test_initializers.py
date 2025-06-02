@@ -32,7 +32,6 @@ class TestInitializers:
             print(f"Testing shape: {shape}")
             arr = Array.zeros(shape)
             nparr = np.zeros(shape, dtype=np.float32)
-            arr.eval()
             assert np.allclose(arr.numpy(), nparr)
             assert tuple(arr.view) == nparr.shape
 
@@ -51,7 +50,6 @@ class TestInitializers:
             print(f"Testing shape: {shape}, value: {value}")
             arr = Array.full(shape, value)
             nparr = np.full(shape, value, dtype=np.float32)
-            arr.eval()
             assert np.allclose(arr.numpy(), nparr)
             assert tuple(arr.view) == nparr.shape
 
@@ -75,7 +73,6 @@ class TestInitializers:
             print(f"Testing {ax_method.__name__} with value {value}")
             arr: Array = ax_method(template_arr)
             nparr: np.ndarray = np_method(template_np)
-            arr.eval()
             assert np.allclose(arr.numpy(), nparr)
             assert tuple(arr.view) == nparr.shape
 
@@ -104,6 +101,5 @@ class TestInitializers:
             size = np.prod(shape)
             # Create base numpy array and reshape to match target shape
             nparr = np.arange(start, start + size * step, step, dtype=np.float32).reshape(shape)
-            arr.eval()
             assert np.allclose(arr.numpy(), nparr, atol=1e-6)
             assert tuple(arr.view) == nparr.shape

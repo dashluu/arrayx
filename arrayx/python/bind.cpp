@@ -67,7 +67,7 @@ NB_MODULE(arrayx, m)
 		.def_prop_ro("itemsize", &axr::Array::get_itemsize, "Get array's element size in bytes")
 		.def_prop_ro("nbytes", &axr::Array::get_nbytes, "Get array's total size in bytes")
 		.def_prop_ro("is_contiguous", &axr::Array::is_contiguous, "Check if array is contiguous")
-		.def_prop_rw("grad_enabled", &axr::Array::is_grad_enabled, &axr::Array::enable_grad, "Get/set array's gradient tracking")
+		.def_prop_rw("grad_enabled", &axr::Array::is_grad_enabled, &axr::Array::enable_grad, "enabled"_a = true, "Get/set array's gradient tracking")
 
 		// N-dimensional array
 		.def("numpy", &axb::array_to_numpy, nb::rv_policy::reference_internal, "Convert array to numpy array")

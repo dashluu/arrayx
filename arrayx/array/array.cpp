@@ -7,13 +7,18 @@ namespace ax::array
 		if (compute_graph == nullptr)
 		{
 			compute_graph = std::make_shared<ComputeGraph>(op);
+			compute_graph->forward();
+			get_backend_runner()->forward(compute_graph);
 		}
-		compute_graph->forward();
-		get_backend_runner()->forward(compute_graph);
+		else if (!op->is_idempotent())
+		{
+			get_backend_runner()->forward(compute_graph);
+		}
 	}
 
 	void Array::backward()
 	{
+		eval();
 		compute_graph->backward();
 		get_backend_runner()->backward(compute_graph);
 	}

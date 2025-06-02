@@ -146,7 +146,7 @@ namespace ax::bind
 		throw axc::UnsupportedNanobindDevice();
 	}
 
-	nb::ndarray<nb::numpy> array_to_numpy(const axr::Array &arr)
+	nb::ndarray<nb::numpy> array_to_numpy(axr::Array &arr)
 	{
 		switch (arr.get_dtype()->get_name())
 		{
@@ -194,7 +194,7 @@ namespace ax::bind
 		return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, device_name);
 	}
 
-	nb::ndarray<nb::pytorch> array_to_torch(const axr::Array &arr)
+	nb::ndarray<nb::pytorch> array_to_torch(axr::Array &arr)
 	{
 		switch (arr.get_dtype()->get_name())
 		{
@@ -207,7 +207,7 @@ namespace ax::bind
 		}
 	}
 
-	nb::object item(const axr::Array &arr)
+	nb::object item(axr::Array &arr)
 	{
 		axc::isize value = arr.item();
 		axc::DtypePtr dtype = arr.get_dtype();

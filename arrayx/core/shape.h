@@ -8,7 +8,7 @@ namespace ax::core
     using ShapeStride = std::vector<isize>;
     using ShapeDims = std::vector<isize>;
 
-    class Shape : public IStr
+    class Shape
     {
     private:
         isize offset;
@@ -501,7 +501,7 @@ namespace ax::core
 
         isize operator[](isize dim) const { return view[dim]; }
 
-        const std::string str() const override
+        const std::string str() const
         {
             return "(offset: " + std::to_string(offset) + ", view: " + vnumstr(view) + ", stride: " + vnumstr(stride) + ")";
         }

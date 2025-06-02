@@ -38,7 +38,6 @@ class TestMatmul:
             arr1 = Array.from_numpy(np1)
             arr2 = Array.from_numpy(np2)
             arr3 = arr1 @ arr2
-            arr3.eval()
             np3 = np1 @ np2
             # Verify shape and values
             assert tuple(arr3.view) == np3.shape
@@ -74,7 +73,6 @@ class TestMatmul:
             arr1 = Array.from_numpy(np1)
             arr2 = Array.from_numpy(np2)
             arr3 = arr1 @ arr2
-            arr3.eval()
             np3 = np1 @ np2
             # Verify shape and values
             assert tuple(arr3.view) == np3.shape, f"Shape mismatch: got {arr3.view()}, expected {np3.shape}"
@@ -101,7 +99,6 @@ class TestMatmul:
             arr1 = Array.from_numpy(np1)
             arr2 = Array.from_numpy(np2)
             arr3 = arr1 @ arr2
-            arr3.eval()
             np3 = np1 @ np2
             # Verify shape and values
             assert tuple(arr3.view) == np3.shape, f"Shape mismatch: got {arr3.view()}, expected {np3.shape}"

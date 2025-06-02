@@ -11,7 +11,7 @@ namespace ax::array
 	class Array;
 	using ArrayPtr = std::shared_ptr<Array>;
 
-	class Array : public std::enable_shared_from_this<Array>, public IStr
+	class Array : public std::enable_shared_from_this<Array>
 	{
 	private:
 		OpPtr op;
@@ -44,7 +44,7 @@ namespace ax::array
 
 		DevicePtr get_device() const { return op->get_lazy()->get_device(); }
 
-		ArrayPtr get_grad() const { return std::make_shared<Array>(op->grad); }
+		ArrayPtr get_grad() const { return op->grad == nullptr ? nullptr : std::make_shared<Array>(ax::graph::detach(op->grad)); }
 
 		isize get_numel() const { return op->get_lazy()->get_numel(); }
 
@@ -54,17 +54,29 @@ namespace ax::array
 
 		isize get_nbytes() const { return op->get_lazy()->get_nbytes(); }
 
-		bool is_grad_enabled() const { return op->grad_enabled; }
+		bool is_grad_enabled() const { return op->is_grad_enabled(); }
 
-		void enable_grad(bool grad_enabled = true) { op->grad_enabled = grad_enabled; }
+		void enable_grad(bool enabled = true) { op->enable_grad(enabled); }
 
 		bool is_contiguous() const { return op->get_lazy()->is_contiguous(); }
 
-		const std::string str() const override { return op->get_lazy()->str(); }
+		const std::string str()
+		{
+			eval();
+			return op->get_lazy()->str();
+		}
 
-		const std::string graph() { return compute_graph->str(); }
+		const std::string graph()
+		{
+			eval();
+			return compute_graph->str();
+		}
 
-		isize item() const { return ax::graph::item(op); }
+		isize item()
+		{
+			eval();
+			return ax::graph::item(op);
+		}
 
 		ArrayPtr detach() const { return std::make_shared<Array>(ax::graph::detach(op)); }
 

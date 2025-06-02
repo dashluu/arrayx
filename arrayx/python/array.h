@@ -5,8 +5,9 @@
 namespace ax::bind
 {
 	template <class T>
-	nb::ndarray<nb::numpy> array_to_numpy_impl(const axr::Array &arr)
+	nb::ndarray<nb::numpy> array_to_numpy_impl(axr::Array &arr)
 	{
+		arr.eval();
 		nb::object pyarr = nb::find(arr);
 		std::vector<size_t> view(arr.get_shape().cbegin(), arr.get_shape().cend());
 
@@ -23,8 +24,9 @@ namespace ax::bind
 	}
 
 	template <class T>
-	nb::ndarray<nb::pytorch> array_to_torch_impl(const axr::Array &arr)
+	nb::ndarray<nb::pytorch> array_to_torch_impl(axr::Array &arr)
 	{
+		arr.eval();
 		nb::object pyarr = nb::find(arr);
 		std::vector<size_t> view(arr.get_shape().cbegin(), arr.get_shape().cend());
 		int device;
@@ -87,11 +89,11 @@ namespace ax::bind
 	std::vector<axc::Range> pyslices_to_ranges(const axr::Array &arr, const nb::object &obj);
 	axc::DtypePtr dtype_from_nb_dtype(nb::dlpack::dtype nb_dtype);
 	const std::string device_from_nb_device(int nb_device_id, int nb_device_type);
-	nb::ndarray<nb::numpy> array_to_numpy(const axr::Array &arr);
+	nb::ndarray<nb::numpy> array_to_numpy(axr::Array &arr);
 	axr::ArrayPtr array_from_numpy(nb::ndarray<nb::numpy> &ndarr);
 	axr::ArrayPtr array_from_torch(nb::ndarray<nb::pytorch> &ndarr);
-	nb::ndarray<nb::pytorch> array_to_torch(const axr::Array &arr);
-	nb::object item(const axr::Array &arr);
+	nb::ndarray<nb::pytorch> array_to_torch(axr::Array &arr);
+	nb::object item(axr::Array &arr);
 	axr::ArrayPtr full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name = axd::default_device_name);
 	axr::ArrayPtr full_like(axr::ArrayPtr other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name = axd::default_device_name);
 	axr::ArrayPtr neg(const axr::Array &arr);

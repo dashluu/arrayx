@@ -52,8 +52,7 @@ x3 = Array.full(shape, 2.0, dtype=f32)
 # Define computation graph
 # Make sure the value is a single element before evaluation and backpropagation
 out = ((x1 + x2) * x3).exp().sum()
-# Execute forward and backward pass
-out.eval()
+# Execute both forward and backward pass once backward is called
 out.backward()
 Backend.cleanup()
 ```
@@ -70,8 +69,8 @@ with ax.context():
     arr1 = Array.zeros([2, 5, 3])
     arr2 = arr1[:, 1:4]
     arr2 += Array.ones([2, 3, 3])
-    arr2.eval()
-    print(arr1)
+	# print triggers the computational graph to be compiled and executed
+    print(arr2)
 ```
 
 ## Features

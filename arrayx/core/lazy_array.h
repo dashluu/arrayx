@@ -10,7 +10,7 @@
 
 namespace ax::core
 {
-    class LazyArray : public std::enable_shared_from_this<LazyArray>, public IStr
+    class LazyArray : public std::enable_shared_from_this<LazyArray>
     {
     private:
         static IdGenerator id_gen;
@@ -92,7 +92,7 @@ namespace ax::core
 
         uint8_t *strided_elm_ptr(isize k) const;
 
-        const std::string str() const override;
+        const std::string str() const;
     };
 
     inline IdGenerator LazyArray::id_gen = IdGenerator();

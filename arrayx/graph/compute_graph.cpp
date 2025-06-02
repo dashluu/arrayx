@@ -21,6 +21,7 @@ namespace ax::graph
         {
             std::shared_ptr<UnaryOp> unary_op = std::static_pointer_cast<UnaryOp>(op);
             OpPtr operand = unary_op->get_operand();
+            operand->enable_grad(unary_op->is_grad_enabled());
             fw_toposort(operand);
             fw_order.push_back(op);
             break;
@@ -30,6 +31,8 @@ namespace ax::graph
             std::shared_ptr<BinaryOp> binary_op = std::static_pointer_cast<BinaryOp>(op);
             OpPtr lhs = binary_op->get_lhs();
             OpPtr rhs = binary_op->get_rhs();
+            lhs->enable_grad(binary_op->is_grad_enabled());
+            rhs->enable_grad(binary_op->is_grad_enabled());
             fw_toposort(lhs);
             fw_toposort(rhs);
             fw_order.push_back(op);
@@ -40,6 +43,8 @@ namespace ax::graph
             std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
             OpPtr lhs = matmul_op->get_lhs();
             OpPtr rhs = matmul_op->get_rhs();
+            lhs->enable_grad(matmul_op->is_grad_enabled());
+            rhs->enable_grad(matmul_op->is_grad_enabled());
             fw_toposort(lhs);
             fw_toposort(rhs);
             fw_order.push_back(op);
@@ -49,6 +54,7 @@ namespace ax::graph
         {
             std::shared_ptr<TransformOp> transform_op = std::static_pointer_cast<TransformOp>(op);
             OpPtr operand = transform_op->get_operand();
+            operand->enable_grad(transform_op->is_grad_enabled());
             fw_toposort(operand);
             fw_order.push_back(op);
             break;
@@ -58,6 +64,7 @@ namespace ax::graph
             // Reduce operation
             std::shared_ptr<ReduceOp> reduce_op = std::static_pointer_cast<ReduceOp>(op);
             OpPtr operand = reduce_op->get_operand();
+            operand->enable_grad(reduce_op->is_grad_enabled());
             fw_toposort(operand);
             fw_order.push_back(op);
             break;
@@ -154,7 +161,7 @@ namespace ax::graph
             // Initializes the gradient array first without allocating buffers
             for (auto &op : std::views::reverse(fw_order))
             {
-                if (op->grad_enabled)
+                if (op->is_grad_enabled())
                 {
                     op->backward();
                 }

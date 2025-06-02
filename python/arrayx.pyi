@@ -158,7 +158,7 @@ class Array:
         """Get/set array's gradient tracking"""
 
     @grad_enabled.setter
-    def grad_enabled(self, arg: bool, /) -> None: ...
+    def grad_enabled(self, enabled: bool = True) -> None: ...
 
     def numpy(self) -> ArrayLike:
         """Convert array to numpy array"""

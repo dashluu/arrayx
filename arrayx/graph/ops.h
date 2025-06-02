@@ -53,6 +53,7 @@ namespace ax::graph
         INITIALIZER,
         UNARY,
         BINARY,
+        CMP,
         MATMUL,
         TRANSFORM,
         REDUCE
@@ -101,19 +102,20 @@ namespace ax::graph
         {Opcode::ARGMIN, "argmin"},
         {Opcode::ASTYPE, "astype"}};
 
-    struct Op : public std::enable_shared_from_this<Op>, public IStr
+    struct Op : public std::enable_shared_from_this<Op>
     {
     protected:
         Opcode opcode;
         Optype optype;
         LazyArrayPtr lazy;
+        bool idempotent = true;
+        // Note: grad_enabled cannot be used to set gradient flow
+        // once the computational graph is compiled
+        bool grad_enabled = true;
 
     public:
         std::shared_ptr<Op> grad = nullptr;
         std::shared_ptr<Op> grad_root = nullptr;
-        // Note: grad_enabled cannot be used to set gradient flow
-        // once the computational graph is compiled
-        bool grad_enabled = true;
 
         Op(Opcode opcode, Optype optype, LazyArrayPtr lazy) : opcode(opcode), optype(optype), lazy(lazy) {}
         Op(const Op &) = delete;
@@ -123,14 +125,18 @@ namespace ax::graph
         const std::string &get_opcode_str() const { return str_by_opname.at(opcode); }
         Optype get_optype() const { return optype; }
         LazyArrayPtr get_lazy() const { return lazy; }
+        bool is_grad_enabled() const { return grad_enabled; }
+        virtual void enable_grad(bool enabled) { grad_enabled = enabled; }
+        bool is_idempotent() const { return idempotent; }
         virtual void backward() const {}
         void init_grad(bool with_zeros = true);
         void update_grad(std::shared_ptr<Op> grad, bool sub = false);
-        const std::string str() const override
+        virtual const std::string str() const
         {
             return lazy->get_id().str() +
                    ": opcode: " + get_opcode_str() +
-                   ", shape: " + lazy->get_shape().str();
+                   ", shape: " + lazy->get_shape().str() +
+                   ", dtype: " + lazy->get_dtype()->str();
         }
     };
 
@@ -162,7 +168,7 @@ namespace ax::graph
         isize get_start() const { return start; }
         isize get_step() const { return step; }
         DtypePtr get_dtype() const { return dtype; }
-        const std::string str() const override
+        const std::string str() const
         {
             return InitializerOp::str() + ", dtype: " + dtype->str() + ", view: (" + vnumstr(view) + "), start: " + std::to_string(start) + ", step: " + std::to_string(step);
         }
@@ -201,7 +207,13 @@ namespace ax::graph
         OpPtr operand;
 
     public:
-        UnaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand, bool in_place) : Op(opcode, Optype::UNARY, lazy), operand(operand), in_place(in_place) {}
+        UnaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand, bool in_place) : Op(opcode, Optype::UNARY, lazy), operand(operand), in_place(in_place)
+        {
+            if (operand != nullptr)
+            {
+                idempotent = !in_place && operand->is_idempotent();
+            }
+        }
         OpPtr get_operand() const { return operand; }
         const std::string str() const override;
         bool is_in_place() const { return in_place; }
@@ -215,7 +227,13 @@ namespace ax::graph
         OpPtr rhs;
 
     public:
-        BinaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : Op(opcode, Optype::BINARY, lazy), lhs(lhs), rhs(rhs), in_place(in_place) {}
+        BinaryOp(Opcode opcode, LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : Op(opcode, Optype::BINARY, lazy), lhs(lhs), rhs(rhs), in_place(in_place)
+        {
+            if (lhs != nullptr && rhs != nullptr)
+            {
+                idempotent = !in_place && lhs->is_idempotent() && rhs->is_idempotent();
+            }
+        }
         OpPtr get_lhs() const { return lhs; }
         OpPtr get_rhs() const { return rhs; }
         const std::string str() const override;
@@ -228,7 +246,14 @@ namespace ax::graph
         OpPtr operand;
 
     public:
-        TransformOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand) : Op(opcode, Optype::TRANSFORM, lazy), operand(operand) {}
+        TransformOp(Opcode opcode, LazyArrayPtr lazy, OpPtr operand) : Op(opcode, Optype::TRANSFORM, lazy), operand(operand)
+        {
+            if (operand != nullptr)
+            {
+                idempotent = operand->is_idempotent();
+            }
+        }
+
         OpPtr get_operand() const { return operand; }
         const std::string str() const override;
     };
@@ -242,7 +267,14 @@ namespace ax::graph
         isize default_val;
 
     public:
-        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims, isize default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val) {}
+        ReduceOp(Opcode opcode, ReduceMode mode, LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims, isize default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val)
+        {
+            if (operand != nullptr)
+            {
+                idempotent = operand->is_idempotent();
+            }
+        }
+
         ReduceMode get_mode() const { return mode; }
         OpPtr get_operand() const { return operand; }
         const ShapeDims &get_dims() const { return dims; }
@@ -285,37 +317,67 @@ namespace ax::graph
     struct EqOp : public BinaryOp
     {
     public:
-        EqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::EQ, lazy, lhs, rhs, false) {}
+        EqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::EQ, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct NeqOp : public BinaryOp
     {
     public:
-        NeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::NEQ, lazy, lhs, rhs, false) {}
+        NeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::NEQ, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct LtOp : public BinaryOp
     {
     public:
-        LtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LT, lazy, lhs, rhs, false) {}
+        LtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LT, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct GtOp : public BinaryOp
     {
     public:
-        GtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GT, lazy, lhs, rhs, false) {}
+        GtOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GT, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct LeqOp : public BinaryOp
     {
     public:
-        LeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LEQ, lazy, lhs, rhs, false) {}
+        LeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::LEQ, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct GeqOp : public BinaryOp
     {
     public:
-        GeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GEQ, lazy, lhs, rhs, false) {}
+        GeqOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::GEQ, lazy, lhs, rhs, false)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct MatmulOp : public Op
@@ -468,8 +530,15 @@ namespace ax::graph
         DtypePtr dtype;
 
     public:
-        AstypeOp(LazyArrayPtr lazy, OpPtr operand, DtypePtr dtype) : TransformOp(Opcode::ASTYPE, lazy, operand), dtype(dtype) {}
+        AstypeOp(LazyArrayPtr lazy, OpPtr operand, DtypePtr dtype) : TransformOp(Opcode::ASTYPE, lazy, operand), dtype(dtype)
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
+
         DtypePtr get_dtype() const { return dtype; }
+
         const std::string str() const override { return TransformOp::str() + ", dtype: " + dtype->str(); }
     };
 
@@ -497,13 +566,23 @@ namespace ax::graph
     struct ArgmaxOp : public ReduceOp
     {
     public:
-        ArgmaxOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMAX, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->min()) {}
+        ArgmaxOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMAX, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->min())
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     struct ArgminOp : public ReduceOp
     {
     public:
-        ArgminOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMIN, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->max()) {}
+        ArgminOp(LazyArrayPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMIN, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->max())
+        {
+            grad_enabled = false;
+        }
+
+        void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
     OpPtr detach(OpPtr op);
@@ -579,7 +658,7 @@ namespace ax::graph
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        rop->grad_enabled = false;
+        rop->enable_grad(false);
         return op_func(lop, rop);
     }
 
@@ -589,7 +668,7 @@ namespace ax::graph
         LazyArrayPtr larr = lop->get_lazy();
         DtypePtr ldtype = larr->get_dtype();
         OpPtr rop = full(larr->get_view(), c, ldtype, larr->get_device());
-        rop->grad_enabled = false;
+        rop->enable_grad(false);
         return op_func(lop, rop);
     }
 

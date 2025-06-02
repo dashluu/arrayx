@@ -4,7 +4,7 @@
 
 namespace ax::graph
 {
-	class ComputeGraph : public IStr, public std::enable_shared_from_this<ComputeGraph>
+	class ComputeGraph : public std::enable_shared_from_this<ComputeGraph>
 	{
 	private:
 		OpPtr output;
@@ -34,7 +34,7 @@ namespace ax::graph
 
 		void backward();
 
-		const std::string str() const override;
+		const std::string str() const;
 
 		std::vector<OpPtr>::const_iterator cbegin() const { return fw_order.cbegin(); }
 

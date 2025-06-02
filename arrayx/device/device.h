@@ -5,7 +5,6 @@
 namespace ax::device
 {
     using ax::core::isize;
-    using ax::core::IStr;
 
     enum struct DeviceType
     {
@@ -13,7 +12,7 @@ namespace ax::device
         MPS
     };
 
-    struct Device : public IStr, public std::enable_shared_from_this<Device>
+    struct Device : public std::enable_shared_from_this<Device>
     {
     private:
         DeviceType type;
@@ -54,7 +53,7 @@ namespace ax::device
 
         bool operator!=(const Device &device) const { return !(*this == device); }
 
-        const std::string str() const override { return get_name(); }
+        const std::string str() const { return get_name(); }
     };
 
     using DevicePtr = std::shared_ptr<Device>;

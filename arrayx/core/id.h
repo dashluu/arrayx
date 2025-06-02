@@ -4,7 +4,7 @@
 
 namespace ax::core
 {
-    struct Id : public IStr
+    struct Id
     {
     private:
         isize data;
@@ -21,7 +21,7 @@ namespace ax::core
             return *this;
         }
         isize get_data() const { return data; }
-        const std::string str() const override { return std::to_string(data); }
+        const std::string str() const { return std::to_string(data); }
     };
 
     struct IdGenerator

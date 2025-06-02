@@ -45,7 +45,6 @@ class TestBinary:
         arr1 = Array.from_numpy(np1)
         arr2 = Array.from_numpy(np2)
         arr3: Array = op(arr1, arr2)
-        arr3.eval()
         np3: np.ndarray = arr3.numpy()
         np4: np.ndarray = op(np1, np2)
         assert tuple(arr3.view) == np4.shape
@@ -71,7 +70,6 @@ class TestBinary:
             arr1 = Array.from_numpy(np1)
             arr2 = Array.from_numpy(np2)
             arr3: Array = op(arr1, arr2)
-            arr3.eval()
             np3: np.ndarray = arr3.numpy()
             np4: np.ndarray = op(np1, np2)
             assert tuple(arr3.view) == np4.shape
@@ -94,7 +92,6 @@ class TestBinary:
         # Apply inplace operation
         arr1: Array = op(arr1, arr2)  # arr1 += arr2, etc.
         arr1: Array = op(arr1, arr2)  # Second time to make sure it's updated.
-        arr1.eval()
 
         # Compare with NumPy
         np1_copy: np.ndarray = op(np1_copy, np2)  # np1_copy += np2, etc.
@@ -130,8 +127,6 @@ class TestBinary:
 
             # Apply inplace operation
             arr1: Array = op(arr1, arr2)
-            arr1.eval()
-
             # Compare with NumPy
             np1_copy: np.ndarray = op(np1_copy, np2)
             assert tuple(arr1.view) == np1_copy.shape

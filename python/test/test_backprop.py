@@ -40,7 +40,6 @@ class TestBackprop:
         arr6 = arr3 * arr4
         arr7 = arr5 + arr6
         arr8 = arr7.sum()
-        arr8.eval()
         arr8.backward()
         t1 = torch.from_numpy(np1).requires_grad_(True)
         t2 = torch.from_numpy(np2).requires_grad_(True)
@@ -74,7 +73,6 @@ class TestBackprop:
         arr4 = arr3.log()
         arr5 = arr4 / arr1
         arr6 = arr5.sum()
-        arr6.eval()
         arr6.backward()
 
         # PyTorch implementation
@@ -110,7 +108,6 @@ class TestBackprop:
         arr6 = arr1 / arr2
         arr7 = arr5 + arr6
         arr8 = arr7.sum()
-        arr8.eval()
         arr8.backward()
 
         # PyTorch implementation
@@ -153,7 +150,6 @@ class TestBackprop:
         arr6 = arr4 * arr5
         arr7 = arr6.log()
         arr8 = arr7.sum()
-        arr8.eval()
         arr8.backward()
 
         # PyTorch implementation
@@ -195,7 +191,6 @@ class TestBackprop:
         arr6 = arr4 / arr5
         arr7 = arr3 + arr6
         arr8 = arr7.sum()
-        arr8.eval()
         arr8.backward()
 
         # PyTorch implementation
@@ -245,9 +240,7 @@ class TestBackprop:
         arr11 = arr10.sq()
         arr12 = arr8 + arr11
         arr13 = arr12.sum()
-
         # First backward pass
-        arr13.eval()
         arr13.backward()
 
         # PyTorch implementation
@@ -341,7 +334,6 @@ class TestBackprop:
         arr2 = Array.from_numpy(y.numpy())
         arr3 = arr1.permute([2, 0, 1]) * arr2
         arr4 = arr3.sum()
-        arr4.eval()
         arr4.backward()
 
         # PyTorch implementation
@@ -367,7 +359,6 @@ class TestBackprop:
         arr2 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5])  # (2,4,3,5)  # (8,3,5)
         arr3 = arr2.exp()
         arr4 = arr3.sum()
-        arr4.eval()
         arr4.backward()
 
         # PyTorch implementation
@@ -396,7 +387,6 @@ class TestBackprop:
         arr3 = arr1.permute([0, 2, 1, 3]).reshape([8, 3, 5]) @ arr2  # (2,4,3,5)  # (8,3,5)  # (8,3,2)
         arr4 = arr3.exp()
         arr5 = arr4.sum()
-        arr5.eval()
         arr5.backward()
 
         # PyTorch implementation
@@ -422,7 +412,6 @@ class TestBackprop:
         arr1 = Array.from_numpy(x.numpy())
         arr2 = arr1[1:3, ::2, ::1]  # Basic slicing
         arr3 = arr2.sum()
-        arr3.eval()
         arr3.backward()
 
         # PyTorch implementation
@@ -445,7 +434,6 @@ class TestBackprop:
         arr2 = arr1[::2, 1:3]  # Slice first
         arr3 = arr2.exp()  # Then unary op
         arr4 = arr3.sum()
-        arr4.eval()
         arr4.backward()
 
         # PyTorch implementation
@@ -472,7 +460,6 @@ class TestBackprop:
         arr2 = Array.from_numpy(y.numpy())
         arr3 = arr1[::2] * arr2  # Slice and multiply
         arr4 = arr3.sum()
-        arr4.eval()
         arr4.backward()
 
         # PyTorch implementation
@@ -497,7 +484,6 @@ class TestBackprop:
         arr2 = arr1[1:4, ::2]  # First slice
         arr3 = arr2[:, 1::2]  # Second slice
         arr4 = arr3.sum()
-        arr4.eval()
         arr4.backward()
 
         # PyTorch implementation
@@ -527,7 +513,6 @@ class TestBackprop:
         arr5 = arr4 * arr2  # Binary op
         arr6 = arr5[:, 1:4]  # Another slice
         arr7 = arr6.sum()
-        arr7.eval()
         arr7.backward()
 
         # PyTorch implementation

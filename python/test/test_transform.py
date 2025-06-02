@@ -23,7 +23,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1[::, ::, ::]
-        arr2.eval()
         npslice1 = arr2.numpy()
         npslice2 = nparr[::, ::, ::]
         assert np.allclose(npslice1, npslice2, atol=1e-3, rtol=0)
@@ -34,7 +33,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1[1::4, :3:2, 2::3]
-        arr2.eval()
         npslice1 = arr2.numpy()
         npslice2 = nparr[1::4, :3:2, 2::3]
         assert np.allclose(npslice1, npslice2, atol=1e-3, rtol=0)
@@ -45,7 +43,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1[1::, ::2, 3:0:-2]
-        arr2.eval()
         npslice1 = arr2.numpy()
         npslice2 = nparr[1::, ::2, 3:0:-2]
         assert np.allclose(npslice1, npslice2, atol=1e-3, rtol=0)
@@ -56,7 +53,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1[1:0:-4, 9:3:-2, 2::3]
-        arr2.eval()
         npslice1 = arr2.numpy()
         npslice2 = nparr[1:0:-4, 9:3:-2, 2::3]
         assert np.allclose(npslice1, npslice2, atol=1e-3, rtol=0)
@@ -67,7 +63,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1.transpose(0, 2)
-        arr2.eval()
         nptranspose1 = arr2.numpy()
         order = list(range(len(shape)))  # [0,1,2,3]
         # Reverse order from start_dim to end_dim
@@ -81,7 +76,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1.transpose(1, -2)
-        arr2.eval()
         nptranspose1 = arr2.numpy()
         order = list(range(len(shape)))  # [0,1,2,3]
         # Reverse order from start_dim to end_dim
@@ -95,7 +89,6 @@ class TestTransform:
         nparr = np.random.randn(*shape).astype(np.float32)
         arr1 = Array.from_numpy(nparr)
         arr2 = arr1.transpose(-3, -1)
-        arr2.eval()
         nptranspose1 = arr2.numpy()
         order = list(range(len(shape)))  # [0,1,2,3]
         # Reverse order from start_dim to end_dim
@@ -125,7 +118,6 @@ class TestTransform:
             nparr = np.random.randn(*shape).astype(np.float32)
             arr1 = Array.from_numpy(nparr)
             arr2 = arr1.permute(permutation)
-            arr2.eval()
             nppermute1 = arr2.numpy()
             nppermute2 = np.transpose(nparr, permutation)
 
@@ -160,7 +152,6 @@ class TestTransform:
             nparr = np.random.randn(*shape).astype(np.float32)
             arr1 = Array.from_numpy(nparr)
             arr2 = arr1.flatten(start, end)
-            arr2.eval()
             npflatten1 = arr2.numpy()
             npflatten2 = nparr.reshape(expected)
 
