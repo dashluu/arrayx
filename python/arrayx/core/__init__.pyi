@@ -174,7 +174,7 @@ class Array:
         """Get array's only value"""
 
     def graph(self) -> str:
-        """Get array's computation graph"""
+        """Get array's computation graph representation"""
 
     @staticmethod
     def full(view: Sequence[int], c: object, dtype: Dtype = ..., device: str = 'mps:0') -> Array:

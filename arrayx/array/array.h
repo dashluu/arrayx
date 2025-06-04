@@ -15,6 +15,7 @@ namespace ax::array
 	{
 	private:
 		OpPtr op;
+
 		std::shared_ptr<ComputeGraph> compute_graph = nullptr;
 
 		static DevicePtr get_backend_device(const std::string &device_name) { return Backend::instance().get_device(device_name); }
@@ -68,11 +69,15 @@ namespace ax::array
 			return op->get_lazy()->str();
 		}
 
-		const std::string graph()
+		const std::string graph_str()
 		{
 			eval();
 			return compute_graph->str();
 		}
+
+		std::shared_ptr<ComputeGraph> get_graph() { return compute_graph; }
+
+		void set_lazy(ArrayPtr arr) { op->set_lazy(arr->op->get_lazy()); }
 
 		isize item()
 		{

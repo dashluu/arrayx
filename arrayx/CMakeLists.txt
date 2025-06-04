@@ -26,6 +26,7 @@ file(GLOB HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/array/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nn/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/python/*.h"
 )
 
@@ -35,6 +36,7 @@ file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/graph/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/array/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nn/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/python/*.cpp"
 )
 
@@ -62,24 +64,32 @@ if(APPLE)
     add_dependencies(${PROJECT_NAME} mtl_kernels)
 endif()
 
-# Add stub file
-nanobind_add_stub(
-    arrayx_stub
-    MODULE arrayx
-    OUTPUT arrayx.pyi
-    PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
-    DEPENDS arrayx
-)
-# Define output directory for Python module
+# Add stub files
+function(add_nanobind_stub STUB_NAME MODULE_NAME)
+    nanobind_add_stub(
+        ${STUB_NAME}
+        MODULE arrayx.${MODULE_NAME}
+        OUTPUT arrayx/${MODULE_NAME}/__init__.pyi
+        PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
+        DEPENDS arrayx
+    )
+endfunction()
+
+add_nanobind_stub(core_stub core)
+add_nanobind_stub(nn_stub nn)
+
+# Define output directory for Python module and move files after build
 set(PYTHON_MODULE_DIR "${CMAKE_SOURCE_DIR}/../python")
 message(STATUS "PYTHON_MODULE_DIR is set to: ${PYTHON_MODULE_DIR}")
 get_filename_component(PYTHON_MODULE_DIR_ABS "${PYTHON_MODULE_DIR}" ABSOLUTE)
 message(STATUS "Absolute path: ${PYTHON_MODULE_DIR_ABS}")
 # Add custom command to move files after build
 add_custom_target(move_files ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PYTHON_MODULE_DIR}"
+    # Remove the destination directory if it exists
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${PYTHON_MODULE_DIR}/${PROJECT_NAME}"
+    COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" "${PYTHON_MODULE_DIR}/${PROJECT_NAME}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${PYTHON_MODULE_DIR}/${PROJECT_NAME}/__init__.pyi"
     COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE:${PROJECT_NAME}>" "${PYTHON_MODULE_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-    COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/arrayx.pyi" "${PYTHON_MODULE_DIR}/arrayx.pyi"
-    DEPENDS arrayx_stub  # Only depend on the stub, which already depends on arrayx
+    DEPENDS core_stub nn_stub  # Only depend on the stub, which already depends on arrayx
     COMMENT "Moving Python module and stub files"
 )

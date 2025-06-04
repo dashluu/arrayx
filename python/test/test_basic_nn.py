@@ -1,5 +1,5 @@
 from __future__ import annotations
-from python.arrayx import Array, Backend
+from ..arrayx.core import Array, Backend
 from python import nn
 import numpy as np
 import torch

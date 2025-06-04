@@ -60,24 +60,3 @@ namespace ax::device
 
     const std::string default_device_name = "mps:0";
 }
-
-namespace std
-{
-    template <>
-    struct hash<const ax::device::Device *>
-    {
-        std::size_t operator()(const ax::device::Device *device) const
-        {
-            return std::hash<std::string>()(device->get_name());
-        }
-    };
-
-    template <>
-    struct equal_to<const ax::device::Device *>
-    {
-        bool operator()(const ax::device::Device *lhs, const ax::device::Device *rhs) const
-        {
-            return *lhs == *rhs;
-        }
-    };
-}

@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from ...arrayx import Array
+from ..arrayx.core import Array
 
 
 # Vanilla Gradient Descent

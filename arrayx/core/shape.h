@@ -527,3 +527,20 @@ namespace ax::core
         }
     };
 }
+
+namespace std
+{
+    template <>
+    struct hash<ax::core::Shape>
+    {
+        std::size_t operator()(const ax::core::Shape &shape) const
+        {
+            std::size_t seed = 0;
+            for (auto &v : shape.get_view())
+            {
+                seed ^= std::hash<ax::core::isize>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+            return seed;
+        }
+    };
+}

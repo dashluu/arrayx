@@ -1,7 +1,7 @@
 import torch
 import torch.testing
 import numpy as np
-from python.arrayx import Array, Backend
+from ..arrayx.core import Array, Backend
 
 
 class TestReduce:

@@ -131,6 +131,27 @@ namespace ax::graph
         virtual void backward() const {}
         void init_grad(bool with_zeros = true);
         void update_grad(std::shared_ptr<Op> grad, bool sub = false);
+
+        void set_lazy(LazyArrayPtr lazy)
+        {
+            if (this->lazy->get_shape() != lazy->get_shape())
+            {
+                throw IncompatShapesForOp(get_opcode_str(), vnumstr(this->lazy->get_view()), vnumstr(lazy->get_view()));
+            }
+
+            if (this->lazy->get_dtype() != lazy->get_dtype())
+            {
+                throw IncompatDtypesForOp(get_opcode_str(), this->lazy->get_dtype()->str(), lazy->get_dtype()->str());
+            }
+
+            if (this->lazy->get_device() != lazy->get_device())
+            {
+                throw IncompatDevicesForOp(get_opcode_str(), this->lazy->get_device()->str(), lazy->get_device()->str());
+            }
+
+            this->lazy = lazy;
+        }
+
         virtual const std::string str() const
         {
             return lazy->get_id().str() +

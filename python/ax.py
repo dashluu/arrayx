@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from arrayx import Backend
+from arrayx.core import Backend
 
 
 @contextmanager

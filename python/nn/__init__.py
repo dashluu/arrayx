@@ -1,8 +1,9 @@
 import numpy as np
-from ..arrayx import Array, DtypeType, f32, i32
+from arrayx.core import Array, DtypeType, f32, i32
+from arrayx.nn import Module
 
 
-class Linear:
+class Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True):
         k = np.sqrt(1 / in_features)
         # Use numpy to randomize for now
@@ -22,7 +23,7 @@ class Linear:
     def b(self):
         return self.__b
 
-    def __call__(self, x: Array):
+    def forward(self, x: Array):
         x = x @ self.__w.transpose(-2, -1)
         return x if self.__b is None else x + self.__b
 

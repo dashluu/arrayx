@@ -163,17 +163,11 @@ namespace ax::runtime::metal
 
 	void MTLRunner::alloc(LazyArrayPtr arr)
 	{
-		if (arr->buff == nullptr)
-		{
-			arr->buff = std::make_shared<Buffer>(ctx->get_allocator(), arr->get_nbytes());
-		}
+		arr->init_buff(std::make_shared<Buffer>(ctx->get_allocator(), arr->get_nbytes()));
 	}
 
 	void MTLRunner::alloc(LazyArrayPtr out_arr, LazyArrayPtr in_arr)
 	{
-		if (out_arr->buff == nullptr)
-		{
-			out_arr->buff = in_arr->buff;
-		}
+		out_arr->init_buff(in_arr->get_buff());
 	}
 }

@@ -2,30 +2,33 @@
 
 NB_MODULE(arrayx, m)
 {
+	auto m_core = m.def_submodule("core", "Core module");
+	auto m_nn = m.def_submodule("nn", "Neural network module");
+
 	// Dtype class and operations
-	nb::enum_<axc::DtypeType>(m, "DtypeType")
+	nb::enum_<axc::DtypeType>(m_core, "DtypeType")
 		.value("BOOL", axc::DtypeType::BOOL)
 		.value("INT", axc::DtypeType::INT)
 		.value("FLOAT", axc::DtypeType::FLOAT);
 
-	nb::class_<axc::Dtype>(m, "Dtype")
+	nb::class_<axc::Dtype>(m_core, "Dtype")
 		.def_prop_ro("name", &axc::Dtype::get_name_str, "Get data type's name as string")
 		.def_prop_ro("size", &axc::Dtype::get_size, "Get data type's size in bytes")
 		.def_prop_ro("type", &axc::Dtype::get_type, "Get data type's type")
 		.def("__str__", &axc::Dtype::str, "String representation of dtype");
 
 	// Derived dtype classes
-	nb::class_<axc::F32, axc::Dtype>(m, "F32", "32-bit floating point dtype");
-	nb::class_<axc::I32, axc::Dtype>(m, "I32", "32-bit integer dtype");
-	nb::class_<axc::Bool, axc::Dtype>(m, "Bool", "Boolean dtype");
+	nb::class_<axc::F32, axc::Dtype>(m_core, "F32", "32-bit floating point dtype");
+	nb::class_<axc::I32, axc::Dtype>(m_core, "I32", "32-bit integer dtype");
+	nb::class_<axc::Bool, axc::Dtype>(m_core, "Bool", "Boolean dtype");
 
 	// Global dtype instances
-	m.attr("f32") = &axc::f32;
-	m.attr("i32") = &axc::i32;
-	m.attr("b8") = &axc::b8;
+	m_core.attr("f32") = &axc::f32;
+	m_core.attr("i32") = &axc::i32;
+	m_core.attr("b8") = &axc::b8;
 
 	// Shape class
-	nb::class_<axc::Shape>(m, "Shape")
+	nb::class_<axc::Shape>(m_core, "Shape")
 		.def_prop_ro("offset", &axc::Shape::get_offset, "Get shape's offset")
 		.def_prop_ro("view", &axc::Shape::get_view, "Get shape's view")
 		.def_prop_ro("stride", &axc::Shape::get_stride, "Get shape's stride")
@@ -34,23 +37,23 @@ NB_MODULE(arrayx, m)
 		.def("__str__", &axc::Shape::str, "String representation of shape");
 
 	// Device class
-	nb::enum_<axd::DeviceType>(m, "DeviceType")
+	nb::enum_<axd::DeviceType>(m_core, "DeviceType")
 		.value("CPU", axd::DeviceType::CPU)
 		.value("MPS", axd::DeviceType::MPS);
 
-	nb::class_<axd::Device>(m, "Device")
+	nb::class_<axd::Device>(m_core, "Device")
 		.def_prop_ro("type", &axd::Device::get_type, "Get device's type")
 		.def_prop_ro("id", &axd::Device::get_id, "Get device's ID")
 		.def_prop_ro("name", &axd::Device::get_name, "Get device's name")
 		.def("__str__", &axd::Device::str, "String representation of device");
 
 	// Backend class
-	nb::class_<axr::Backend>(m, "Backend")
+	nb::class_<axr::Backend>(m_core, "Backend")
 		.def_static("init", &axr::Backend::init, "Initialize backend")
 		.def_static("cleanup", &axr::Backend::cleanup, "Shutdown backend");
 
 	// Array class
-	nb::class_<axr::Array>(m, "Array")
+	nb::class_<axr::Array>(m_core, "Array")
 		// Properties
 		.def_prop_ro("id", [](const axr::Array &arr)
 					 { return arr.get_id().str(); }, "Get array's ID")
@@ -75,7 +78,7 @@ NB_MODULE(arrayx, m)
 		.def("torch", &axb::array_to_torch, nb::rv_policy::reference_internal, "Convert array to Pytorch tensor")
 		// .def_static("from_torch", &axb::array_from_torch, "tensor"_a, "Convert Pytorch tensor to array")
 		.def("item", &axb::item, "Get array's only value")
-		.def("graph", &axr::Array::graph, "Get array's computation graph")
+		.def("graph", &axr::Array::graph_str, "Get array's computation graph representation")
 
 		// Initializer operations
 		.def_static("full", &axb::full, "view"_a, "c"_a, "dtype"_a = &axc::f32, "device"_a = axd::default_device_name, "Create a new array filled with specified value")
@@ -142,4 +145,8 @@ NB_MODULE(arrayx, m)
 
 		// String representation
 		.def("__str__", &axr::Array::str, "String representation of array");
+
+	nb::class_<axnn::Module>(m_nn, "Module")
+		.def("__call__", &axnn::Module::operator(), "input"_a, "Call the nn module using the forward hook")
+		.def("forward", &axnn::Module::forward, "input"_a, "Forward the nn module, can be overidden");
 }

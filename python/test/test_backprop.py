@@ -1,4 +1,4 @@
-from python.arrayx import Array, Backend, Shape
+from ..arrayx.core import Array, Backend, Shape
 import numpy as np
 import torch
 

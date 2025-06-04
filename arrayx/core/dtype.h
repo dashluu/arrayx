@@ -227,6 +227,9 @@ namespace ax::core
         isize min() const override { return std::numeric_limits<bool>::lowest(); }
     };
 
+    using DtypePtr = const Dtype *;
+    using DtypePtrSet = const std::unordered_set<DtypePtr>;
+
     inline const F32 f32;
     inline const F64 f64;
     inline const I8 i8;
@@ -235,33 +238,6 @@ namespace ax::core
     inline const I64 i64;
     inline const Bool b8;
 
-    using DtypePtr = const Dtype *;
-    using DtypePtrSet = const std::unordered_set<DtypePtr>;
-}
-
-namespace std
-{
-    template <>
-    struct hash<const ax::core::Dtype *>
-    {
-        std::size_t operator()(const ax::core::Dtype *dtype) const
-        {
-            return std::hash<std::string>()(dtype->get_name_str());
-        }
-    };
-
-    template <>
-    struct equal_to<const ax::core::Dtype *>
-    {
-        bool operator()(const ax::core::Dtype *lhs, const ax::core::Dtype *rhs) const
-        {
-            return *lhs == *rhs;
-        }
-    };
-}
-
-namespace ax::core
-{
     inline DtypePtrSet all_dtypes = {&b8, &i32, &f32};
     inline DtypePtrSet numeric_dtypes = {&i32, &f32};
     inline DtypePtrSet binary_dtypes = {&i32, &f32};

@@ -20,10 +20,9 @@ namespace ax::core
         using Buffer = ax::device::Buffer;
         using DevicePtr = ax::device::DevicePtr;
         DevicePtr device;
-
-    public:
         std::shared_ptr<Buffer> buff = nullptr;
 
+    public:
         LazyArray(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
         {
             buff = std::make_shared<Buffer>(ptr, nbytes);
@@ -50,6 +49,16 @@ namespace ax::core
         const ShapeView &get_view() const { return shape.get_view(); }
 
         const ShapeStride &get_stride() const { return shape.get_stride(); }
+
+        std::shared_ptr<Buffer> get_buff() const { return buff; }
+
+        void init_buff(std::shared_ptr<Buffer> buff)
+        {
+            if (this->buff == nullptr)
+            {
+                this->buff = buff;
+            }
+        }
 
         // Gets the buffer pointer without accounting for offset
         uint8_t *get_buff_ptr() const { return buff->get_ptr(); }
