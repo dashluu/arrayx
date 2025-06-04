@@ -1,5 +1,5 @@
 import numpy as np
-from ..arrayx.core import Array, Backend
+from arrayx.core import Array, Backend
 
 
 class TestMatmul:

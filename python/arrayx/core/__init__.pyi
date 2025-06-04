@@ -114,7 +114,7 @@ class Array:
         """Get array's device"""
 
     @property
-    def grad(self) -> Array:
+    def grad(self) -> Array | None:
         """Get array's gradient"""
 
     @property
@@ -209,7 +209,13 @@ class Array:
     def __add__(self, rhs: object) -> Array:
         """Add two arrays element-wise"""
 
+    def __radd__(self, rhs: object) -> Array:
+        """Add two arrays element-wise"""
+
     def __sub__(self, rhs: object) -> Array:
+        """Subtract two arrays element-wise"""
+
+    def __rsub__(self, rhs: object) -> Array:
         """Subtract two arrays element-wise"""
 
     def __mul__(self, rhs: object) -> Array:
@@ -219,6 +225,9 @@ class Array:
         """Multiply two arrays element-wise"""
 
     def __truediv__(self, rhs: object) -> Array:
+        """Divide two arrays element-wise"""
+
+    def __rtruediv__(self, rhs: object) -> Array:
         """Divide two arrays element-wise"""
 
     def __iadd__(self, rhs: object) -> Array:

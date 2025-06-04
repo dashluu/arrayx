@@ -11,16 +11,14 @@ namespace ax::bind
 		return idx < 0 ? idx + len : idx;
 	}
 
-	axc::ShapeDims get_pyindices(axc::isize len, const axc::ShapeDims &dims)
+	axc::ShapeDims get_pyindices(axc::isize len, axc::ShapeDims &dims)
 	{
-		if (dims.empty())
+		if (!dims.empty())
 		{
-			return dims;
+			std::transform(dims.begin(), dims.end(), dims.begin(), [len](auto dim)
+						   { return get_pyindex(len, dim); });
 		}
-		axc::ShapeDims indices(dims.size());
-		std::transform(dims.begin(), dims.end(), indices.begin(), [len](auto dim)
-					   { return get_pyindex(len, dim); });
-		return indices;
+		return dims;
 	}
 
 	axc::Range pyslice_to_range(axc::isize len, const nb::object &obj)
@@ -159,7 +157,7 @@ namespace ax::bind
 		}
 	}
 
-	axr::ArrayPtr array_from_numpy(nb::ndarray<nb::numpy> &ndarr)
+	axr::Array array_from_numpy(nb::ndarray<nb::numpy> &ndarr)
 	{
 		axc::ShapeView view;
 		axc::ShapeStride stride;
@@ -176,7 +174,7 @@ namespace ax::bind
 		return axr::Array::from_ptr(ptr, ndarr.nbytes(), shape, dtype, axd::default_device_name);
 	}
 
-	axr::ArrayPtr array_from_torch(nb::ndarray<nb::pytorch> &ndarr)
+	axr::Array array_from_torch(nb::ndarray<nb::pytorch> &ndarr)
 	{
 		axc::ShapeView view;
 		axc::ShapeStride stride;
@@ -223,7 +221,7 @@ namespace ax::bind
 		}
 	}
 
-	axr::ArrayPtr full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
+	axr::Array full(const axc::ShapeView &view, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
 	{
 		if (nb::isinstance<nb::float_>(obj))
 		{
@@ -240,156 +238,156 @@ namespace ax::bind
 		throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
 	}
 
-	axr::ArrayPtr full_like(axr::ArrayPtr other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
+	axr::Array full_like(const axr::Array &other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name)
 	{
-		return full(other->get_view(), obj, dtype, device_name);
+		return full(other.get_view(), obj, dtype, device_name);
 	}
 
-	axr::ArrayPtr neg(const axr::Array &arr)
+	axr::Array neg(const axr::Array &arr)
 	{
 		return arr.neg();
 	}
 
-	axr::ArrayPtr add(const axr::Array &arr, const nb::object &obj)
+	axr::Array add(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.add(b); });
+					  { return a + b; });
 	}
 
-	axr::ArrayPtr self_add(const axr::Array &arr, const nb::object &obj)
+	axr::Array self_add(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.self_add(b); });
+					  { return a += b; });
 	}
 
-	axr::ArrayPtr sub(const axr::Array &arr, const nb::object &obj)
+	axr::Array sub(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.sub(b); });
+					  { return a - b; });
 	}
 
-	axr::ArrayPtr self_sub(const axr::Array &arr, const nb::object &obj)
+	axr::Array self_sub(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.self_sub(b); });
+					  { return a -= b; });
 	}
 
-	axr::ArrayPtr mul(const axr::Array &arr, const nb::object &obj)
+	axr::Array mul(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.mul(b); });
+					  { return a * b; });
 	}
 
-	axr::ArrayPtr self_mul(const axr::Array &arr, const nb::object &obj)
+	axr::Array self_mul(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.self_mul(b); });
+					  { return a *= b; });
 	}
 
-	axr::ArrayPtr div(const axr::Array &arr, const nb::object &obj)
+	axr::Array div(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.div(b); });
+					  { return a / b; });
 	}
 
-	axr::ArrayPtr self_div(const axr::Array &arr, const nb::object &obj)
+	axr::Array self_div(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.self_div(b); });
+					  { return a /= b; });
 	}
 
-	axr::ArrayPtr eq(const axr::Array &arr, const nb::object &obj)
+	axr::Array eq(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.eq(b); });
+					  { return a == b; });
 	}
 
-	axr::ArrayPtr neq(const axr::Array &arr, const nb::object &obj)
+	axr::Array neq(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.neq(b); });
+					  { return a != b; });
 	}
 
-	axr::ArrayPtr lt(const axr::Array &arr, const nb::object &obj)
+	axr::Array lt(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.lt(b); });
+					  { return a < b; });
 	}
 
-	axr::ArrayPtr gt(const axr::Array &arr, const nb::object &obj)
+	axr::Array gt(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.gt(b); });
+					  { return a > b; });
 	}
 
-	axr::ArrayPtr leq(const axr::Array &arr, const nb::object &obj)
+	axr::Array leq(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.leq(b); });
+					  { return a <= b; });
 	}
 
-	axr::ArrayPtr geq(const axr::Array &arr, const nb::object &obj)
+	axr::Array geq(const axr::Array &arr, const nb::object &obj)
 	{
 		return binary(arr, obj, [](const auto &a, const auto &b)
-					  { return a.geq(b); });
+					  { return a >= b; });
 	}
 
-	axr::ArrayPtr slice(const axr::Array &arr, const nb::object &obj)
+	axr::Array slice(const axr::Array &arr, const nb::object &obj)
 	{
 		return arr.slice(axb::pyslices_to_ranges(arr, obj));
 	}
 
-	axr::ArrayPtr permute(const axr::Array &arr, const ax::core::ShapeDims &dims)
+	axr::Array permute(const axr::Array &arr, ax::core::ShapeDims &dims)
 	{
 		return arr.permute(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr transpose(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
+	axr::Array transpose(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
 	{
 		return arr.transpose(get_pyindex(arr.get_shape().get_ndim(), start_dim), get_pyindex(arr.get_shape().get_ndim(), end_dim));
 	}
 
-	axr::ArrayPtr flatten(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
+	axr::Array flatten(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim)
 	{
 		return arr.flatten(get_pyindex(arr.get_shape().get_ndim(), start_dim), get_pyindex(arr.get_shape().get_ndim(), end_dim));
 	}
 
-	axr::ArrayPtr squeeze(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array squeeze(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.squeeze(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr unsqueeze(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array unsqueeze(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.unsqueeze(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr sum(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array sum(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.sum(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr mean(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array mean(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.mean(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr max(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array max(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.max(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr min(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array min(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.min(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr argmax(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array argmax(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.argmax(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}
 
-	axr::ArrayPtr argmin(const axr::Array &arr, const axc::ShapeDims &dims)
+	axr::Array argmin(const axr::Array &arr, axc::ShapeDims &dims)
 	{
 		return arr.argmin(get_pyindices(arr.get_shape().get_ndim(), dims));
 	}

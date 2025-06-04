@@ -1,4 +1,4 @@
-from ..arrayx.core import Array, Backend
+from arrayx.core import Array, Backend
 import numpy as np
 
 

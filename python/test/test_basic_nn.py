@@ -1,6 +1,6 @@
 from __future__ import annotations
-from ..arrayx.core import Array, Backend
-from python import nn
+from arrayx.core import Array, Backend
+import nn
 import numpy as np
 import torch
 

@@ -1,9 +1,11 @@
 #include "array.h"
+#include "module.h"
 
 NB_MODULE(arrayx, m)
 {
 	auto m_core = m.def_submodule("core", "Core module");
 	auto m_nn = m.def_submodule("nn", "Neural network module");
+	// auto m_optim = m.def_submodule("optim", "Optimizer module");
 
 	// Dtype class and operations
 	nb::enum_<axc::DtypeType>(m_core, "DtypeType")
@@ -91,10 +93,13 @@ NB_MODULE(arrayx, m)
 
 		// Element-wise operations
 		.def("__add__", &axb::add, "rhs"_a, "Add two arrays element-wise")
+		.def("__radd__", &axb::add, "rhs"_a, "Add two arrays element-wise")
 		.def("__sub__", &axb::sub, "rhs"_a, "Subtract two arrays element-wise")
+		.def("__rsub__", &axb::sub, "rhs"_a, "Subtract two arrays element-wise")
 		.def("__mul__", &axb::mul, "rhs"_a, "Multiply two arrays element-wise")
 		.def("__rmul__", &axb::mul, "rhs"_a, "Multiply two arrays element-wise")
 		.def("__truediv__", &axb::div, "rhs"_a, "Divide two arrays element-wise")
+		.def("__rtruediv__", &axb::div, "rhs"_a, "Divide two arrays element-wise")
 		.def("__iadd__", &axb::self_add, "rhs"_a, "In-place add two arrays element-wise")
 		.def("__isub__", &axb::self_sub, "rhs"_a, "In-place subtract two arrays element-wise")
 		.def("__imul__", &axb::self_mul, "rhs"_a, "In-place multiply two arrays element-wise")
@@ -146,7 +151,12 @@ NB_MODULE(arrayx, m)
 		// String representation
 		.def("__str__", &axr::Array::str, "String representation of array");
 
-	nb::class_<axnn::Module>(m_nn, "Module")
+	nb::class_<axnn::Module, axb::PyModule>(m_nn, "Module")
+		.def(nb::init<>())
 		.def("__call__", &axnn::Module::operator(), "input"_a, "Call the nn module using the forward hook")
 		.def("forward", &axnn::Module::forward, "input"_a, "Forward the nn module, can be overidden");
+
+	m_nn.def("relu", &axnn::relu, "x"_a, "ReLU activation function");
+	m_nn.def("onehot", &axnn::onehot, "x"_a, "num_classes"_a = -1, "One-hot encode input array");
+	m_nn.def("cross_entropy_loss", &axnn::cross_entropy_loss, "x"_a, "y"_a, "num_classes"_a = -1, "Compute cross-entropy loss between input x and target y");
 }

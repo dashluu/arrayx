@@ -5,6 +5,7 @@ from arrayx.nn import Module
 
 class Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True):
+        super().__init__()
         k = np.sqrt(1 / in_features)
         # Use numpy to randomize for now
         self.__npw = np.random.uniform(-k, k, (out_features, in_features)).astype(np.float32)

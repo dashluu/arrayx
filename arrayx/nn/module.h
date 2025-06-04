@@ -9,10 +9,10 @@ namespace ax::nn
 	struct ModuleKey
 	{
 	private:
-		ArrayPtr arr;
+		Array arr;
 
 	public:
-		ModuleKey(ArrayPtr arr) : arr(arr) {}
+		ModuleKey(const Array &arr) : arr(arr) {}
 
 		ModuleKey(const ModuleKey &other) : arr(other.arr) {}
 
@@ -24,14 +24,14 @@ namespace ax::nn
 
 		bool operator==(const ModuleKey &other) const
 		{
-			return arr->get_shape() == other.arr->get_shape() &&
-				   arr->get_dtype() == other.arr->get_dtype() &&
-				   arr->get_device() == other.arr->get_device();
+			return arr.get_shape() == other.arr.get_shape() &&
+				   arr.get_dtype() == other.arr.get_dtype() &&
+				   arr.get_device() == other.arr.get_device();
 		}
 
 		bool operator!=(const ModuleKey &other) const { return !(*this == other); }
 
-		ArrayPtr get_array() const { return arr; }
+		const Array &get_array() const { return arr; }
 	};
 }
 
@@ -50,9 +50,9 @@ namespace std
 				seed ^= std::hash<std::decay_t<decltype(v)>>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			};
 
-			hash_combine(seed, std::hash<ax::core::Shape>{}(key.get_array()->get_shape()));
-			hash_combine(seed, key.get_array()->get_dtype());
-			hash_combine(seed, key.get_array()->get_device());
+			hash_combine(seed, std::hash<ax::core::Shape>{}(key.get_array().get_shape()));
+			hash_combine(seed, key.get_array().get_dtype());
+			hash_combine(seed, key.get_array().get_device());
 			return seed;
 		}
 	};
@@ -63,8 +63,8 @@ namespace ax::nn
 	class Module
 	{
 	protected:
-		ArrayPtr input;
-		static std::unordered_map<ModuleKey, ArrayPtr> modules;
+		Array input;
+		static std::unordered_map<ModuleKey, Array> modules;
 
 	public:
 		Module() = default;
@@ -75,31 +75,31 @@ namespace ax::nn
 
 		Module &operator=(const Module &) = delete;
 
-		virtual ArrayPtr forward(ArrayPtr input) = 0;
+		virtual Array forward(const Array &input) = 0;
 
-		ArrayPtr operator()(ArrayPtr input)
+		Array operator()(const Array &input)
 		{
 			const ModuleKey key(input);
-			ArrayPtr output;
+			Array output;
 
 			if (modules.find(key) == modules.end())
 			{
 				// Initialize a new compute primitive
-				this->input = input->detach();
+				this->input = input.detach();
 				output = forward(this->input);
 				modules[key] = output;
 			}
 			else
 			{
 				// Update the input lazy array
-				this->input->set_lazy(input);
+				this->input.set_lazy(input);
 				output = modules[key];
 			}
 
-			output->eval();
+			output.eval();
 			return output;
 		}
 	};
 
-	inline std::unordered_map<ModuleKey, ArrayPtr> Module::modules;
+	inline std::unordered_map<ModuleKey, Array> Module::modules;
 }

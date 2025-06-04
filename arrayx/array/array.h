@@ -8,13 +8,11 @@ namespace ax::array
 	using namespace ax::core;
 	using namespace ax::runtime;
 	using namespace ax::graph;
-	class Array;
-	using ArrayPtr = std::shared_ptr<Array>;
 
-	class Array : public std::enable_shared_from_this<Array>
+	class Array
 	{
 	private:
-		OpPtr op;
+		OpPtr op = nullptr;
 
 		std::shared_ptr<ComputeGraph> compute_graph = nullptr;
 
@@ -25,11 +23,22 @@ namespace ax::array
 		std::function<std::shared_ptr<ComputeGraph>(OpPtr)> get_backend_graph_builder() { return Backend::instance().get_graph_builder(op->get_lazy()->get_device_name()); }
 
 	public:
+		Array() = default;
+
 		Array(OpPtr op) : op(op) {}
 
-		Array(const Array &) = delete;
+		Array(const Array &arr)
+		{
+			op = arr.op;
+			compute_graph = arr.compute_graph;
+		}
 
-		Array &operator=(const Array &) = delete;
+		Array &operator=(const Array &arr)
+		{
+			op = arr.op;
+			compute_graph = arr.compute_graph;
+			return *this;
+		}
 
 		const Id &get_id() const { return op->get_lazy()->get_id(); }
 
@@ -47,7 +56,7 @@ namespace ax::array
 
 		DevicePtr get_device() const { return op->get_lazy()->get_device(); }
 
-		ArrayPtr get_grad() const { return op->grad == nullptr ? nullptr : std::make_shared<Array>(ax::graph::detach(op->grad)); }
+		std::optional<Array> get_grad() const { return op->grad == nullptr ? std::nullopt : std::optional<Array>(ax::graph::detach(op->grad)); }
 
 		isize get_numel() const { return op->get_lazy()->get_numel(); }
 
@@ -77,7 +86,7 @@ namespace ax::array
 
 		std::shared_ptr<ComputeGraph> get_graph() { return compute_graph; }
 
-		void set_lazy(ArrayPtr arr) { op->set_lazy(arr->op->get_lazy()); }
+		void set_lazy(const Array &arr) { op->set_lazy(arr.op->get_lazy()); }
 
 		isize item()
 		{
@@ -85,7 +94,7 @@ namespace ax::array
 			return ax::graph::item(op);
 		}
 
-		ArrayPtr detach() const { return std::make_shared<Array>(ax::graph::detach(op)); }
+		Array detach() const { return Array(ax::graph::detach(op)); }
 
 		void eval();
 
@@ -93,184 +102,199 @@ namespace ax::array
 
 		// Initializer operations
 		template <typename T>
-		static ArrayPtr full(const ShapeView &view, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		static Array full(const ShapeView &view, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
 		{
 			DevicePtr device = get_backend_device(device_name);
-			OpPtr out_op = ax::graph::full(view, c, dtype, device);
-			return std::make_shared<Array>(out_op);
+			return Array(ax::graph::full(view, c, dtype, device));
 		}
 
 		template <typename T>
-		static ArrayPtr full_like(ArrayPtr other, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		static Array full_like(const Array &other, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
 		{
 			DevicePtr device = get_backend_device(device_name);
-			OpPtr out_op = ax::graph::full_like(other->op, c, dtype, device);
-			return std::make_shared<Array>(out_op);
+			return Array(ax::graph::full_like(other.op, c, dtype, device));
 		}
 
-		static ArrayPtr arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
-		static ArrayPtr zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
-		static ArrayPtr ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
-		static ArrayPtr zeros_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
-		static ArrayPtr ones_like(ArrayPtr other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
-		static ArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = default_device_name);
+		static Array arange(const ShapeView &view, isize start, isize step, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::arange(view, start, step, dtype, device));
+		}
+
+		static Array zeros(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::zeros(view, dtype, device));
+		}
+
+		static Array ones(const ShapeView &view, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::ones(view, dtype, device));
+		}
+
+		static Array zeros_like(const Array &other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::zeros_like(other.op, dtype, device));
+		}
+
+		static Array ones_like(const Array &other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::ones_like(other.op, dtype, device));
+		}
+
+		static Array from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = default_device_name)
+		{
+			DevicePtr device = get_backend_device(device_name);
+			return Array(ax::graph::from_ptr(ptr, nbytes, shape, dtype, device));
+		}
 
 		// Element-wise operations
-		ArrayPtr add(ArrayPtr rhs) const;
+		Array operator+(const Array &rhs) const { return Array(ax::graph::add(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr add(T c) const
-		{
-			OpPtr out_op = ax::graph::add(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator+(T c) const { return Array(ax::graph::add(op, c)); }
 
-		ArrayPtr sub(ArrayPtr rhs) const;
+		Array operator-(const Array &rhs) const { return Array(ax::graph::sub(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr sub(T c) const
-		{
-			OpPtr out_op = ax::graph::sub(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator-(T c) const { return Array(ax::graph::sub(op, c)); }
 
-		ArrayPtr mul(ArrayPtr rhs) const;
+		Array operator*(const Array &rhs) const { return Array(ax::graph::mul(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr mul(T c) const
-		{
-			OpPtr out_op = ax::graph::mul(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator*(T c) const { return Array(ax::graph::mul(op, c)); }
 
-		ArrayPtr div(ArrayPtr rhs) const;
+		Array operator/(const Array &rhs) const { return Array(ax::graph::div(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr div(T c) const
-		{
-			OpPtr out_op = ax::graph::div(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator/(T c) const { return Array(ax::graph::div(op, c)); }
 
-		ArrayPtr self_add(ArrayPtr rhs) const;
+		Array operator+=(const Array &rhs) const { return Array(ax::graph::self_add(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr self_add(T c) const
-		{
-			OpPtr out_op = ax::graph::self_add(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator+=(T c) const { return Array(ax::graph::self_add(op, c)); }
 
-		ArrayPtr self_sub(ArrayPtr rhs) const;
+		Array operator-=(const Array &rhs) const { return Array(ax::graph::self_sub(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr self_sub(T c) const
-		{
-			OpPtr out_op = ax::graph::self_sub(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator-=(T c) const { return Array(ax::graph::self_sub(op, c)); }
 
-		ArrayPtr self_mul(ArrayPtr rhs) const;
+		Array operator*=(const Array &rhs) const { return Array(ax::graph::self_mul(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr self_mul(T c) const
-		{
-			OpPtr out_op = ax::graph::self_mul(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator*=(T c) const { return Array(ax::graph::self_mul(op, c)); }
 
-		ArrayPtr self_div(ArrayPtr rhs) const;
+		Array operator/=(const Array &rhs) const { return Array(ax::graph::self_div(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr self_div(T c) const
-		{
-			OpPtr out_op = ax::graph::self_div(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator/=(T c) const { return Array(ax::graph::self_div(op, c)); }
 
-		ArrayPtr matmul(ArrayPtr rhs) const;
-		ArrayPtr exp(bool in_place = false) const;
-		ArrayPtr log(bool in_place = false) const;
-		ArrayPtr sqrt(bool in_place = false) const;
-		ArrayPtr sq(bool in_place = false) const;
-		ArrayPtr neg(bool in_place = false) const;
-		ArrayPtr recip(bool in_place = false) const;
+		Array matmul(const Array &rhs) const { return Array(ax::graph::matmul(op, rhs.op)); }
 
-		// Comparison operations
-		ArrayPtr eq(ArrayPtr rhs) const;
+		Array exp(bool in_place = false) const { return Array(ax::graph::exp(op, in_place)); }
 
-		template <NumericOrBool T>
-		ArrayPtr eq(T c) const
-		{
-			OpPtr out_op = ax::graph::eq(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array log(bool in_place = false) const { return Array(ax::graph::log(op, in_place)); }
 
-		ArrayPtr neq(ArrayPtr rhs) const;
+		Array sqrt(bool in_place = false) const { return Array(ax::graph::sqrt(op, in_place)); }
 
-		template <NumericOrBool T>
-		ArrayPtr neq(T c) const
-		{
-			OpPtr out_op = ax::graph::neq(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array sq(bool in_place = false) const { return Array(ax::graph::sq(op, in_place)); }
 
-		ArrayPtr lt(ArrayPtr rhs) const;
+		Array neg(bool in_place = false) const { return Array(ax::graph::neg(op, in_place)); }
+
+		Array operator-() const { return Array(ax::graph::neg(op)); }
+
+		Array recip(bool in_place = false) const { return Array(ax::graph::recip(op, in_place)); }
+
+		Array operator==(const Array &rhs) const { return Array(ax::graph::eq(op, rhs.op)); }
+
+		Array operator!=(const Array &rhs) const { return Array(ax::graph::neq(op, rhs.op)); }
+
+		Array operator<(const Array &rhs) const { return Array(ax::graph::lt(op, rhs.op)); }
+
+		Array operator>(const Array &rhs) const { return Array(ax::graph::gt(op, rhs.op)); }
+
+		Array operator<=(const Array &rhs) const { return Array(ax::graph::leq(op, rhs.op)); }
+
+		Array operator>=(const Array &rhs) const { return Array(ax::graph::geq(op, rhs.op)); }
 
 		template <Numeric T>
-		ArrayPtr lt(T c) const
-		{
-			OpPtr out_op = ax::graph::lt(op, c);
-			return std::make_shared<Array>(out_op);
-		}
-
-		ArrayPtr gt(ArrayPtr rhs) const;
+		Array operator==(T c) const { return Array(ax::graph::eq(op, c)); }
 
 		template <Numeric T>
-		ArrayPtr gt(T c) const
-		{
-			OpPtr out_op = ax::graph::gt(op, c);
-			return std::make_shared<Array>(out_op);
-		}
-
-		ArrayPtr leq(ArrayPtr rhs) const;
+		Array operator!=(T c) const { return Array(ax::graph::neq(op, c)); }
 
 		template <Numeric T>
-		ArrayPtr leq(T c) const
-		{
-			OpPtr out_op = ax::graph::leq(op, c);
-			return std::make_shared<Array>(out_op);
-		}
-
-		ArrayPtr geq(ArrayPtr rhs) const;
+		Array operator<(T c) const { return Array(ax::graph::lt(op, c)); }
 
 		template <Numeric T>
-		ArrayPtr geq(T c) const
-		{
-			OpPtr out_op = ax::graph::geq(op, c);
-			return std::make_shared<Array>(out_op);
-		}
+		Array operator>(T c) const { return Array(ax::graph::gt(op, c)); }
+
+		template <Numeric T>
+		Array operator<=(T c) const { return Array(ax::graph::leq(op, c)); }
+
+		template <Numeric T>
+		Array operator>=(T c) const { return Array(ax::graph::geq(op, c)); }
 
 		// Reduction operations
-		ArrayPtr sum(const ShapeDims &dims = {}) const;
-		ArrayPtr mean(const ShapeDims &dims = {}) const;
-		ArrayPtr max(const ShapeDims &dims = {}) const;
-		ArrayPtr min(const ShapeDims &dims = {}) const;
-		ArrayPtr argmax(const ShapeDims &dims = {}) const;
-		ArrayPtr argmin(const ShapeDims &dims = {}) const;
+		Array sum(const ShapeDims &dims = {}) const { return Array(ax::graph::sum(op, dims)); }
+
+		Array mean(const ShapeDims &dims = {}) const { return Array(ax::graph::mean(op, dims)); }
+
+		Array max(const ShapeDims &dims = {}) const { return Array(ax::graph::max(op, dims)); }
+
+		Array min(const ShapeDims &dims = {}) const { return Array(ax::graph::min(op, dims)); }
+
+		Array argmax(const ShapeDims &dims = {}) const { return Array(ax::graph::argmax(op, dims)); }
+
+		Array argmin(const ShapeDims &dims = {}) const { return Array(ax::graph::argmin(op, dims)); }
 
 		// Shape operations
-		ArrayPtr broadcast(const ShapeView &view) const;
-		ArrayPtr broadcast_to(const ShapeView &view) const;
-		ArrayPtr slice(const RangeVec &ranges) const;
-		ArrayPtr reshape(const ShapeView &view) const;
-		ArrayPtr flatten(isize start_dim, isize end_dim) const;
-		ArrayPtr squeeze(const ShapeDims &dims = {}) const;
-		ArrayPtr unsqueeze(const ShapeDims &dims = {}) const;
-		ArrayPtr permute(const ShapeDims &dims) const;
-		ArrayPtr transpose(isize start_dim, isize end_dim) const;
+		Array broadcast(const ShapeView &view) const { return Array(ax::graph::broadcast(op, view)); }
+
+		Array broadcast_to(const ShapeView &view) const { return Array(ax::graph::broadcast_to(op, view)); }
+
+		Array slice(const RangeVec &ranges) const { return Array(ax::graph::slice(op, ranges)); }
+
+		Array reshape(const ShapeView &view) const { return Array(ax::graph::reshape(op, view)); }
+
+		Array flatten(isize start_dim, isize end_dim) const { return Array(ax::graph::flatten(op, start_dim, end_dim)); }
+
+		Array squeeze(const ShapeDims &dims = {}) const { return Array(ax::graph::squeeze(op, dims)); }
+
+		Array unsqueeze(const ShapeDims &dims = {}) const { return Array(ax::graph::unsqueeze(op, dims)); }
+
+		Array permute(const ShapeDims &dims) const { return Array(ax::graph::permute(op, dims)); }
+
+		Array transpose(isize start_dim, isize end_dim) const { return Array(ax::graph::transpose(op, start_dim, end_dim)); }
 
 		// Type operations
-		ArrayPtr astype(DtypePtr dtype) const;
+		Array astype(DtypePtr dtype) const { return Array(ax::graph::astype(op, dtype)); }
 	};
+
+	template <Numeric T>
+	Array operator+(T c, const Array &arr)
+	{
+		return arr + c;
+	}
+
+	template <Numeric T>
+	Array operator-(T c, const Array &arr)
+	{
+		return arr - c;
+	}
+
+	template <Numeric T>
+	Array operator*(T c, const Array &arr)
+	{
+		return arr * c;
+	}
+
+	template <Numeric T>
+	Array operator/(T c, const Array &arr)
+	{
+		return arr.recip() * c;
+	}
 }

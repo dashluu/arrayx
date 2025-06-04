@@ -44,10 +44,12 @@ if(APPLE)
     add_subdirectory(runtime/metal/kernels)
     file(GLOB MTL_HEADER_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/device/metal/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/graph/metal/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.h"
     )
     file(GLOB MTL_SRC_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/device/metal/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/graph/metal/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/runtime/metal/*.cpp"
     )
     # set(CMAKE_BUILD_TYPE Debug)
