@@ -2,12 +2,10 @@
 
 #include "../utils.h"
 
-namespace ax::device
-{
+namespace ax::device {
     using ax::core::isize;
 
-    struct Allocator : public std::enable_shared_from_this<Allocator>
-    {
+    struct Allocator : public std::enable_shared_from_this<Allocator> {
     protected:
         isize allocated = 0;
 
@@ -20,4 +18,4 @@ namespace ax::device
         virtual void free(uint8_t *ptr, isize nbytes) = 0;
         isize get_allocated() const { return allocated; }
     };
-}
+} // namespace ax::device

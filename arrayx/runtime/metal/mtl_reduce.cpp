@@ -1,9 +1,7 @@
 #include "mtl_runner.h"
 
-namespace ax::runtime::metal
-{
-    void MTLRunner::run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val)
-    {
+namespace ax::runtime::metal {
+    void MTLRunner::run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
         LazyArrayPtr in_arr = in_op->get_lazy();
@@ -13,13 +11,11 @@ namespace ax::runtime::metal
         // Encode buffers
         isize numel = in_arr->get_numel();
         encoder.encode_buffer(&numel, sizeof(mtl_usize), false);
-        if (strided_input)
-        {
+        if (strided_input) {
             encoder.encode_ndim(in_arr);
         }
         encoder.encode_offset({in_arr, out_arr});
-        if (strided_input)
-        {
+        if (strided_input) {
             encoder.encode_view(in_arr);
             encoder.encode_stride(in_arr);
         }
@@ -49,8 +45,7 @@ namespace ax::runtime::metal
         pool->release();
     }
 
-    void MTLRunner::run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val)
-    {
+    void MTLRunner::run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) {
         // Initialize Metal autorelease pool and encoder
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
@@ -59,14 +54,12 @@ namespace ax::runtime::metal
         bool strided_input = !in_arr->is_contiguous();
 
         // Encode buffers
-        if (strided_input)
-        {
+        if (strided_input) {
             encoder.encode_ndim(in_arr);
         }
         encoder.encode_offset({in_arr, out_arr});
         encoder.encode_view(in_arr);
-        if (strided_input)
-        {
+        if (strided_input) {
             encoder.encode_stride(in_arr);
         }
         encoder.encode_array(in_arr);
@@ -99,4 +92,4 @@ namespace ax::runtime::metal
         encoder.wait_to_complete();
         pool->release();
     }
-}
+} // namespace ax::runtime::metal

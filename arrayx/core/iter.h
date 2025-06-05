@@ -2,18 +2,15 @@
 
 #include "lazy_array.h"
 
-namespace ax::core
-{
-    struct ArrayIter
-    {
+namespace ax::core {
+    struct ArrayIter {
     private:
         std::shared_ptr<const LazyArray> arr;
         uint8_t *ptr;
         isize counter;
 
     public:
-        ArrayIter(std::shared_ptr<const LazyArray> arr) : arr(arr)
-        {
+        ArrayIter(std::shared_ptr<const LazyArray> arr) : arr(arr) {
         }
 
         ArrayIter(const ArrayIter &) = delete;
@@ -24,16 +21,14 @@ namespace ax::core
 
         isize count() const { return counter; }
 
-        void start()
-        {
+        void start() {
             counter = 0;
         }
 
-        uint8_t *next()
-        {
+        uint8_t *next() {
             ptr = arr->strided_elm_ptr(counter);
             counter++;
             return ptr;
         }
     };
-}
+} // namespace ax::core

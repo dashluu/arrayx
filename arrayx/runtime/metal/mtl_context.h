@@ -5,14 +5,12 @@
 #include "../../graph/metal/mtl_kernel.h"
 #include "../runner_context.h"
 
-namespace ax::runtime::metal
-{
+namespace ax::runtime::metal {
     using namespace ax::core;
     using namespace ax::graph::metal;
     using namespace ax::device::metal;
 
-    class MTLContext : public RunnerContext
-    {
+    class MTLContext : public RunnerContext {
     private:
         std::shared_ptr<MTLAllocator> allocator;
         NS::SharedPtr<MTL::Device> device;
@@ -36,24 +34,20 @@ namespace ax::runtime::metal
 
         bool register_kernel(const std::string &name, std::shared_ptr<MTLKernel> kernel);
 
-        std::shared_ptr<MTLAllocator> get_allocator() const
-        {
+        std::shared_ptr<MTLAllocator> get_allocator() const {
             return allocator;
         }
 
-        std::shared_ptr<MTLKernel> get_kernel(const std::string &name) const
-        {
+        std::shared_ptr<MTLKernel> get_kernel(const std::string &name) const {
             return kernel_by_name.at(name);
         }
 
-        NS::SharedPtr<MTL::Device> get_device() const
-        {
+        NS::SharedPtr<MTL::Device> get_device() const {
             return device;
         }
 
-        NS::SharedPtr<MTL::CommandQueue> get_cmd_queue() const
-        {
+        NS::SharedPtr<MTL::CommandQueue> get_cmd_queue() const {
             return cmd_queue;
         }
     };
-}
+} // namespace ax::runtime::metal

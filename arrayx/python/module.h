@@ -2,15 +2,12 @@
 
 #include "bind.h"
 
-namespace ax::bind
-{
-	struct PyModule : axnn::Module
-	{
-		NB_TRAMPOLINE(axnn::Module, 1);
+namespace ax::bind {
+    struct PyModule : axnn::Module {
+        NB_TRAMPOLINE(axnn::Module, 1);
 
-		axr::Array forward(const axr::Array &input) override
-		{
-			NB_OVERRIDE_PURE(forward, input);
-		}
-	};
-}
+        axr::Array forward(const axr::Array &input) override {
+            NB_OVERRIDE_PURE(forward, input);
+        }
+    };
+} // namespace ax::bind

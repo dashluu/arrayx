@@ -1,15 +1,13 @@
 #pragma once
 
+#include "../../utils.h"
+#include "../compute_primitive.h"
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
-#include "../../utils.h"
-#include "../compute_primitive.h"
 
-namespace ax::graph::metal
-{
-    class MTLKernel : public std::enable_shared_from_this<MTLKernel>, public ComputeKernel
-    {
+namespace ax::graph::metal {
+    class MTLKernel : public std::enable_shared_from_this<MTLKernel>, public ComputeKernel {
     private:
         // shared ptr gets released once kernel is released
         NS::SharedPtr<MTL::Function> function;
@@ -18,8 +16,7 @@ namespace ax::graph::metal
     public:
         MTLKernel(const std::string &name) : ComputeKernel(name) {}
 
-        void init(NS::SharedPtr<MTL::Device> device, NS::SharedPtr<MTL::Library> lib)
-        {
+        void init(NS::SharedPtr<MTL::Device> device, NS::SharedPtr<MTL::Library> lib) {
             NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
             auto ns_name = NS::String::string(name.c_str(), NS::UTF8StringEncoding);
             function = NS::TransferPtr<MTL::Function>(lib->newFunction(ns_name));
@@ -33,4 +30,4 @@ namespace ax::graph::metal
 
         NS::SharedPtr<MTL::ComputePipelineState> get_state() const { return state; }
     };
-}
+} // namespace ax::graph::metal

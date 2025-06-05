@@ -3,38 +3,36 @@
 #include "compute_primitive.h"
 #include "ops.h"
 
-namespace ax::graph
-{
-	class ComputeGraph : public std::enable_shared_from_this<ComputeGraph>, public ComputePrimitive
-	{
-	private:
-		OpPtr output;
-		std::unordered_set<Id> visited;
-		std::vector<OpPtr> fw_order;
-		std::vector<OpPtr> bw_order;
+namespace ax::graph {
+    class ComputeGraph : public std::enable_shared_from_this<ComputeGraph>, public ComputePrimitive {
+    private:
+        OpPtr output;
+        std::unordered_set<Id> visited;
+        std::vector<OpPtr> fw_order;
+        std::vector<OpPtr> bw_order;
 
-		void fw_toposort(OpPtr op);
-		void bw_toposort(OpPtr op);
+        void fw_toposort(OpPtr op);
+        void bw_toposort(OpPtr op);
 
-	public:
-		ComputeGraph(OpPtr output) : ComputePrimitive(ComputePrimitiveType::GRAPH), output(output) {}
+    public:
+        ComputeGraph(OpPtr output) : ComputePrimitive(ComputePrimitiveType::GRAPH), output(output) {}
 
-		OpPtr get_output() const { return output; }
+        OpPtr get_output() const { return output; }
 
-		void forward();
+        void forward();
 
-		void backward();
+        void backward();
 
-		virtual std::shared_ptr<ComputeKernel> compile() = 0;
+        virtual std::shared_ptr<ComputeKernel> compile() = 0;
 
-		const std::string str() const;
+        const std::string str() const;
 
-		std::vector<OpPtr>::const_iterator cbegin() const { return fw_order.cbegin(); }
+        std::vector<OpPtr>::const_iterator cbegin() const { return fw_order.cbegin(); }
 
-		std::vector<OpPtr>::const_iterator cend() const { return fw_order.cend(); }
+        std::vector<OpPtr>::const_iterator cend() const { return fw_order.cend(); }
 
-		std::vector<OpPtr>::const_iterator crbegin() const { return bw_order.cbegin(); }
+        std::vector<OpPtr>::const_iterator crbegin() const { return bw_order.cbegin(); }
 
-		std::vector<OpPtr>::const_iterator crend() const { return bw_order.cend(); }
-	};
-}
+        std::vector<OpPtr>::const_iterator crend() const { return bw_order.cend(); }
+    };
+} // namespace ax::graph

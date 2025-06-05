@@ -2,10 +2,8 @@
 
 #include "../utils.h"
 
-namespace ax::core
-{
-    struct Range
-    {
+namespace ax::core {
+    struct Range {
         isize start;
         // Stop is exclusive
         isize stop;
@@ -15,24 +13,21 @@ namespace ax::core
 
         Range(const Range &range) : Range(range.start, range.stop, range.step) {}
 
-        Range &operator=(const Range &range)
-        {
+        Range &operator=(const Range &range) {
             start = range.start;
             stop = range.stop;
             step = range.step;
             return *this;
         }
 
-        bool operator==(const Range &range) const
-        {
+        bool operator==(const Range &range) const {
             return start == range.start && stop == range.stop && step == range.step;
         }
 
-        std::string str() const
-        {
+        std::string str() const {
             return "(" + std::to_string(start) + ", " + std::to_string(stop) + ", " + std::to_string(step) + ")";
         }
     };
 
     using RangeVec = std::vector<Range>;
-}
+} // namespace ax::core

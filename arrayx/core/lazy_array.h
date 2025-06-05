@@ -1,17 +1,15 @@
 #pragma once
 
-#include "exceptions.h"
-#include "range.h"
-#include "shape.h"
-#include "dtype.h"
-#include "id.h"
 #include "../device/buffer.h"
 #include "../device/device.h"
+#include "dtype.h"
+#include "exceptions.h"
+#include "id.h"
+#include "range.h"
+#include "shape.h"
 
-namespace ax::core
-{
-    class LazyArray : public std::enable_shared_from_this<LazyArray>
-    {
+namespace ax::core {
+    class LazyArray : public std::enable_shared_from_this<LazyArray> {
     private:
         static IdGenerator id_gen;
         Id id;
@@ -23,17 +21,14 @@ namespace ax::core
         std::shared_ptr<Buffer> buff = nullptr;
 
     public:
-        LazyArray(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
-        {
+        LazyArray(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device) {
             buff = std::make_shared<Buffer>(ptr, nbytes);
         }
 
-        LazyArray(const Shape &shape, DtypePtr dtype, DevicePtr device) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device)
-        {
+        LazyArray(const Shape &shape, DtypePtr dtype, DevicePtr device) : id(id_gen.generate()), shape(shape), dtype(dtype), device(device) {
         }
 
-        LazyArray(const LazyArray &arr) : id(id_gen.generate()), shape(arr.shape), dtype(arr.dtype), device(arr.device), buff(arr.buff)
-        {
+        LazyArray(const LazyArray &arr) : id(id_gen.generate()), shape(arr.shape), dtype(arr.dtype), device(arr.device), buff(arr.buff) {
         }
 
         ~LazyArray() {}
@@ -52,10 +47,8 @@ namespace ax::core
 
         std::shared_ptr<Buffer> get_buff() const { return buff; }
 
-        void init_buff(std::shared_ptr<Buffer> buff)
-        {
-            if (this->buff == nullptr)
-            {
+        void init_buff(std::shared_ptr<Buffer> buff) {
+            if (this->buff == nullptr) {
                 this->buff = buff;
             }
         }
@@ -84,13 +77,11 @@ namespace ax::core
 
         isize get_nbytes() const { return get_numel() * get_itemsize(); }
 
-        static LazyArrayPtr empty(const Shape &shape, DtypePtr dtype, DevicePtr device)
-        {
+        static LazyArrayPtr empty(const Shape &shape, DtypePtr dtype, DevicePtr device) {
             return std::make_shared<LazyArray>(shape, dtype, device);
         }
 
-        static LazyArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device)
-        {
+        static LazyArrayPtr from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype, DevicePtr device) {
             return std::make_shared<LazyArray>(ptr, nbytes, shape, dtype, device);
         }
 
@@ -106,4 +97,4 @@ namespace ax::core
 
     inline IdGenerator LazyArray::id_gen = IdGenerator();
     using LazyArrayPtrVec = std::vector<LazyArrayPtr>;
-};
+}; // namespace ax::core

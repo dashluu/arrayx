@@ -2,28 +2,23 @@
 
 #include "../utils.h"
 
-namespace ax::device
-{
+namespace ax::device {
     using ax::core::isize;
 
-    enum struct DeviceType
-    {
+    enum struct DeviceType {
         CPU,
         MPS
     };
 
-    struct Device : public std::enable_shared_from_this<Device>
-    {
+    struct Device : public std::enable_shared_from_this<Device> {
     private:
         DeviceType type;
         isize id;
         std::string name;
 
-        void init_name_from_type_id()
-        {
+        void init_name_from_type_id() {
             std::string typestr;
-            switch (type)
-            {
+            switch (type) {
             case DeviceType::CPU:
                 typestr = "cpu";
                 break;
@@ -59,4 +54,4 @@ namespace ax::device
     using DevicePtr = std::shared_ptr<Device>;
 
     const std::string default_device_name = "mps:0";
-}
+} // namespace ax::device

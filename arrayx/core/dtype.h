@@ -2,10 +2,8 @@
 
 #include "../utils.h"
 
-namespace ax::core
-{
-    enum struct DtypeName
-    {
+namespace ax::core {
+    enum struct DtypeName {
         F32,
         F64,
         I8,
@@ -15,8 +13,7 @@ namespace ax::core
         B8
     };
 
-    enum struct DtypeType
-    {
+    enum struct DtypeType {
         FLOAT,
         INT,
         BOOL
@@ -29,14 +26,13 @@ namespace ax::core
         {DtypeName::I32, "i32"},
         {DtypeName::B8, "b8"}};
 
-    struct Dtype
-    {
-    private:
+    struct Dtype {
+      private:
         DtypeName name;
         DtypeType type;
         isize size;
 
-    public:
+      public:
         Dtype(DtypeName name, DtypeType type, isize size) : name(name), type(type), size(size) {}
 
         Dtype(const Dtype &dtype) : Dtype(dtype.name, dtype.type, dtype.size) {}
@@ -55,16 +51,14 @@ namespace ax::core
 
         bool operator!=(const Dtype &dtype) const { return !(*this == dtype); }
 
-        Dtype &operator=(const Dtype &dtype)
-        {
+        Dtype &operator=(const Dtype &dtype) {
             name = dtype.name;
             type = dtype.type;
             size = dtype.size;
             return *this;
         }
 
-        std::string str() const
-        {
+        std::string str() const {
             return get_name_str();
         }
 
@@ -84,18 +78,15 @@ namespace ax::core
     };
 
     template <class T>
-    struct Float : public Dtype
-    {
-    public:
+    struct Float : public Dtype {
+      public:
         Float(DtypeName name, isize size) : Dtype(name, DtypeType::FLOAT, size) {}
 
         Float(const Float<T> &dtype) : Dtype(dtype) {}
 
-        std::string get_value_as_str(uint8_t *ptr) const override
-        {
+        std::string get_value_as_str(uint8_t *ptr) const override {
             T val = *reinterpret_cast<T *>(ptr);
-            if (0 < val && val <= 1e-5)
-            {
+            if (0 < val && val <= 1e-5) {
                 return std::format("{:.4e}", val);
             }
             return std::format("{:.4f}", val);
@@ -103,25 +94,21 @@ namespace ax::core
     };
 
     template <class T>
-    struct Int : public Dtype
-    {
-    public:
+    struct Int : public Dtype {
+      public:
         Int(DtypeName name, isize size) : Dtype(name, DtypeType::INT, size) {}
 
         Int(const Int<T> &dtype) : Dtype(dtype) {}
 
-        std::string get_value_as_str(uint8_t *ptr) const override
-        {
+        std::string get_value_as_str(uint8_t *ptr) const override {
             return std::to_string(*reinterpret_cast<T *>(ptr));
         }
 
-        std::string get_value_as_str(isize val) const override
-        {
+        std::string get_value_as_str(isize val) const override {
             return std::to_string(val);
         }
 
-        isize get_low_level_value(uint8_t *ptr) const override
-        {
+        isize get_low_level_value(uint8_t *ptr) const override {
             return *reinterpret_cast<T *>(ptr);
         }
 
@@ -130,19 +117,16 @@ namespace ax::core
         isize min() const override { return std::numeric_limits<T>::lowest(); }
     };
 
-    struct F32 : public Float<float>
-    {
-    public:
+    struct F32 : public Float<float> {
+      public:
         F32() : Float<float>(DtypeName::F32, 4) {}
         F32(const F32 &dtype) : Float<float>(dtype) {}
 
-        std::string get_value_as_str(isize val) const override
-        {
+        std::string get_value_as_str(isize val) const override {
             return std::to_string(std::bit_cast<float>(static_cast<int>(val)));
         }
 
-        isize get_low_level_value(uint8_t *ptr) const override
-        {
+        isize get_low_level_value(uint8_t *ptr) const override {
             return std::bit_cast<int>(*reinterpret_cast<float *>(ptr));
         }
 
@@ -151,19 +135,16 @@ namespace ax::core
         isize min() const override { return std::bit_cast<int>(std::numeric_limits<float>::lowest()); }
     };
 
-    struct F64 : public Float<double>
-    {
-    public:
+    struct F64 : public Float<double> {
+      public:
         F64() : Float<double>(DtypeName::F64, 8) {}
         F64(const F64 &dtype) : Float<double>(dtype) {}
 
-        std::string get_value_as_str(isize val) const override
-        {
+        std::string get_value_as_str(isize val) const override {
             return std::to_string(std::bit_cast<double>(static_cast<int64_t>(val)));
         }
 
-        isize get_low_level_value(uint8_t *ptr) const override
-        {
+        isize get_low_level_value(uint8_t *ptr) const override {
             return std::bit_cast<int64_t>(*reinterpret_cast<double *>(ptr));
         }
 
@@ -172,53 +153,45 @@ namespace ax::core
         isize min() const override { return std::bit_cast<int64_t>(std::numeric_limits<double>::lowest()); }
     };
 
-    struct I8 : public Int<int8_t>
-    {
-    public:
+    struct I8 : public Int<int8_t> {
+      public:
         I8() : Int<int8_t>(DtypeName::I8, 1) {}
         I8(const I8 &dtype) : Int<int8_t>(dtype) {}
     };
 
-    struct I16 : public Int<int16_t>
-    {
-    public:
+    struct I16 : public Int<int16_t> {
+      public:
         I16() : Int<int16_t>(DtypeName::I16, 2) {}
         I16(const I16 &dtype) : Int<int16_t>(dtype) {}
     };
 
-    struct I32 : public Int<int32_t>
-    {
-    public:
+    struct I32 : public Int<int32_t> {
+      public:
         I32() : Int<int32_t>(DtypeName::I32, 4) {}
         I32(const I32 &dtype) : Int<int32_t>(dtype) {}
     };
 
-    struct I64 : public Int<int64_t>
-    {
-    public:
+    struct I64 : public Int<int64_t> {
+      public:
         I64() : Int<int64_t>(DtypeName::I64, 8) {}
         I64(const I64 &dtype) : Int<int64_t>(dtype) {}
     };
 
-    struct Bool : public Dtype
-    {
-    public:
+    struct Bool : public Dtype {
+      public:
         Bool() : Dtype(DtypeName::B8, DtypeType::BOOL, 1) {}
 
         Bool(const Bool &dtype) : Dtype(dtype) {}
 
-        std::string get_value_as_str(uint8_t *ptr) const override
-        {
+        std::string get_value_as_str(uint8_t *ptr) const override {
             return *ptr ? "True" : "False";
         }
 
-        std::string get_value_as_str(isize val) const override
-        {
+        std::string get_value_as_str(isize val) const override {
             return std::to_string(static_cast<bool>(val));
         }
 
-        isize get_low_level_value(uint8_t *ptr) const override
-        {
+        isize get_low_level_value(uint8_t *ptr) const override {
             return *ptr;
         }
 
@@ -249,13 +222,10 @@ namespace ax::core
         {&f32, &f32}};
 
     template <class T>
-    isize dtype_cast_down(T c, DtypePtr dtype)
-    {
-        switch (dtype->get_type())
-        {
+    isize dtype_cast_down(T c, DtypePtr dtype) {
+        switch (dtype->get_type()) {
         case DtypeType::FLOAT:
-            switch (dtype->get_size())
-            {
+            switch (dtype->get_size()) {
             default:
                 return std::bit_cast<int>(static_cast<float>(c));
             }
@@ -265,4 +235,4 @@ namespace ax::core
             return static_cast<bool>(c);
         }
     }
-}
+} // namespace ax::core

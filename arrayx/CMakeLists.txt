@@ -79,6 +79,7 @@ endfunction()
 
 add_nanobind_stub(core_stub core)
 add_nanobind_stub(nn_stub nn)
+add_nanobind_stub(optim_stub optim)
 
 # Define output directory for Python module and move files after build
 set(PYTHON_MODULE_DIR "${CMAKE_SOURCE_DIR}/../python")
@@ -92,6 +93,6 @@ add_custom_target(move_files ALL
     COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" "${PYTHON_MODULE_DIR}/${PROJECT_NAME}"
     COMMAND ${CMAKE_COMMAND} -E touch "${PYTHON_MODULE_DIR}/${PROJECT_NAME}/__init__.pyi"
     COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE:${PROJECT_NAME}>" "${PYTHON_MODULE_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-    DEPENDS core_stub nn_stub  # Only depend on the stub, which already depends on arrayx
+    DEPENDS core_stub nn_stub optim_stub
     COMMENT "Moving Python module and stub files"
 )

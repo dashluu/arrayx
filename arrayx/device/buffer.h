@@ -2,26 +2,21 @@
 
 #include "allocator.h"
 
-namespace ax::device
-{
-    struct Buffer : public std::enable_shared_from_this<Buffer>
-    {
+namespace ax::device {
+    struct Buffer : public std::enable_shared_from_this<Buffer> {
     private:
         std::shared_ptr<Allocator> allocator = nullptr;
         uint8_t *ptr;
         isize nbytes;
 
-        void free()
-        {
-            if (allocator != nullptr)
-            {
+        void free() {
+            if (allocator != nullptr) {
                 allocator->free(ptr, nbytes);
             }
         }
 
     public:
-        Buffer(std::shared_ptr<Allocator> allocator, isize nbytes) : allocator(allocator), nbytes(nbytes)
-        {
+        Buffer(std::shared_ptr<Allocator> allocator, isize nbytes) : allocator(allocator), nbytes(nbytes) {
             ptr = allocator->alloc(nbytes);
         }
 
@@ -31,8 +26,7 @@ namespace ax::device
 
         ~Buffer() { free(); }
 
-        Buffer &operator=(const Buffer &buff)
-        {
+        Buffer &operator=(const Buffer &buff) {
             free();
             allocator = nullptr;
             ptr = buff.ptr;
@@ -44,4 +38,4 @@ namespace ax::device
 
         isize get_nbytes() const { return nbytes; }
     };
-}
+} // namespace ax::device

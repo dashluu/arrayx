@@ -1,9 +1,7 @@
 #include "mtl_runner.h"
 
-namespace ax::runtime::metal
-{
-    void MTLRunner::run_unary_kernel(const std::string &name, OpPtr in_op, OpPtr out_op)
-    {
+namespace ax::runtime::metal {
+    void MTLRunner::run_unary_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
         LazyArrayPtr in_arr = in_op->get_lazy();
@@ -22,4 +20,4 @@ namespace ax::runtime::metal
         encoder.wait_to_complete();
         pool->release();
     }
-}
+} // namespace ax::runtime::metal

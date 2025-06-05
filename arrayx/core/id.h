@@ -2,10 +2,8 @@
 
 #include "../utils.h"
 
-namespace ax::core
-{
-    struct Id
-    {
+namespace ax::core {
+    struct Id {
     private:
         isize data;
 
@@ -15,8 +13,7 @@ namespace ax::core
         Id(const Id &id) : data(id.data) {}
         bool operator==(const Id &id) const { return data == id.data; }
         bool operator!=(const Id &id) const { return !(*this == id); }
-        Id &operator=(const Id &id)
-        {
+        Id &operator=(const Id &id) {
             data = id.data;
             return *this;
         }
@@ -24,8 +21,7 @@ namespace ax::core
         const std::string str() const { return std::to_string(data); }
     };
 
-    struct IdGenerator
-    {
+    struct IdGenerator {
     private:
         static isize counter;
 
@@ -34,24 +30,20 @@ namespace ax::core
         IdGenerator(const IdGenerator &) = delete;
         IdGenerator &operator=(const IdGenerator &) = delete;
 
-        Id generate()
-        {
+        Id generate() {
             Id curr(counter++);
             return curr;
         }
     };
 
     inline isize IdGenerator::counter = 1;
-}
+} // namespace ax::core
 
-namespace std
-{
+namespace std {
     template <>
-    struct hash<ax::core::Id>
-    {
-        std::size_t operator()(const ax::core::Id &id) const
-        {
+    struct hash<ax::core::Id> {
+        std::size_t operator()(const ax::core::Id &id) const {
             return std::hash<ax::core::isize>()(id.get_data());
         }
     };
-}
+} // namespace std
