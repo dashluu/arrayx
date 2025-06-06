@@ -537,6 +537,7 @@ namespace ax::graph {
     };
 
     OpPtr detach(OpPtr op);
+    OpPtr empty_like(OpPtr op, DtypePtr dtype, DevicePtr device);
     OpPtr full_impl(const ShapeView &view, isize c, DtypePtr dtype, DevicePtr device);
     OpPtr zeros(const ShapeView &view, DtypePtr dtype, DevicePtr device);
     OpPtr zeros_like(OpPtr in_op, DtypePtr dtype, DevicePtr device);

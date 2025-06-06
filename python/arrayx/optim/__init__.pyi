@@ -7,7 +7,7 @@ class Optimizer:
     def __init__(self, params: Sequence[arrayx.core.Array], lr: float = 0.001) -> None:
         """Base optimizer"""
 
-    def optim_func(self) -> None:
+    def forward(self) -> None:
         """Parameter update function"""
 
     def step(self) -> None:

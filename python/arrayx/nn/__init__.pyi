@@ -10,11 +10,14 @@ class Module:
     def forward(self, input: arrayx.core.Array) -> arrayx.core.Array:
         """Forward the nn module, can be overidden"""
 
+    def parameters(self) -> list[arrayx.core.Array]:
+        """Get the parameters of the nn module, can be overidden"""
+
 def relu(x: arrayx.core.Array) -> arrayx.core.Array:
     """ReLU activation function"""
 
 def onehot(x: arrayx.core.Array, num_classes: int = -1) -> arrayx.core.Array:
     """One-hot encode input array"""
 
-def cross_entropy_loss(x: arrayx.core.Array, y: arrayx.core.Array, num_classes: int = -1) -> arrayx.core.Array:
+def cross_entropy_loss(x: arrayx.core.Array, y: arrayx.core.Array) -> arrayx.core.Array:
     """Compute cross-entropy loss between input x and target y"""

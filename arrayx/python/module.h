@@ -4,10 +4,14 @@
 
 namespace ax::bind {
     struct PyModule : axnn::Module {
-        NB_TRAMPOLINE(axnn::Module, 1);
+        NB_TRAMPOLINE(axnn::Module, 2);
 
         axr::Array forward(const axr::Array &input) override {
             NB_OVERRIDE_PURE(forward, input);
+        }
+
+        axr::ArrayVec parameters() override {
+            NB_OVERRIDE_PURE(parameters);
         }
     };
 } // namespace ax::bind

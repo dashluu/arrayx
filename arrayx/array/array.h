@@ -82,6 +82,8 @@ namespace ax::array {
 
         void set_lazy(const Array &arr) { op->set_lazy(arr.op->get_lazy()); }
 
+        LazyArrayPtr get_lazy() const { return op->get_lazy(); }
+
         isize item() {
             eval();
             return ax::graph::item(op);
@@ -134,6 +136,15 @@ namespace ax::array {
         static Array from_ptr(uint8_t *ptr, isize nbytes, const Shape &shape, DtypePtr dtype = &f32, const std::string &device_name = default_device_name) {
             DevicePtr device = get_backend_device(device_name);
             return Array(ax::graph::from_ptr(ptr, nbytes, shape, dtype, device));
+        }
+
+        static Array empty_like(const Array &other, DtypePtr dtype = &f32, const std::string &device_name = default_device_name) {
+            DevicePtr device = get_backend_device(device_name);
+            return Array(ax::graph::empty_like(other.op, dtype, device));
+        }
+
+        static Array empty_twin(const Array &other) {
+            return Array(ax::graph::empty_like(other.op, other.get_dtype(), other.get_device()));
         }
 
         // Element-wise operations
@@ -278,4 +289,6 @@ namespace ax::array {
     Array operator/(T c, const Array &arr) {
         return arr.recip() * c;
     }
+
+    using ArrayVec = std::vector<Array>;
 } // namespace ax::array

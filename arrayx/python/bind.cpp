@@ -153,17 +153,18 @@ NB_MODULE(arrayx, m) {
     nb::class_<axnn::Module, axb::PyModule>(m_nn, "Module")
         .def(nb::init<>())
         .def("__call__", &axnn::Module::operator(), "input"_a, "Call the nn module using the forward hook")
-        .def("forward", &axnn::Module::forward, "input"_a, "Forward the nn module, can be overidden");
+        .def("forward", &axnn::Module::forward, "input"_a, "Forward the nn module, can be overidden")
+        .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden");
 
     nb::class_<axo::Optimizer, axb::PyOptimizer>(m_optim, "Optimizer")
-        .def(nb::init<std::vector<axr::Array>, float>(), "params"_a, "lr"_a = 1e-3, "Base optimizer")
-        .def("optim_func", &axo::Optimizer::optim_func, "Parameter update function")
+        .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Base optimizer")
+        .def("forward", &axo::Optimizer::forward, "Parameter update function")
         .def("step", &axo::Optimizer::step, "Update module parameters");
 
     nb::class_<axo::GradientDescent, axo::Optimizer>(m_optim, "GradientDescent")
-        .def(nb::init<std::vector<axr::Array>, float>(), "params"_a, "lr"_a = 1e-3, "Gradient Descent optimizer");
+        .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Gradient Descent optimizer");
 
     m_nn.def("relu", &axnn::relu, "x"_a, "ReLU activation function");
     m_nn.def("onehot", &axnn::onehot, "x"_a, "num_classes"_a = -1, "One-hot encode input array");
-    m_nn.def("cross_entropy_loss", &axnn::cross_entropy_loss, "x"_a, "y"_a, "num_classes"_a = -1, "Compute cross-entropy loss between input x and target y");
+    m_nn.def("cross_entropy_loss", &axnn::cross_entropy_loss, "x"_a, "y"_a, "Compute cross-entropy loss between input x and target y");
 }

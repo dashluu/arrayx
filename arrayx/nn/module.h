@@ -19,13 +19,15 @@ namespace ax::nn {
 
         virtual Array forward(const Array &input) = 0;
 
+        virtual ArrayVec parameters() = 0;
+
         Array operator()(const Array &input) {
             const JitKey key(input);
-            Array output = jit(input, [this](const Array &input) {
-                this->input = input.detach();
+            Array output = jit(input, [this](const Array &x) {
+                this->input = Array::empty_twin(x);
                 return forward(this->input);
             });
-            output.eval();
+            this->input.set_lazy(input);
             return output;
         }
     };

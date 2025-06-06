@@ -56,16 +56,16 @@ namespace ax::bind {
         return nb::cast<std::string>(name);
     }
 
-    template <class OpFunc>
-    axr::Array binary(const axr::Array &arr, const nb::object &obj, OpFunc op_func) {
+    template <class F>
+    axr::Array binary(const axr::Array &arr, const nb::object &obj, F &&f) {
         if (nb::isinstance<axr::Array>(obj)) {
-            return op_func(arr, nb::cast<axr::Array>(obj));
+            return f(arr, nb::cast<axr::Array>(obj));
         } else if (nb::isinstance<nb::float_>(obj)) {
-            return op_func(arr, nb::cast<float>(obj));
+            return f(arr, nb::cast<float>(obj));
         } else if (nb::isinstance<nb::int_>(obj)) {
-            return op_func(arr, nb::cast<int>(obj));
+            return f(arr, nb::cast<int>(obj));
         } else if (nb::isinstance<nb::bool_>(obj)) {
-            return op_func(arr, nb::cast<bool>(obj));
+            return f(arr, nb::cast<bool>(obj));
         }
         throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "float, int, bool, Array");
     }

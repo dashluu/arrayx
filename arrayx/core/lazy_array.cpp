@@ -25,15 +25,12 @@ namespace ax::core {
         auto iter = std::make_unique<ArrayIter>(shared_from_this());
         iter->start();
         bool next_elm_available = iter->has_next();
+        if (!next_elm_available) {
+            return "[]";
+        }
         std::string s = "";
         for (isize i = 0; i < get_ndim(); i++) {
             s += "[";
-        }
-        if (!next_elm_available) {
-            for (isize i = 0; i < get_ndim(); i++) {
-                s += "]";
-            }
-            return s;
         }
         ShapeView elms_per_dim = shape.get_elms_per_dim();
         size_t close = 0;

@@ -6,10 +6,10 @@ namespace ax::nn {
     using namespace ax::array;
 
     struct JitKey {
-      private:
+    private:
         Array arr;
 
-      public:
+    public:
         JitKey(const Array &arr) : arr(arr) {}
 
         JitKey(const JitKey &other) : arr(other.arr) {}
@@ -51,21 +51,23 @@ namespace std {
 namespace ax::nn {
     class Jit {
 
-      private:
+    private:
         std::unordered_map<JitKey, Array> cache;
 
-      public:
+    public:
         Jit() = default;
         Jit(const Jit &) = delete;
         Jit &operator=(const Jit &) = delete;
 
-        template <typename Func>
-        Array operator()(const Array &input, Func &&func) {
+        template <class F>
+        Array operator()(const Array &input, F &&f_not_cached) {
             JitKey key(input);
             if (cache.count(key)) {
+                std::cout << "Loading cache for array " << key.get_array().get_id().str() << "..." << std::endl;
                 return cache[key];
             } else {
-                Array result = func(input);
+                std::cout << "Caching array " << key.get_array().get_id().str() << "..." << std::endl;
+                Array result = f_not_cached(input);
                 cache[key] = result;
                 return result;
             }

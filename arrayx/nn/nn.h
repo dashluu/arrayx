@@ -6,20 +6,19 @@
 namespace ax::nn {
     inline Array relu(const Array &input) {
         static Jit jit;
-        return jit(input, [](const Array &x) { return (x >= 0).astype(&f32) * x; });
+        return jit(input, [](const Array &x) { return (x >= 0).astype(x.get_dtype()) * x; });
     }
 
     inline Array onehot(const Array &input, isize num_classes = 0) {
         static Jit jit;
         return jit(input, [num_classes](const Array &x) mutable {
             if (x.get_dtype()->get_type() != DtypeType::INT) {
-                throw std::invalid_argument("Array " + x.get_id().str() +
-                                            " must be of type int.");
+                throw std::invalid_argument("Array " + x.get_id().str() + " must be of type int.");
             }
             if (num_classes <= 0) {
                 num_classes = x.max().item() + 1;
             }
-            auto arange = Array::arange({num_classes}, 0, 1, &i32);
+            Array arange = Array::arange({num_classes}, 0, 1, &i32);
             return (x.unsqueeze() == arange).astype(&i32);
         });
     }
@@ -47,13 +46,13 @@ namespace ax::nn {
         loss: (*, 1)
         */
         static Jit jit;
-        return jit(x, [y](const Array &x) mutable {
-            auto max_x = x.max({-1});
-            auto exp_x = (x - max_x).exp();
-            auto sum_exp_x = exp_x.sum({-1});
-            auto log_sum_exp_x = sum_exp_x.log() + max_x;
-            auto onehot_y = onehot(y).astype(&f32);
-            auto loss = -(onehot_y * x).sum({-1}) + log_sum_exp_x;
+        return jit(x, [y](const Array &x) {
+            Array max_x = x.max({-1});
+            Array exp_x = (x - max_x).exp();
+            Array sum_exp_x = exp_x.sum({-1});
+            Array log_sum_exp_x = sum_exp_x.log() + max_x;
+            Array onehot_y = onehot(y).astype(x.get_dtype());
+            Array loss = -(onehot_y * x).sum({-1}) + log_sum_exp_x;
             return loss.mean();
         });
     }

@@ -231,6 +231,12 @@ namespace ax::graph {
         return std::make_shared<NoopOp>(out_arr);
     }
 
+    OpPtr empty_like(OpPtr op, DtypePtr dtype, DevicePtr device) {
+        LazyArrayPtr in_arr = op->get_lazy();
+        LazyArrayPtr out_arr = LazyArray::empty(in_arr->get_shape(), dtype, device);
+        return std::make_shared<NoopOp>(out_arr);
+    }
+
     isize item(OpPtr op) {
         LazyArrayPtr arr = op->get_lazy();
 

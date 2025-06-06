@@ -4,14 +4,10 @@
 
 namespace ax::bind {
     struct PyOptimizer : axo::Optimizer {
-        NB_TRAMPOLINE(axo::Optimizer, 2);
+        NB_TRAMPOLINE(axo::Optimizer, 1);
 
-        void optim_func() override {
-            NB_OVERRIDE_PURE(optim_func);
-        }
-
-        void step() override {
-            NB_OVERRIDE_PURE(step);
+        void forward() override {
+            NB_OVERRIDE_PURE(forward);
         }
     };
 } // namespace ax::bind
