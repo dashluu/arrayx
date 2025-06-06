@@ -152,8 +152,8 @@ NB_MODULE(arrayx, m) {
 
     nb::class_<axnn::Module, axb::PyModule>(m_nn, "Module")
         .def(nb::init<>())
-        .def("__call__", &axnn::Module::operator(), "input"_a, "Call the nn module using the forward hook")
-        .def("forward", &axnn::Module::forward, "input"_a, "Forward the nn module, can be overidden")
+        .def("__call__", &axnn::Module::operator(), "x"_a, "Call the nn module using the forward hook")
+        .def("forward", &axnn::Module::forward, "x"_a, "Forward the nn module, can be overidden")
         .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden");
 
     nb::class_<axo::Optimizer, axb::PyOptimizer>(m_optim, "Optimizer")

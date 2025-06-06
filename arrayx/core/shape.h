@@ -1,6 +1,7 @@
 #pragma once
 
 #include "range.h"
+#include <set>
 
 namespace ax::core {
     using ShapeView = std::vector<isize>;
