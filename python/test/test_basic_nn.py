@@ -1,6 +1,6 @@
 from __future__ import annotations
 from arrayx.core import Array, Backend
-from arrayx.nn import relu, onehot, cross_entropy_loss
+from arrayx.nn import CrossEntropyLoss, relu, onehot, cross_entropy_loss
 from arrayx.optim import GradientDescent
 from mnist import MnistModel
 import nn
@@ -36,7 +36,7 @@ class TestBasicNN:
         t3: torch.Tensor = b.torch()
         t3.requires_grad_(True)
         t3.retain_grad()
-        arr2 = linear(arr1).sum()
+        arr2 = linear([arr1]).sum()
         t4 = (t1 @ t2.T + t3).sum()
         arr2.backward()
         t4.backward()
@@ -113,7 +113,7 @@ class TestBasicNN:
         t1 = torch.from_numpy(x)
         t2 = torch.from_numpy(y).type(torch.int64)
 
-        logits = model(arr1)
+        logits = model([arr1])
         torch_logits = torch_model(t1)
 
         # Loss computation
@@ -170,7 +170,7 @@ class TestBasicNN:
         passes = 3
 
         for _ in range(passes):
-            logits = model(arr1)
+            logits = model([arr1])
             torch_logits = torch_model(t1)
             # Loss computation
             loss = cross_entropy_loss(logits, arr2)
@@ -189,58 +189,59 @@ class TestBasicNN:
             assert torch.allclose(model.linear2.w.torch(), torch_model[2].weight.data, atol=1e-3, rtol=0)
             assert torch.allclose(model.linear2.b.torch(), torch_model[2].bias.data, atol=1e-3, rtol=0)
 
-        def test_multipass_with_jit_and_optimizer(self):
-            # Input data
-            x = np.random.randn(64, 784).astype(np.float32)
-            y = np.random.randint(0, 10, (64,), dtype=np.int32)
+    def test_multipass_with_jit_and_optimizer(self):
+        # Input data
+        x = np.random.randn(64, 784).astype(np.float32)
+        y = np.random.randint(0, 10, (64,), dtype=np.int32)
 
-            # Array implementation
-            arr1 = Array.from_numpy(x)
-            arr2 = Array.from_numpy(y)
-            model = MnistModel()
+        # Array implementation
+        arr1 = Array.from_numpy(x)
+        arr2 = Array.from_numpy(y)
+        model = MnistModel()
+        loss_fn = CrossEntropyLoss()
 
-            # PyTorch implementation
-            torch_model = torch.nn.Sequential(torch.nn.Linear(784, 128), torch.nn.ReLU(), torch.nn.Linear(128, 10))
+        # PyTorch implementation
+        torch_model = torch.nn.Sequential(torch.nn.Linear(784, 128), torch.nn.ReLU(), torch.nn.Linear(128, 10))
 
-            # Share weights between Array and PyTorch
-            # First layer
-            w1: torch.Tensor = model.linear1.w.torch()
-            b1: torch.Tensor = model.linear1.b.torch()
-            w1.requires_grad_(True)
-            b1.requires_grad_(True)
-            torch_model[0].weight.data.copy_(w1)
-            torch_model[0].bias.data.copy_(b1)
+        # Share weights between Array and PyTorch
+        # First layer
+        w1: torch.Tensor = model.linear1.w.torch()
+        b1: torch.Tensor = model.linear1.b.torch()
+        w1.requires_grad_(True)
+        b1.requires_grad_(True)
+        torch_model[0].weight.data.copy_(w1)
+        torch_model[0].bias.data.copy_(b1)
 
-            # Second layer
-            w2: torch.Tensor = model.linear2.w.torch()
-            b2: torch.Tensor = model.linear2.b.torch()
-            w2.requires_grad_(True)
-            b2.requires_grad_(True)
-            torch_model[2].weight.data.copy_(w2)
-            torch_model[2].bias.data.copy_(b2)
+        # Second layer
+        w2: torch.Tensor = model.linear2.w.torch()
+        b2: torch.Tensor = model.linear2.b.torch()
+        w2.requires_grad_(True)
+        b2.requires_grad_(True)
+        torch_model[2].weight.data.copy_(w2)
+        torch_model[2].bias.data.copy_(b2)
 
-            # Forward pass
-            t1 = torch.from_numpy(x)
-            t2 = torch.from_numpy(y).type(torch.int64)
-            passes = 3
+        # Forward pass
+        t1 = torch.from_numpy(x)
+        t2 = torch.from_numpy(y).type(torch.int64)
+        passes = 3
 
-            for _ in range(passes):
-                # JIT compilation here
-                logits = model.jit(arr1)
-                torch_logits = torch_model(t1)
-                # Loss computation
-                loss = cross_entropy_loss(logits, arr2)
-                torch_loss: torch.Tensor = torch.nn.CrossEntropyLoss()(torch_logits, t2)
-                # Backward pass
-                loss.backward()
-                torch_loss.backward()
-                # Setup optimizers
-                optimizer = GradientDescent(model.parameters(), lr=1e-3)
-                torch_optimizer = torch.optim.SGD(torch_model.parameters(), lr=1e-3, momentum=0, weight_decay=0)
-                optimizer.step()
-                torch_optimizer.step()
-                # Compare updated weights and biases
-                assert torch.allclose(model.linear1.w.torch(), torch_model[0].weight.data, atol=1e-3, rtol=0)
-                assert torch.allclose(model.linear1.b.torch(), torch_model[0].bias.data, atol=1e-3, rtol=0)
-                assert torch.allclose(model.linear2.w.torch(), torch_model[2].weight.data, atol=1e-3, rtol=0)
-                assert torch.allclose(model.linear2.b.torch(), torch_model[2].bias.data, atol=1e-3, rtol=0)
+        for _ in range(passes):
+            # JIT compilation here
+            logits = model.jit([arr1])
+            torch_logits = torch_model(t1)
+            # Loss computation
+            loss = cross_entropy_loss(logits, arr2)
+            torch_loss: torch.Tensor = torch.nn.CrossEntropyLoss()(torch_logits, t2)
+            # Backward pass
+            loss.backward()
+            torch_loss.backward()
+            # Setup optimizers
+            optimizer = GradientDescent(model.parameters(), lr=1e-3)
+            torch_optimizer = torch.optim.SGD(torch_model.parameters(), lr=1e-3, momentum=0, weight_decay=0)
+            optimizer.step()
+            torch_optimizer.step()
+            # Compare updated weights and biases
+            assert torch.allclose(model.linear1.w.torch(), torch_model[0].weight.data, atol=1e-3, rtol=0)
+            assert torch.allclose(model.linear1.b.torch(), torch_model[0].bias.data, atol=1e-3, rtol=0)
+            assert torch.allclose(model.linear2.w.torch(), torch_model[2].weight.data, atol=1e-3, rtol=0)
+            assert torch.allclose(model.linear2.b.torch(), torch_model[2].bias.data, atol=1e-3, rtol=0)

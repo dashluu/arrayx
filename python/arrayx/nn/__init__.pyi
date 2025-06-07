@@ -1,20 +1,25 @@
+from collections.abc import Sequence
+
 import arrayx.core
 
 
 class Module:
     def __init__(self) -> None: ...
 
-    def __call__(self, x: arrayx.core.Array) -> arrayx.core.Array:
+    def __call__(self, x: Sequence[arrayx.core.Array]) -> arrayx.core.Array:
         """Call the nn module using the forward hook"""
 
-    def forward(self, x: arrayx.core.Array) -> arrayx.core.Array:
+    def forward(self, x: Sequence[arrayx.core.Array]) -> arrayx.core.Array:
         """Forward the nn module, can be overidden"""
 
     def parameters(self) -> list[arrayx.core.Array]:
         """Get the parameters of the nn module, can be overidden"""
 
-    def jit(self, x: arrayx.core.Array) -> arrayx.core.Array:
+    def jit(self, x: Sequence[arrayx.core.Array]) -> arrayx.core.Array:
         """JIT-compile the nn module"""
+
+class CrossEntropyLoss(Module):
+    def __init__(self) -> None: ...
 
 def linear(x: arrayx.core.Array, weight: arrayx.core.Array) -> arrayx.core.Array:
     """Functional linear without bias"""

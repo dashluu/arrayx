@@ -58,4 +58,13 @@ namespace ax::nn {
         Array loss = -(onehot_y * x).sum({x_ndim - 1}) + log_sum_exp_x;
         return loss.mean();
     }
+
+    class CrossEntropyLoss : public Module {
+        Array forward(const ArrayVec &input) override {
+            if (input.size() != 2) {
+                throw std::invalid_argument("CrossEntropyLoss expects 2 input arrays but got " + std::to_string(input.size()) + ".");
+            }
+            return cross_entropy_loss(input[0], input[1]);
+        }
+    };
 } // namespace ax::nn

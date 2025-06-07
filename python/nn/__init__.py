@@ -1,6 +1,7 @@
 import numpy as np
 from arrayx.core import Array, DtypeType, f32, i32
 from arrayx.nn import Module, linear, linear_with_bias
+from collections.abc import Sequence
 
 
 class Linear(Module):
@@ -24,8 +25,10 @@ class Linear(Module):
     def b(self):
         return self.__b
 
-    def forward(self, x: Array):
-        return linear(x, self.__w) if self.__b is None else linear_with_bias(x, self.__w, self.__b)
+    def forward(self, x: Sequence[Array]):
+        if len(x) != 1:
+            raise Exception(f"Linear expects 1 argument but got {len(x)}.")
+        return linear(x[0], self.__w) if self.__b is None else linear_with_bias(x[0], self.__w, self.__b)
 
     def parameters(self):
         return [self.__w] if self.__b is None else [self.__w, self.__b]

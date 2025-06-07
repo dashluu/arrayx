@@ -159,6 +159,9 @@ NB_MODULE(arrayx, m) {
         .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden")
         .def("jit", &axnn::Module::jit, "x"_a, "JIT-compile the nn module");
 
+    nb::class_<axnn::CrossEntropyLoss, axnn::Module>(m_nn, "CrossEntropyLoss")
+        .def(nb::init<>());
+
     nb::class_<axo::Optimizer, axb::PyOptimizer>(m_optim, "Optimizer")
         .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Base optimizer")
         .def("forward", &axo::Optimizer::forward, "Parameter update function")
