@@ -48,8 +48,8 @@ namespace ax::core {
             }
             std::vector<bool> dims_used(ndim, false);
             for (auto &dim : dims) {
-                if (dim >= ndim) {
-                    throw std::invalid_argument("The specified order must be a permutation of the dimensions but got " + vnumstr(dims) + ".");
+                if (dim < 0 || dim >= ndim) {
+                    throw std::invalid_argument("The dimension must be in the range [0, " + std::to_string(ndim) + ") but got " + std::to_string(dim) + ".");
                 }
                 dims_used[dim] = true;
             }
@@ -64,11 +64,11 @@ namespace ax::core {
             if (start_dim > end_dim) {
                 throw std::invalid_argument("The start dimension must be smaller than the end dimension.");
             }
-            if (start_dim >= get_ndim()) {
-                throw std::invalid_argument("The start dimension must be smaller than the number of dimensions.");
+            if (start_dim < 0 || start_dim >= get_ndim()) {
+                throw std::invalid_argument("The start dimension must be in the range [0, " + std::to_string(get_ndim()) + ") but got " + std::to_string(start_dim) + ".");
             }
-            if (end_dim >= get_ndim()) {
-                throw std::invalid_argument("The end dimension must be smaller than the number of dimensions.");
+            if (end_dim < 0 || end_dim >= get_ndim()) {
+                throw std::invalid_argument("The end dimension must be in the range [0, " + std::to_string(get_ndim()) + ") but got " + std::to_string(end_dim) + ".");
             }
         }
 

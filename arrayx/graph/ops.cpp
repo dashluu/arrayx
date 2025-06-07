@@ -65,6 +65,32 @@ namespace ax::graph {
         rhs->update_grad(mul(grad, div(self, detach(rhs))), true);
     }
 
+    void MinimumOp::backward() const {
+        // z = min(x, y)
+        // dx += dz * (1 where x is min and 0 otherwise)
+        // dy += dz * (1 where y is min and 0 otherwise)
+        OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+        OpPtr lminimum = astype(eq(detach(lhs), self), self->get_lazy()->get_dtype());
+        OpPtr rminimum = astype(eq(detach(rhs), self), self->get_lazy()->get_dtype());
+        lhs->init_grad();
+        lhs->update_grad(mul(grad, lminimum));
+        rhs->init_grad();
+        rhs->update_grad(mul(grad, rminimum));
+    }
+
+    void MaximumOp::backward() const {
+        // z = max(x, y)
+        // dx += dz * (1 where x is max and 0 otherwise)
+        // dy += dz * (1 where y is max and 0 otherwise)
+        OpPtr self = detach(std::const_pointer_cast<Op>(shared_from_this()));
+        OpPtr lmaximum = astype(eq(detach(lhs), self), self->get_lazy()->get_dtype());
+        OpPtr rmaximum = astype(eq(detach(rhs), self), self->get_lazy()->get_dtype());
+        lhs->init_grad();
+        lhs->update_grad(mul(grad, lmaximum));
+        rhs->init_grad();
+        rhs->update_grad(mul(grad, rmaximum));
+    }
+
     void MatmulOp::backward() const {
         // Transpose the last two dimensions of lhs and rhs
         // z = x @ y
@@ -453,6 +479,10 @@ namespace ax::graph {
     OpPtr leq(OpPtr lop, OpPtr rop) { return cmp<LeqOp>(lop, rop, numeric_dtypes); }
 
     OpPtr geq(OpPtr lop, OpPtr rop) { return cmp<GeqOp>(lop, rop, numeric_dtypes); }
+
+    OpPtr minimum(OpPtr lop, OpPtr rop) { return binary_no_inplace<MinimumOp>(lop, rop); }
+
+    OpPtr maximum(OpPtr lop, OpPtr rop) { return binary_no_inplace<MaximumOp>(lop, rop); }
 
     OpPtr sq(OpPtr in_op, bool in_place) { return unary<SqOp>(in_op, in_place); }
 

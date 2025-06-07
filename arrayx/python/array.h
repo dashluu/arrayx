@@ -98,6 +98,8 @@ namespace ax::bind {
     axr::Array gt(const axr::Array &arr, const nb::object &obj);
     axr::Array leq(const axr::Array &arr, const nb::object &obj);
     axr::Array geq(const axr::Array &arr, const nb::object &obj);
+    axr::Array minimum(const axr::Array &arr, const nb::object &obj);
+    axr::Array maximum(const axr::Array &arr, const nb::object &obj);
     axr::Array slice(const axr::Array &arr, const nb::object &obj);
     axr::Array permute(const axr::Array &arr, ax::core::ShapeDims &dims);
     axr::Array transpose(const axr::Array &arr, axc::isize start_dim, axc::isize end_dim);

@@ -60,14 +60,15 @@ namespace ax::nn {
         Jit &operator=(const Jit &) = delete;
 
         template <class F>
-        Array operator()(const Array &input, F &&f_not_cached) {
+        Array operator()(const Array &input, F &&f) {
             JitKey key(input);
             if (cache.count(key)) {
-                std::cout << "Loading cache for array " << key.get_array().get_id().str() << "..." << std::endl;
+                std::cout << "Loading JIT cache for input array " << key.get_array().get_id().str() << "..." << std::endl;
                 return cache[key];
             } else {
-                std::cout << "Caching array " << key.get_array().get_id().str() << "..." << std::endl;
-                Array result = f_not_cached(input);
+                std::cout << "JIT-caching input array " << key.get_array().get_id().str() << "..." << std::endl;
+                Array result = f(input);
+                result.compile();
                 cache[key] = result;
                 return result;
             }

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "compute_primitive.h"
 #include "ops.h"
 
 namespace ax::graph {
-    class ComputeGraph : public std::enable_shared_from_this<ComputeGraph>, public ComputePrimitive {
+    class ComputeGraph : public std::enable_shared_from_this<ComputeGraph> {
     private:
         OpPtr output;
         std::unordered_set<Id> visited;
@@ -15,7 +14,7 @@ namespace ax::graph {
         void bw_toposort(OpPtr op);
 
     public:
-        ComputeGraph(OpPtr output) : ComputePrimitive(ComputePrimitiveType::GRAPH), output(output) {}
+        ComputeGraph(OpPtr output) : output(output) {}
 
         OpPtr get_output() const { return output; }
 
@@ -23,7 +22,7 @@ namespace ax::graph {
 
         void backward();
 
-        virtual std::shared_ptr<ComputeKernel> compile() = 0;
+        virtual void compile() = 0;
 
         const std::string str() const;
 

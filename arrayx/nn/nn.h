@@ -4,7 +4,16 @@
 
 namespace ax::nn {
     inline Array relu(const Array &x) {
-        return (x >= 0).astype(x.get_dtype()) * x;
+        return x.maximum(0);
+    }
+
+    inline Array linear(const Array &x, const Array &weight) {
+        isize weight_ndim = weight.get_ndim();
+        return x.matmul(weight.transpose(weight_ndim - 2, weight_ndim - 1));
+    }
+
+    inline Array linear_with_bias(const Array &x, const Array &weight, const Array &bias) {
+        return linear(x, weight) + bias;
     }
 
     inline Array onehot(const Array &x, isize num_classes = 0) {
@@ -40,12 +49,13 @@ namespace ax::nn {
         onehot_y * x: (*, N)
         loss: (*, 1)
         */
-        Array max_x = x.max({-1});
+        isize x_ndim = x.get_ndim();
+        Array max_x = x.max({x_ndim - 1});
         Array exp_x = (x - max_x).exp();
-        Array sum_exp_x = exp_x.sum({-1});
+        Array sum_exp_x = exp_x.sum({x_ndim - 1});
         Array log_sum_exp_x = sum_exp_x.log() + max_x;
         Array onehot_y = onehot(y).astype(x.get_dtype());
-        Array loss = -(onehot_y * x).sum({-1}) + log_sum_exp_x;
+        Array loss = -(onehot_y * x).sum({x_ndim - 1}) + log_sum_exp_x;
         return loss.mean();
     }
 } // namespace ax::nn

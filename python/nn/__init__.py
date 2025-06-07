@@ -1,6 +1,6 @@
 import numpy as np
 from arrayx.core import Array, DtypeType, f32, i32
-from arrayx.nn import Module
+from arrayx.nn import Module, linear, linear_with_bias
 
 
 class Linear(Module):
@@ -25,8 +25,7 @@ class Linear(Module):
         return self.__b
 
     def forward(self, x: Array):
-        x = x @ self.__w.transpose(-2, -1)
-        return x if self.__b is None else x + self.__b
+        return linear(x, self.__w) if self.__b is None else linear_with_bias(x, self.__w, self.__b)
 
     def parameters(self):
         return [self.__w] if self.__b is None else [self.__w, self.__b]

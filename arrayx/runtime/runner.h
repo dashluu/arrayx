@@ -52,9 +52,9 @@ namespace ax::runtime {
 
         Runner &operator=(const Runner &) = delete;
 
-        void forward(std::shared_ptr<ComputePrimitive> primitive);
+        void forward(std::shared_ptr<ComputeGraph> graph);
 
-        void backward(std::shared_ptr<ComputePrimitive> primitive);
+        void backward(std::shared_ptr<ComputeGraph> graph);
     };
 
     using RunnerPtr = std::shared_ptr<Runner>;

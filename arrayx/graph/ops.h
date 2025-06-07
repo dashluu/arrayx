@@ -24,6 +24,8 @@ namespace ax::graph {
         GEQ,
         LT,
         LEQ,
+        MINIMUM,
+        MAXIMUM,
         MATMUL,
         SQ,
         SQRT,
@@ -77,6 +79,8 @@ namespace ax::graph {
         {Opcode::GEQ, "geq"},
         {Opcode::LT, "lt"},
         {Opcode::LEQ, "leq"},
+        {Opcode::MINIMUM, "minimum"},
+        {Opcode::MAXIMUM, "maximum"},
         {Opcode::MATMUL, "matmul"},
         {Opcode::SQ, "sq"},
         {Opcode::SQRT, "sqrt"},
@@ -356,6 +360,20 @@ namespace ax::graph {
         void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
+    struct MinimumOp : public BinaryOp {
+    public:
+        MinimumOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::MINIMUM, lazy, lhs, rhs, false) {}
+
+        void backward() const override;
+    };
+
+    struct MaximumOp : public BinaryOp {
+    public:
+        MaximumOp(LazyArrayPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::MAXIMUM, lazy, lhs, rhs, false) {}
+
+        void backward() const override;
+    };
+
     struct MatmulOp : public Op {
     private:
         OpPtr lhs;
@@ -566,6 +584,8 @@ namespace ax::graph {
     OpPtr gt(OpPtr lop, OpPtr rop);
     OpPtr leq(OpPtr lop, OpPtr rop);
     OpPtr geq(OpPtr lop, OpPtr rop);
+    OpPtr minimum(OpPtr lop, OpPtr rop);
+    OpPtr maximum(OpPtr lop, OpPtr rop);
     OpPtr sq(OpPtr in_op, bool in_place = false);
     OpPtr sqrt(OpPtr in_op, bool in_place = false);
     OpPtr neg(OpPtr in_op, bool in_place = false);
@@ -621,74 +641,52 @@ namespace ax::graph {
     }
 
     template <Numeric T>
-    OpPtr add(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, add);
-    }
+    OpPtr add(OpPtr lop, T c) { return binary_with_scalar(lop, c, add); }
 
     template <Numeric T>
-    OpPtr self_add(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, self_add);
-    }
+    OpPtr self_add(OpPtr lop, T c) { return binary_with_scalar(lop, c, self_add); }
 
     template <Numeric T>
-    OpPtr sub(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, sub);
-    }
+    OpPtr sub(OpPtr lop, T c) { return binary_with_scalar(lop, c, sub); }
 
     template <Numeric T>
-    OpPtr self_sub(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, self_sub);
-    }
+    OpPtr self_sub(OpPtr lop, T c) { return binary_with_scalar(lop, c, self_sub); }
 
     template <Numeric T>
-    OpPtr mul(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, mul);
-    }
+    OpPtr mul(OpPtr lop, T c) { return binary_with_scalar(lop, c, mul); }
 
     template <Numeric T>
-    OpPtr self_mul(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, self_mul);
-    }
+    OpPtr self_mul(OpPtr lop, T c) { return binary_with_scalar(lop, c, self_mul); }
 
     template <Numeric T>
-    OpPtr div(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, div);
-    }
+    OpPtr div(OpPtr lop, T c) { return binary_with_scalar(lop, c, div); }
 
     template <Numeric T>
-    OpPtr self_div(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, self_div);
-    }
+    OpPtr self_div(OpPtr lop, T c) { return binary_with_scalar(lop, c, self_div); }
 
     template <NumericOrBool T>
-    OpPtr eq(OpPtr lop, T c) {
-        return eq_with_scalar(lop, c, eq);
-    }
+    OpPtr eq(OpPtr lop, T c) { return eq_with_scalar(lop, c, eq); }
 
     template <NumericOrBool T>
-    OpPtr neq(OpPtr lop, T c) {
-        return eq_with_scalar(lop, c, neq);
-    }
+    OpPtr neq(OpPtr lop, T c) { return eq_with_scalar(lop, c, neq); }
 
     template <Numeric T>
-    OpPtr lt(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, lt);
-    }
+    OpPtr lt(OpPtr lop, T c) { return binary_with_scalar(lop, c, lt); }
 
     template <Numeric T>
-    OpPtr gt(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, gt);
-    }
+    OpPtr gt(OpPtr lop, T c) { return binary_with_scalar(lop, c, gt); }
 
     template <Numeric T>
-    OpPtr leq(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, leq);
-    }
+    OpPtr leq(OpPtr lop, T c) { return binary_with_scalar(lop, c, leq); }
 
     template <Numeric T>
-    OpPtr geq(OpPtr lop, T c) {
-        return binary_with_scalar(lop, c, geq);
-    }
+    OpPtr geq(OpPtr lop, T c) { return binary_with_scalar(lop, c, geq); }
+
+    template <Numeric T>
+    OpPtr minimum(OpPtr lop, T c) { return binary_with_scalar(lop, c, minimum); }
+
+    template <Numeric T>
+    OpPtr maximum(OpPtr lop, T c) { return binary_with_scalar(lop, c, maximum); }
 
     template <class O>
     OpPtr binary(OpPtr lop, OpPtr rop) {
@@ -716,6 +714,35 @@ namespace ax::graph {
         OpPtr broadcasted_rop = broadcast(rop, lview);
         LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_lazy()->get_view()), ldtype, ldevice);
         OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop, false);
+        return out_op;
+    }
+
+    template <class O>
+    OpPtr binary_no_inplace(OpPtr lop, OpPtr rop) {
+        O dummy_op(nullptr, nullptr, nullptr);
+        LazyArrayPtr larr = lop->get_lazy();
+        LazyArrayPtr rarr = rop->get_lazy();
+        const ShapeView &lview = larr->get_view();
+        const ShapeView &rview = rarr->get_view();
+        DtypePtr ldtype = larr->get_dtype();
+        DtypePtr rdtype = rarr->get_dtype();
+        DevicePtr ldevice = larr->get_device();
+        DevicePtr rdevice = rarr->get_device();
+
+        if (!larr->get_shape().broadcastable(rview)) {
+            throw IncompatShapesForOp(dummy_op.get_opcode_str(), vnumstr(lview), vnumstr(rview));
+        }
+        if (!binary_dtypes.contains(ldtype) || ldtype != rdtype) {
+            throw IncompatDtypesForOp(dummy_op.get_opcode_str(), ldtype->str(), rdtype->str());
+        }
+        if (ldevice != rdevice) {
+            throw IncompatDevicesForOp(dummy_op.get_opcode_str(), ldevice->str(), rdevice->str());
+        }
+
+        OpPtr broadcasted_lop = broadcast(lop, rview);
+        OpPtr broadcasted_rop = broadcast(rop, lview);
+        LazyArrayPtr out_arr = LazyArray::empty(Shape(broadcasted_lop->get_lazy()->get_view()), ldtype, ldevice);
+        OpPtr out_op = std::make_shared<O>(out_arr, broadcasted_lop, broadcasted_rop);
         return out_op;
     }
 

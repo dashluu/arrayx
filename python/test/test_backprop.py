@@ -107,8 +107,9 @@ class TestBackprop:
         arr5 = arr3 * arr4
         arr6 = arr1 / arr2
         arr7 = arr5 + arr6
-        arr8 = arr7.sum()
-        arr8.backward()
+        arr8 = arr7.maximum(arr6)
+        arr9 = arr8.sum()
+        arr9.backward()
 
         # PyTorch implementation
         t1 = torch.from_numpy(np1).requires_grad_(True)
@@ -123,8 +124,10 @@ class TestBackprop:
         t6.retain_grad()
         t7 = t5 + t6
         t7.retain_grad()
-        t8 = t7.sum()
-        t8.backward()
+        t8 = t7.maximum(t6)
+        t8.retain_grad()
+        t9 = t8.sum()
+        t9.backward()
 
         # Compare gradients
         compare_grads(arr1.grad, t1.grad, "arr1")
@@ -134,6 +137,7 @@ class TestBackprop:
         compare_grads(arr5.grad, t5.grad, "arr5")
         compare_grads(arr6.grad, t6.grad, "arr6")
         compare_grads(arr7.grad, t7.grad, "arr7")
+        compare_grads(arr8.grad, t8.grad, "arr8")
 
     def test_backprop_v4(self):
         print("Testing nested operations:")
@@ -234,14 +238,15 @@ class TestBackprop:
         arr5 = arr2 / arr1
         arr6 = arr5.exp()
         arr7 = arr4 * arr6
-        arr8 = arr7.log()
-        arr9 = arr2.sqrt()
-        arr10 = arr1 * arr9
-        arr11 = arr10.sq()
-        arr12 = arr8 + arr11
-        arr13 = arr12.sum()
+        arr8 = arr7.minimum(arr4)
+        arr9 = arr8.log()
+        arr10 = arr2.sqrt()
+        arr11 = arr1 * arr10
+        arr12 = arr11.sq()
+        arr13 = arr9 + arr12
+        arr14 = arr13.sum()
         # First backward pass
-        arr13.backward()
+        arr14.backward()
 
         # PyTorch implementation
         t1 = torch.from_numpy(np1).requires_grad_(True)
@@ -256,18 +261,20 @@ class TestBackprop:
         t6.retain_grad()
         t7 = t4 * t6
         t7.retain_grad()
-        t8 = t7.log()
+        t8 = t7.minimum(t4)
         t8.retain_grad()
-        t9 = t2.sqrt()
+        t9 = t8.log()
         t9.retain_grad()
-        t10 = t1 * t9
+        t10 = t2.sqrt()
         t10.retain_grad()
-        t11 = t10 * t10
+        t11 = t1 * t10
         t11.retain_grad()
-        t12 = t8 + t11
+        t12 = t11.square()
         t12.retain_grad()
-        t13 = t12.sum()
-        t13.backward(retain_graph=True)
+        t13 = t9 + t12
+        t13.retain_grad()
+        t14 = t13.sum()
+        t14.backward(retain_graph=True)
 
         # Compare first backward pass gradients
         print("\nChecking first backward pass:")
@@ -288,7 +295,7 @@ class TestBackprop:
         # TODO: uncomment this after implementing backprop for broadcasting
         # result = result * 2.0
         # result.forward()
-        arr13.backward()
+        arr14.backward()
 
         # PyTorch second pass
         # TODO: uncomment this after implementing backprop for broadcasting
@@ -306,7 +313,8 @@ class TestBackprop:
         t10.grad = None
         t11.grad = None
         t12.grad = None
-        t13.backward()
+        t13.grad = None
+        t14.backward()
 
         # Compare second backward pass gradients
         print("\nChecking second backward pass:")

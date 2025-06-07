@@ -36,7 +36,7 @@ class TestBinary:
         # Add any cleanup code here
         Backend.cleanup()
 
-    def binary_no_broadcast(self, name: str, op, gen=randn):
+    def binary_no_broadcast(self, name: str, op1, op2, gen=randn):
         print(f"{name}:")
         n = np.random.randint(1, 5)
         shape = [np.random.randint(1, 100) for _ in range(n)]
@@ -44,13 +44,13 @@ class TestBinary:
         np2 = gen(shape)
         arr1 = Array.from_numpy(np1)
         arr2 = Array.from_numpy(np2)
-        arr3: Array = op(arr1, arr2)
+        arr3: Array = op1(arr1, arr2)
         np3: np.ndarray = arr3.numpy()
-        np4: np.ndarray = op(np1, np2)
+        np4: np.ndarray = op2(np1, np2)
         assert tuple(arr3.view) == np4.shape
         assert np.allclose(np3, np4, atol=1e-3, rtol=0)
 
-    def binary_with_broadcast(self, name: str, op, gen=randn):
+    def binary_with_broadcast(self, name: str, op1, op2, gen=randn):
         print(f"{name} with broadcast:")
         # Test cases with different broadcasting scenarios
         test_cases = [
@@ -69,13 +69,13 @@ class TestBinary:
             np2 = gen(shape2)
             arr1 = Array.from_numpy(np1)
             arr2 = Array.from_numpy(np2)
-            arr3: Array = op(arr1, arr2)
+            arr3: Array = op1(arr1, arr2)
             np3: np.ndarray = arr3.numpy()
-            np4: np.ndarray = op(np1, np2)
+            np4: np.ndarray = op2(np1, np2)
             assert tuple(arr3.view) == np4.shape
             assert np.allclose(np3, np4, atol=1e-3, rtol=0)
 
-    def binary_inplace(self, name: str, op, gen=randn):
+    def binary_inplace(self, name: str, op1, op2, gen=randn):
         print(f"{name} inplace:")
         n = np.random.randint(1, 5)
         shape = [np.random.randint(1, 100) for _ in range(n)]
@@ -90,16 +90,16 @@ class TestBinary:
         arr2 = Array.from_numpy(np2)
 
         # Apply inplace operation
-        arr1: Array = op(arr1, arr2)  # arr1 += arr2, etc.
-        arr1: Array = op(arr1, arr2)  # Second time to make sure it's updated.
+        arr1: Array = op1(arr1, arr2)  # arr1 += arr2, etc.
+        arr1: Array = op1(arr1, arr2)  # Second time to make sure it's updated.
 
         # Compare with NumPy
-        np1_copy: np.ndarray = op(np1_copy, np2)  # np1_copy += np2, etc.
-        np1_copy: np.ndarray = op(np1_copy, np2)  # Second time
+        np1_copy: np.ndarray = op2(np1_copy, np2)  # np1_copy += np2, etc.
+        np1_copy: np.ndarray = op2(np1_copy, np2)  # Second time
         assert tuple(arr1.view) == np1_copy.shape
         assert np.allclose(arr1.numpy(), np1_copy, atol=1e-3, rtol=0)
 
-    def binary_inplace_broadcast(self, name: str, op, gen=randn):
+    def binary_inplace_broadcast(self, name: str, op1, op2, gen=randn):
         print(f"{name} inplace broadcast:")
 
         test_cases = [
@@ -126,56 +126,62 @@ class TestBinary:
             arr2 = Array.from_numpy(np2)
 
             # Apply inplace operation
-            arr1: Array = op(arr1, arr2)
+            arr1: Array = op1(arr1, arr2)
             # Compare with NumPy
-            np1_copy: np.ndarray = op(np1_copy, np2)
+            np1_copy: np.ndarray = op2(np1_copy, np2)
             assert tuple(arr1.view) == np1_copy.shape
             assert np.allclose(arr1.numpy(), np1_copy, atol=1e-3, rtol=0)
 
     def test_add(self):
-        self.binary_no_broadcast("add", operator.add)
+        self.binary_no_broadcast("add", operator.add, operator.add)
 
     def test_sub(self):
-        self.binary_no_broadcast("sub", operator.sub)
+        self.binary_no_broadcast("sub", operator.sub, operator.sub)
 
     def test_mul(self):
-        self.binary_no_broadcast("mul", operator.mul)
+        self.binary_no_broadcast("mul", operator.mul, operator.mul)
 
     def test_div(self):
-        self.binary_no_broadcast("div", operator.truediv)
+        self.binary_no_broadcast("div", operator.truediv, operator.truediv)
+
+    def test_minimum(self):
+        self.binary_no_broadcast("minimum", lambda x, y: x.minimum(y), lambda x, y: np.minimum(x, y))
+
+    def test_maximum(self):
+        self.binary_no_broadcast("maximum", lambda x, y: x.maximum(y), lambda x, y: np.maximum(x, y))
 
     def test_add_broadcast(self):
-        self.binary_with_broadcast("add", operator.add)
+        self.binary_with_broadcast("add", operator.add, operator.add)
 
     def test_sub_broadcast(self):
-        self.binary_with_broadcast("sub", operator.sub)
+        self.binary_with_broadcast("sub", operator.sub, operator.sub)
 
     def test_mul_broadcast(self):
-        self.binary_with_broadcast("mul", operator.mul)
+        self.binary_with_broadcast("mul", operator.mul, operator.mul)
 
     def test_div_broadcast(self):
-        self.binary_with_broadcast("div", operator.truediv)
+        self.binary_with_broadcast("div", operator.truediv, operator.truediv)
 
     def test_add_inplace(self):
-        self.binary_inplace("add", operator.iadd)
+        self.binary_inplace("add", operator.iadd, operator.iadd)
 
     def test_sub_inplace(self):
-        self.binary_inplace("sub", operator.isub)
+        self.binary_inplace("sub", operator.isub, operator.isub)
 
     def test_mul_inplace(self):
-        self.binary_inplace("mul", operator.imul)
+        self.binary_inplace("mul", operator.imul, operator.imul)
 
     def test_div_inplace(self):
-        self.binary_inplace("div", operator.itruediv)
+        self.binary_inplace("div", operator.itruediv, operator.itruediv)
 
     def test_add_inplace_broadcast(self):
-        self.binary_inplace_broadcast("add", operator.iadd)
+        self.binary_inplace_broadcast("add", operator.iadd, operator.iadd)
 
     def test_sub_inplace_broadcast(self):
-        self.binary_inplace_broadcast("sub", operator.isub)
+        self.binary_inplace_broadcast("sub", operator.isub, operator.isub)
 
     def test_mul_inplace_broadcast(self):
-        self.binary_inplace_broadcast("mul", operator.imul)
+        self.binary_inplace_broadcast("mul", operator.imul, operator.imul)
 
     def test_div_inplace_broadcast(self):
-        self.binary_inplace_broadcast("div", operator.itruediv)
+        self.binary_inplace_broadcast("div", operator.itruediv, operator.itruediv)

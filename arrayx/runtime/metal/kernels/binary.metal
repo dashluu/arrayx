@@ -60,6 +60,18 @@ struct Geq
     bool operator()(T lhs, T rhs) { return lhs >= rhs; }
 };
 
+struct Minimum
+{
+    template <class T>
+    T operator()(T lhs, T rhs) { return lhs < rhs ? lhs : rhs; }
+};
+
+struct Maximum
+{
+    template <class T>
+    T operator()(T lhs, T rhs) { return lhs > rhs ? lhs : rhs; }
+};
+
 template <class Op, class T, class R>
 kernel void binary(
     const constant uint &ndim [[buffer(0)]],
@@ -102,6 +114,8 @@ binary(add, Add);
 binary(sub, Sub);
 binary(mul, Mul);
 binary(div, Div);
+binary(minimum, Minimum);
+binary(maximum, Maximum);
 cmp_all(eq, Eq);
 cmp_all(neq, Neq);
 numeric_cmp(lt, Lt);

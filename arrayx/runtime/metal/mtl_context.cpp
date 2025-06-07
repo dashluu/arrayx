@@ -40,7 +40,7 @@ namespace ax::runtime::metal {
     }
 
     void MTLContext::init_binary_kernels() {
-        std::vector<std::string> binary_opstrs = {"add", "sub", "mul", "div", "lt", "gt", "leq", "geq"};
+        std::vector<std::string> binary_opstrs = {"add", "sub", "mul", "div", "lt", "gt", "leq", "geq", "minimum", "maximum"};
         std::vector<std::string> eq_opstrs = {"eq", "neq"};
         init_kernels(binary_opstrs, numeric_dtypes);
         init_kernels(eq_opstrs, all_dtypes);

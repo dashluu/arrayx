@@ -30,22 +30,15 @@ namespace ax::runtime {
         }
     }
 
-    void Runner::forward(std::shared_ptr<ComputePrimitive> primitive) {
-        if (primitive->get_primitive_type() == ComputePrimitiveType::GRAPH) {
-            auto graph = std::static_pointer_cast<ComputeGraph>(primitive);
-            for (auto iter = graph->cbegin(); iter != graph->cend(); ++iter) {
-                std::cout << (*iter)->str() << std::endl;
-                run(*iter);
-            }
+    void Runner::forward(std::shared_ptr<ComputeGraph> graph) {
+        for (auto iter = graph->cbegin(); iter != graph->cend(); ++iter) {
+            run(*iter);
         }
     }
 
-    void Runner::backward(std::shared_ptr<ComputePrimitive> primitive) {
-        if (primitive->get_primitive_type() == ComputePrimitiveType::GRAPH) {
-            auto graph = std::static_pointer_cast<ComputeGraph>(primitive);
-            for (auto iter = graph->crbegin(); iter != graph->crend(); ++iter) {
-                run(*iter);
-            }
+    void Runner::backward(std::shared_ptr<ComputeGraph> graph) {
+        for (auto iter = graph->crbegin(); iter != graph->crend(); ++iter) {
+            run(*iter);
         }
     }
 } // namespace ax::runtime

@@ -1,8 +1,6 @@
-from arrayx.core import Array, f32, b8
-from arrayx.optim import GradientDescent
+from arrayx.core import Array
+from arrayx.nn import relu
 import nn
-import numpy as np
-import ax
 
 
 class MnistModel(nn.Module):
@@ -13,25 +11,9 @@ class MnistModel(nn.Module):
 
     def forward(self, x: Array):
         x = self.linear1(x)
-        # x = nn.relu(x)
-        # x = self.linear2(x)
+        x = relu(x)
+        x = self.linear2(x)
         return x
 
     def parameters(self):
         return self.linear1.parameters() + self.linear2.parameters()
-
-
-def test_mnist_logits():
-    npx = np.random.randn(64, 784).astype(np.float32)
-    x = Array.from_numpy(npx)
-    model = MnistModel()
-    logits = model(x)
-    print(logits)
-
-
-def mnist():
-    with ax.context():
-        test_mnist_logits()
-
-
-mnist()

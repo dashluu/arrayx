@@ -1,5 +1,5 @@
 #include "array.h"
-#include "module.h"
+#include "nn.h"
 #include "optim.h"
 
 NB_MODULE(arrayx, m) {
@@ -120,6 +120,8 @@ NB_MODULE(arrayx, m) {
         .def("__gt__", &axb::gt, "rhs"_a, "Element-wise greater than comparison")
         .def("__le__", &axb::leq, "rhs"_a, "Element-wise less than or equal comparison")
         .def("__ge__", &axb::geq, "rhs"_a, "Element-wise greater than or equal comparison")
+        .def("minimum", &axb::minimum, "rhs"_a, "Element-wise minimum comparison")
+        .def("maximum", &axb::maximum, "rhs"_a, "Element-wise maximum comparison")
 
         // Reduction operations
         .def("sum", &axb::sum, "dims"_a = axc::ShapeDims{}, "Sum array elements along specified dimensions")
@@ -154,7 +156,8 @@ NB_MODULE(arrayx, m) {
         .def(nb::init<>())
         .def("__call__", &axnn::Module::operator(), "x"_a, "Call the nn module using the forward hook")
         .def("forward", &axnn::Module::forward, "x"_a, "Forward the nn module, can be overidden")
-        .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden");
+        .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden")
+        .def("jit", &axnn::Module::jit, "x"_a, "JIT-compile the nn module");
 
     nb::class_<axo::Optimizer, axb::PyOptimizer>(m_optim, "Optimizer")
         .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Base optimizer")
@@ -164,6 +167,8 @@ NB_MODULE(arrayx, m) {
     nb::class_<axo::GradientDescent, axo::Optimizer>(m_optim, "GradientDescent")
         .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Gradient Descent optimizer");
 
+    m_nn.def("linear", &axnn::linear, "x"_a, "weight"_a, "Functional linear without bias");
+    m_nn.def("linear_with_bias", &axnn::linear_with_bias, "x"_a, "weight"_a, "bias"_a, "Functional linear with bias");
     m_nn.def("relu", &axnn::relu, "x"_a, "ReLU activation function");
     m_nn.def("onehot", &axnn::onehot, "x"_a, "num_classes"_a = -1, "One-hot encode input array");
     m_nn.def("cross_entropy_loss", &axnn::cross_entropy_loss, "x"_a, "y"_a, "Compute cross-entropy loss between input x and target y");

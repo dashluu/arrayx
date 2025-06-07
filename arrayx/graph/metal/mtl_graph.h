@@ -8,9 +8,8 @@ namespace ax::graph::metal {
     public:
         MTLGraph(OpPtr output) : ComputeGraph(output) {}
 
-        virtual std::shared_ptr<ComputeKernel> compile() override {
+        void compile() override {
             // TODO: implement this later
-            return nullptr;
         }
     };
 } // namespace ax::graph::metal

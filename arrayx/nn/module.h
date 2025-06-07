@@ -6,7 +6,7 @@ namespace ax::nn {
     class Module {
     protected:
         Array input;
-        static Jit jit;
+        Jit jit_engine;
 
     public:
         Module() = default;
@@ -21,16 +21,15 @@ namespace ax::nn {
 
         virtual ArrayVec parameters() = 0;
 
-        Array operator()(const Array &input) {
-            const JitKey key(input);
-            Array output = jit(input, [this](const Array &x) {
-                this->input = Array::empty_twin(x);
+        Array operator()(const Array &input) { return forward(input); }
+
+        Array jit(const Array &input) {
+            Array output = jit_engine(input, [this](const Array &input) {
+                this->input = Array::empty_twin(input);
                 return forward(this->input);
             });
             this->input.set_lazy(input);
             return output;
         }
     };
-
-    inline Jit Module::jit;
 } // namespace ax::nn

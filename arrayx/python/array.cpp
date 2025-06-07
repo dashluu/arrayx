@@ -248,6 +248,14 @@ namespace ax::bind {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a >= b; });
     }
 
+    axr::Array minimum(const axr::Array &arr, const nb::object &obj) {
+        return binary(arr, obj, [](const auto &a, const auto &b) { return a.minimum(b); });
+    }
+
+    axr::Array maximum(const axr::Array &arr, const nb::object &obj) {
+        return binary(arr, obj, [](const auto &a, const auto &b) { return a.maximum(b); });
+    }
+
     axr::Array slice(const axr::Array &arr, const nb::object &obj) {
         return arr.slice(axb::pyslices_to_ranges(arr, obj));
     }

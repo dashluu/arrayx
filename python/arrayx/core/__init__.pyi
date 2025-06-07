@@ -287,6 +287,12 @@ class Array:
     def __ge__(self, rhs: object) -> Array:
         """Element-wise greater than or equal comparison"""
 
+    def minimum(self, rhs: object) -> Array:
+        """Element-wise minimum comparison"""
+
+    def maximum(self, rhs: object) -> Array:
+        """Element-wise maximum comparison"""
+
     def sum(self, dims: Sequence[int] = []) -> Array:
         """Sum array elements along specified dimensions"""
 

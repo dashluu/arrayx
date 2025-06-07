@@ -95,6 +95,8 @@ namespace ax::array {
 
         void backward();
 
+        void compile();
+
         // Initializer operations
         template <typename T>
         static Array full(const ShapeView &view, T c, DtypePtr dtype = &f32, const std::string &device_name = default_device_name) {
@@ -216,6 +218,10 @@ namespace ax::array {
 
         Array operator>=(const Array &rhs) const { return Array(ax::graph::geq(op, rhs.op)); }
 
+        Array minimum(const Array &rhs) const { return Array(ax::graph::minimum(op, rhs.op)); }
+
+        Array maximum(const Array &rhs) const { return Array(ax::graph::maximum(op, rhs.op)); }
+
         template <Numeric T>
         Array operator==(T c) const { return Array(ax::graph::eq(op, c)); }
 
@@ -233,6 +239,12 @@ namespace ax::array {
 
         template <Numeric T>
         Array operator>=(T c) const { return Array(ax::graph::geq(op, c)); }
+
+        template <Numeric T>
+        Array minimum(T c) const { return Array(ax::graph::minimum(op, c)); }
+
+        template <Numeric T>
+        Array maximum(T c) const { return Array(ax::graph::maximum(op, c)); }
 
         // Reduction operations
         Array sum(const ShapeDims &dims = {}) const { return Array(ax::graph::sum(op, dims)); }
