@@ -4,24 +4,24 @@ namespace ax::runtime::metal {
     void MTLRunner::run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
-        LazyArrayPtr in_arr = in_op->get_lazy();
-        LazyArrayPtr out_arr = out_op->get_lazy();
-        bool strided_input = !in_arr->is_contiguous();
+        LazyPtr in_lazy = in_op->get_lazy();
+        LazyPtr out_lazy = out_op->get_lazy();
+        bool strided_input = !in_lazy->is_contiguous();
 
         // Encode buffers
-        isize numel = in_arr->get_numel();
+        isize numel = in_lazy->get_numel();
         encoder.encode_buffer(&numel, sizeof(mtl_usize), false);
         if (strided_input) {
-            encoder.encode_ndim(in_arr);
+            encoder.encode_ndim(in_lazy);
         }
-        encoder.encode_offset({in_arr, out_arr});
+        encoder.encode_offset({in_lazy, out_lazy});
         if (strided_input) {
-            encoder.encode_view(in_arr);
-            encoder.encode_stride(in_arr);
+            encoder.encode_view(in_lazy);
+            encoder.encode_stride(in_lazy);
         }
-        encoder.encode_array(in_arr);
-        encoder.encode_array(out_arr);
-        DtypePtr dtype = in_arr->get_dtype();
+        encoder.encode_array(in_lazy);
+        encoder.encode_array(out_lazy);
+        DtypePtr dtype = in_lazy->get_dtype();
         encoder.encode_buffer(&default_val, dtype->get_size(), false);
 
         // Configure kernel
@@ -49,22 +49,22 @@ namespace ax::runtime::metal {
         // Initialize Metal autorelease pool and encoder
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
-        LazyArrayPtr in_arr = in_op->get_lazy();
-        LazyArrayPtr out_arr = out_op->get_lazy();
-        bool strided_input = !in_arr->is_contiguous();
+        LazyPtr in_lazy = in_op->get_lazy();
+        LazyPtr out_lazy = out_op->get_lazy();
+        bool strided_input = !in_lazy->is_contiguous();
 
         // Encode buffers
         if (strided_input) {
-            encoder.encode_ndim(in_arr);
+            encoder.encode_ndim(in_lazy);
         }
-        encoder.encode_offset({in_arr, out_arr});
-        encoder.encode_view(in_arr);
+        encoder.encode_offset({in_lazy, out_lazy});
+        encoder.encode_view(in_lazy);
         if (strided_input) {
-            encoder.encode_stride(in_arr);
+            encoder.encode_stride(in_lazy);
         }
-        encoder.encode_array(in_arr);
-        encoder.encode_array(out_arr);
-        DtypePtr dtype = in_arr->get_dtype();
+        encoder.encode_array(in_lazy);
+        encoder.encode_array(out_lazy);
+        DtypePtr dtype = in_lazy->get_dtype();
         encoder.encode_buffer(&default_val, dtype->get_size(), false);
 
         // Configure kernel
@@ -75,7 +75,7 @@ namespace ax::runtime::metal {
         // Calculate optimal thread configuration
         const isize max_threadgroup_size = encoder.get_kernel()->get_state()->maxTotalThreadsPerThreadgroup();
         const isize simd_size = encoder.get_kernel()->get_state()->threadExecutionWidth();
-        const ShapeView &view = in_arr->get_view();
+        const ShapeView &view = in_lazy->get_view();
         const isize nrow = view[0];
         const isize ncol = (view[1] + simd_size - 1) / simd_size * simd_size;
         const isize col_threadgroup_size = std::min(ncol, max_threadgroup_size);

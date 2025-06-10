@@ -7,8 +7,10 @@ namespace ax::array {
             // TODO: use compute_graph->compile()
             compute_graph->forward();
             get_backend_runner()->forward(compute_graph);
-        } else if (!op->is_idempotent()) {
+            initial_run = true;
+        } else if (!initial_run || !op->is_idempotent()) {
             get_backend_runner()->forward(compute_graph);
+            initial_run = true;
         }
     }
 

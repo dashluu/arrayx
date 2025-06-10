@@ -21,9 +21,7 @@ namespace ax::device {
         }
 
         Buffer(uint8_t *ptr, isize nbytes) : ptr(ptr), nbytes(nbytes) {}
-
         Buffer(const Buffer &buff) : ptr(buff.ptr), nbytes(buff.nbytes) {}
-
         ~Buffer() { free(); }
 
         Buffer &operator=(const Buffer &buff) {
@@ -35,7 +33,6 @@ namespace ax::device {
         }
 
         uint8_t *get_ptr() const { return ptr; }
-
         isize get_nbytes() const { return nbytes; }
     };
 } // namespace ax::device

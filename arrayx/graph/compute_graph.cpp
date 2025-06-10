@@ -2,11 +2,11 @@
 
 namespace ax::graph {
     void ComputeGraph::fw_toposort(OpPtr op) {
-        LazyArrayPtr arr = op->get_lazy();
-        if (visited.contains(arr->get_id())) {
+        LazyPtr lazy = op->get_lazy();
+        if (visited.contains(lazy->get_id())) {
             return;
         }
-        visited.insert(arr->get_id());
+        visited.insert(lazy->get_id());
         switch (op->get_optype()) {
         case Optype::INITIALIZER: {
             fw_order.push_back(op);
@@ -26,17 +26,6 @@ namespace ax::graph {
             OpPtr rhs = binary_op->get_rhs();
             lhs->enable_grad(binary_op->is_grad_enabled());
             rhs->enable_grad(binary_op->is_grad_enabled());
-            fw_toposort(lhs);
-            fw_toposort(rhs);
-            fw_order.push_back(op);
-            break;
-        }
-        case Optype::MATMUL: {
-            std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
-            OpPtr lhs = matmul_op->get_lhs();
-            OpPtr rhs = matmul_op->get_rhs();
-            lhs->enable_grad(matmul_op->is_grad_enabled());
-            rhs->enable_grad(matmul_op->is_grad_enabled());
             fw_toposort(lhs);
             fw_toposort(rhs);
             fw_order.push_back(op);
@@ -63,11 +52,11 @@ namespace ax::graph {
     }
 
     void ComputeGraph::bw_toposort(OpPtr op) {
-        LazyArrayPtr arr = op->get_lazy();
-        if (visited.contains(arr->get_id())) {
+        LazyPtr lazy = op->get_lazy();
+        if (visited.contains(lazy->get_id())) {
             return;
         }
-        visited.insert(arr->get_id());
+        visited.insert(lazy->get_id());
         switch (op->get_optype()) {
         case Optype::INITIALIZER: {
             bw_order.push_back(op);
@@ -84,15 +73,6 @@ namespace ax::graph {
             std::shared_ptr<BinaryOp> binary_op = std::static_pointer_cast<BinaryOp>(op);
             OpPtr lhs = binary_op->get_lhs();
             OpPtr rhs = binary_op->get_rhs();
-            bw_toposort(lhs);
-            bw_toposort(rhs);
-            bw_order.push_back(op);
-            break;
-        }
-        case Optype::MATMUL: {
-            std::shared_ptr<MatmulOp> matmul_op = std::static_pointer_cast<MatmulOp>(op);
-            OpPtr lhs = matmul_op->get_lhs();
-            OpPtr rhs = matmul_op->get_rhs();
             bw_toposort(lhs);
             bw_toposort(rhs);
             bw_order.push_back(op);
@@ -127,9 +107,9 @@ namespace ax::graph {
             throw ComputeGraphNotForwardedException();
         }
         if (bw_order.empty()) {
-            LazyArrayPtr arr = output->get_lazy();
-            if (arr->get_numel() > 1) {
-                throw std::invalid_argument("Array " + arr->get_id().str() + " must be a singleton to do gradient backpropation.");
+            LazyPtr lazy = output->get_lazy();
+            if (lazy->get_numel() > 1) {
+                throw std::invalid_argument("Array " + lazy->get_id().str() + " must be a singleton to do gradient backpropation.");
             }
             // Initializes gradient with 1's
             output->init_grad(false);
@@ -153,15 +133,15 @@ namespace ax::graph {
         if (fw_order.empty()) {
             throw ComputeGraphNotForwardedException();
         }
-        LazyArrayPtr arr;
+        LazyPtr lazy;
         std::string s = "Forward:\n";
         for (auto &op : fw_order) {
-            arr = op->get_lazy();
+            lazy = op->get_lazy();
             s += op->str() + "\n";
         }
         s += "Backward:\n";
         for (auto &op : bw_order) {
-            arr = op->get_lazy();
+            lazy = op->get_lazy();
             s += op->str() + "\n";
         }
         return s;

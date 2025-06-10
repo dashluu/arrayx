@@ -20,6 +20,7 @@ namespace ax::core {
                                             std::to_string(ranges.size()) + " and " +
                                             std::to_string(get_ndim()) + ".");
             }
+
             for (size_t i = 0; i < ranges.size(); i++) {
                 const Range range = ranges[i];
                 if (range.start < 0 || range.start >= static_cast<isize>(view[i])) {
@@ -42,17 +43,21 @@ namespace ax::core {
 
         void if_dims_make_valid_permutation(const ShapeDims &dims) const {
             isize ndim = get_ndim();
+
             if (dims.size() != ndim) {
                 throw std::invalid_argument("The number of dimensions in the specified order does not match the number of dimensions in the shape: " +
                                             std::to_string(dims.size()) + " and " + std::to_string(ndim) + ".");
             }
+
             std::vector<bool> dims_used(ndim, false);
+
             for (auto &dim : dims) {
                 if (dim < 0 || dim >= ndim) {
                     throw std::invalid_argument("The dimension must be in the range [0, " + std::to_string(ndim) + ") but got " + std::to_string(dim) + ".");
                 }
                 dims_used[dim] = true;
             }
+
             for (auto dim_used : dims_used) {
                 if (!dim_used) {
                     throw std::invalid_argument("The specified order must be a permutation of the dimensions but got " + vnumstr(dims) + ".");
@@ -78,8 +83,7 @@ namespace ax::core {
         Shape(isize offset, const ShapeView &view, const ShapeStride &stride) {
             if_view_is_valid(view);
             if (view.size() != stride.size()) {
-                throw std::invalid_argument("View and stride do not have the same number of dimensions: " +
-                                            std::to_string(view.size()) + " and " + std::to_string(stride.size()) + ".");
+                throw std::invalid_argument("View and stride do not have the same number of dimensions: " + std::to_string(view.size()) + " and " + std::to_string(stride.size()) + ".");
             }
             this->offset = offset;
             this->view = view;
@@ -92,6 +96,7 @@ namespace ax::core {
             this->view = view;
             stride.resize(view.size());
             isize s = 1;
+
             for (ssize_t i = view.size() - 1; i >= 0; i--) {
                 stride[i] = s;
                 s *= view[i];
@@ -129,20 +134,24 @@ namespace ax::core {
         ShapeStride get_contiguous_stride() const {
             ShapeStride contiguous_stride(get_ndim(), 0);
             isize s = 1;
+
             for (isize i = get_ndim() - 1; i >= 0; i--) {
                 contiguous_stride[i] = s;
                 s *= view[i];
             }
+
             return contiguous_stride;
         }
 
         std::vector<isize> get_elms_per_dim() const {
             std::vector<isize> elms_per_dim(get_ndim(), 0);
             isize n = 1;
+
             for (isize i = get_ndim() - 1; i >= 0; i--) {
                 n *= view[i];
                 elms_per_dim[i] = n;
             }
+
             return elms_per_dim;
         }
 
@@ -154,6 +163,7 @@ namespace ax::core {
             if (view == rhs) {
                 return true;
             }
+
             for (auto view_iter = view.rbegin(), rhs_iter = rhs.rbegin();
                  view_iter != view.rend() && rhs_iter != rhs.rend();
                  view_iter++, rhs_iter++) {
@@ -161,6 +171,7 @@ namespace ax::core {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -169,14 +180,17 @@ namespace ax::core {
             if (view == target) {
                 return true;
             }
+
             if (get_ndim() > target.size()) {
                 return false;
             }
+
             for (auto view_iter = view.rbegin(), target_iter = target.rbegin(); view_iter != view.rend(); view_iter++, target_iter++) {
                 if (*view_iter != *target_iter && *view_iter != 1) {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -184,6 +198,7 @@ namespace ax::core {
             if (get_ndim() < 2 || view[get_ndim() - 1] != rhs[rhs.size() - 2]) {
                 return false;
             }
+
             for (auto view_iter = view.begin(), rhs_iter = rhs.begin();
                  view_iter != view.end() - 2 && rhs_iter != rhs.end() - 2;
                  view_iter++, rhs_iter++) {
@@ -191,23 +206,28 @@ namespace ax::core {
                     return false;
                 }
             }
+
             return true;
         }
 
         // One-direction broadcast
         std::pair<Shape, ShapeDims> broadcast_to(const ShapeView &target) const {
             ShapeDims broadcast_dims;
+
             if (view == target) {
                 return std::make_pair(*this, broadcast_dims);
             }
+
             if (!broadcastable_to(target)) {
                 throw std::invalid_argument("Cannot broadcast shape (" + vnumstr(view) + ") to (" + vnumstr(target) + ").");
             }
+
             ShapeView broadcast_view = view;
             size_t ndim_diff = target.size() - broadcast_view.size();
             broadcast_view.insert(broadcast_view.begin(), ndim_diff, 1);
             Shape broadcast_shape(offset, broadcast_view);
             std::fill_n(broadcast_shape.stride.begin(), ndim_diff, 0);
+
             for (size_t i = 0; i < target.size(); i++) {
                 if (broadcast_view[i] < target[i]) {
                     broadcast_dims.emplace_back(i);
@@ -215,18 +235,22 @@ namespace ax::core {
                     broadcast_shape.stride[i] = 0;
                 }
             }
+
             return std::make_pair(broadcast_shape, broadcast_dims);
         }
 
         // ShapeDims specifies which dimensions are broadcasted
         std::pair<Shape, ShapeDims> broadcast(const ShapeView &rhs) const {
             ShapeDims broadcast_dims;
+
             if (view == rhs) {
                 return std::make_pair(*this, broadcast_dims);
             }
+
             if (!broadcastable(rhs)) {
                 throw std::invalid_argument("Cannot broadcast shape (" + vnumstr(view) + ") and (" + vnumstr(rhs) + ").");
             }
+
             ShapeView lview = view;
             ShapeView rview = rhs;
             size_t ndim = std::max(lview.size(), rview.size());
@@ -236,6 +260,7 @@ namespace ax::core {
             rview.insert(rview.begin(), rdiff, 1);
             Shape broadcast_shape(offset, lview);
             std::fill_n(broadcast_shape.stride.begin(), ldiff, 0);
+
             for (size_t i = 0; i < ndim; i++) {
                 if (lview[i] < rview[i]) {
                     broadcast_dims.emplace_back(i);
@@ -243,6 +268,7 @@ namespace ax::core {
                     broadcast_shape.stride[i] = 0;
                 }
             }
+
             return std::make_pair(broadcast_shape, broadcast_dims);
         }
 
@@ -281,10 +307,12 @@ namespace ax::core {
             isize ndim = get_ndim();
             ShapeView v(ndim, 0);
             ShapeStride s(ndim, 0);
+
             for (isize i = 0; i < ndim; i++) {
                 v[i] = view[dims[i]];
                 s[i] = stride[dims[i]];
             }
+
             return Shape(offset, v, s);
         }
 
@@ -313,9 +341,11 @@ namespace ax::core {
             */
             if_dims_make_valid_permutation(dims);
             ShapeView reverse_dims(dims.size());
+
             for (size_t i = 0; i < dims.size(); i++) {
                 reverse_dims[dims[i]] = i;
             }
+
             return reverse_dims;
         }
 
@@ -326,17 +356,21 @@ namespace ax::core {
         Shape slice(const RangeVec &ranges) const {
             if_ranges_are_valid(ranges);
             isize o = offset;
+
             for (size_t i = 0; i < ranges.size(); i++) {
                 o += ranges[i].start * stride[i];
             }
+
             ShapeView v(get_ndim());
             ShapeStride s(get_ndim());
+
             for (size_t i = 0; i < ranges.size(); i++) {
                 const Range &range = ranges[i];
                 isize diff = std::abs(range.stop - range.start);
                 v[i] = static_cast<isize>(ceil((static_cast<double>(diff)) / std::abs(range.step)));
                 s[i] = stride[i] * range.step;
             }
+
             return Shape(o, v, s);
         }
 

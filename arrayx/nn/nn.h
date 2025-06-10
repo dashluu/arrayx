@@ -1,8 +1,10 @@
 #pragma once
 
-#include "module.h"
+#include "../array/array.h"
 
 namespace ax::nn {
+    using namespace ax::array;
+
     inline Array relu(const Array &x) {
         return x.maximum(0);
     }
@@ -58,13 +60,4 @@ namespace ax::nn {
         Array loss = -(onehot_y * x).sum({x_ndim - 1}) + log_sum_exp_x;
         return loss.mean();
     }
-
-    class CrossEntropyLoss : public Module {
-        Array forward(const ArrayVec &input) override {
-            if (input.size() != 2) {
-                throw std::invalid_argument("CrossEntropyLoss expects 2 input arrays but got " + std::to_string(input.size()) + ".");
-            }
-            return cross_entropy_loss(input[0], input[1]);
-        }
-    };
 } // namespace ax::nn

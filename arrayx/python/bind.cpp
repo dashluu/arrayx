@@ -1,5 +1,4 @@
 #include "array.h"
-#include "nn.h"
 #include "optim.h"
 
 NB_MODULE(arrayx, m) {
@@ -99,10 +98,10 @@ NB_MODULE(arrayx, m) {
         .def("__rmul__", &axb::mul, "rhs"_a, "Multiply two arrays element-wise")
         .def("__truediv__", &axb::div, "rhs"_a, "Divide two arrays element-wise")
         .def("__rtruediv__", &axb::div, "rhs"_a, "Divide two arrays element-wise")
-        .def("__iadd__", &axb::self_add, "rhs"_a, "In-place add two arrays element-wise")
-        .def("__isub__", &axb::self_sub, "rhs"_a, "In-place subtract two arrays element-wise")
-        .def("__imul__", &axb::self_mul, "rhs"_a, "In-place multiply two arrays element-wise")
-        .def("__itruediv__", &axb::self_div, "rhs"_a, "In-place divide two arrays element-wise")
+        .def("__iadd__", &axb::inplace_add, "rhs"_a, "In-place add two arrays element-wise")
+        .def("__isub__", &axb::inplace_sub, "rhs"_a, "In-place subtract two arrays element-wise")
+        .def("__imul__", &axb::inplace_mul, "rhs"_a, "In-place multiply two arrays element-wise")
+        .def("__itruediv__", &axb::inplace_div, "rhs"_a, "In-place divide two arrays element-wise")
         .def("__matmul__", &axr::Array::matmul, "rhs"_a, "Matrix multiply two arrays")
         .def("detach", &axr::Array::detach, "Detach array from computation graph")
         .def("exp", &axr::Array::exp, "in_place"_a = false, "Compute exponential of array elements")
@@ -148,19 +147,10 @@ NB_MODULE(arrayx, m) {
         // Evaluation and backward
         .def("eval", &axr::Array::eval, "Evaluate array and materialize values")
         .def("backward", &axr::Array::backward, "Compute gradients through backpropagation")
+        .def("compile", &axr::Array::compile, "Compile array for faster execution")
 
         // String representation
         .def("__str__", &axr::Array::str, "String representation of array");
-
-    nb::class_<axnn::Module, axb::PyModule>(m_nn, "Module")
-        .def(nb::init<>())
-        .def("__call__", &axnn::Module::operator(), "x"_a, "Call the nn module using the forward hook")
-        .def("forward", &axnn::Module::forward, "x"_a, "Forward the nn module, can be overidden")
-        .def("parameters", &axnn::Module::parameters, "Get the parameters of the nn module, can be overidden")
-        .def("jit", &axnn::Module::jit, "x"_a, "JIT-compile the nn module");
-
-    nb::class_<axnn::CrossEntropyLoss, axnn::Module>(m_nn, "CrossEntropyLoss")
-        .def(nb::init<>());
 
     nb::class_<axo::Optimizer, axb::PyOptimizer>(m_optim, "Optimizer")
         .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Base optimizer")

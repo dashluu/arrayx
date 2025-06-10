@@ -15,10 +15,6 @@ namespace ax::runtime {
             run_binary_op(op);
             break;
         }
-        case Optype::MATMUL: {
-            run_matmul_op(op);
-            break;
-        }
         case Optype::TRANSFORM: {
             run_transform_op(op);
             break;

@@ -347,5 +347,8 @@ class Array:
     def backward(self) -> None:
         """Compute gradients through backpropagation"""
 
+    def compile(self) -> None:
+        """Compile array for faster execution"""
+
     def __str__(self) -> str:
         """String representation of array"""

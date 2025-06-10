@@ -21,17 +21,21 @@ namespace ax::bind {
         if (!nb::isinstance<nb::slice>(obj)) {
             throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "slice");
         }
+
         auto slice = nb::cast<nb::slice>(obj);
         bool start_none = slice.attr("start").is_none();
         bool stop_none = slice.attr("stop").is_none();
         bool step_none = slice.attr("step").is_none();
         axc::isize start, stop, step;
+
         if (step_none) {
             start = start_none ? 0 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
             stop = stop_none ? len : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
             return axc::Range(start, stop, 1);
         }
+
         step = nb::cast<axc::isize>(slice.attr("step"));
+
         if (step > 0) {
             start = start_none ? 0 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
             stop = stop_none ? len : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
@@ -39,33 +43,41 @@ namespace ax::bind {
             start = start_none ? len - 1 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("start")));
             stop = stop_none ? -1 : get_pyindex(len, nb::cast<axc::isize>(slice.attr("stop")));
         }
+
         return axc::Range(start, stop, step);
     }
 
     std::vector<axc::Range> pyslices_to_ranges(const axr::Array &arr, const nb::object &obj) {
         std::vector<axc::Range> ranges;
         const axc::Shape &shape = arr.get_shape();
+
         // obj can be an int, a slice, or a sequence of ints or slices
         if (nb::isinstance<nb::int_>(obj)) {
             axc::isize idx = get_pyindex(shape[0], nb::cast<axc::isize>(obj));
             ranges.emplace_back(idx, idx + 1, 1);
+
             for (axc::isize i = 1; i < shape.get_ndim(); i++) {
                 ranges.emplace_back(0, shape[i], 1);
             }
+
             return ranges;
         } else if (nb::isinstance<nb::slice>(obj)) {
             ranges.push_back(pyslice_to_range(shape[0], obj));
+
             for (axc::isize i = 1; i < shape.get_ndim(); i++) {
                 ranges.emplace_back(0, shape[i], 1);
             }
+
             return ranges;
         } else if (nb::isinstance<nb::sequence>(obj) && !nb::isinstance<nb::str>(obj)) {
             // Object is a sequence but not a string
             auto sequence = nb::cast<nb::sequence>(obj);
             size_t seq_len = nb::len(sequence);
+
             if (seq_len > shape.get_ndim()) {
                 throw axc::OutOfRange(seq_len, 1, shape.get_ndim() + 1);
             }
+
             for (size_t i = 0; i < seq_len; i++) {
                 auto elm = sequence[i];
                 // elm must be a sequence of ints or slices
@@ -78,11 +90,14 @@ namespace ax::bind {
                     throw axc::NanobindInvalidArgumentType(get_pyclass(elm), "int, slice");
                 }
             }
+
             for (axc::isize i = seq_len; i < shape.get_ndim(); i++) {
                 ranges.emplace_back(0, shape[i], 1);
             }
+
             return ranges;
         }
+
         throw axc::NanobindInvalidArgumentType(get_pyclass(obj), "int, slice, sequence");
     }
 
@@ -196,7 +211,7 @@ namespace ax::bind {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a + b; });
     }
 
-    axr::Array self_add(const axr::Array &arr, const nb::object &obj) {
+    axr::Array inplace_add(const axr::Array &arr, const nb::object &obj) {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a += b; });
     }
 
@@ -204,7 +219,7 @@ namespace ax::bind {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a - b; });
     }
 
-    axr::Array self_sub(const axr::Array &arr, const nb::object &obj) {
+    axr::Array inplace_sub(const axr::Array &arr, const nb::object &obj) {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a -= b; });
     }
 
@@ -212,7 +227,7 @@ namespace ax::bind {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a * b; });
     }
 
-    axr::Array self_mul(const axr::Array &arr, const nb::object &obj) {
+    axr::Array inplace_mul(const axr::Array &arr, const nb::object &obj) {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a *= b; });
     }
 
@@ -220,7 +235,7 @@ namespace ax::bind {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a / b; });
     }
 
-    axr::Array self_div(const axr::Array &arr, const nb::object &obj) {
+    axr::Array inplace_div(const axr::Array &arr, const nb::object &obj) {
         return binary(arr, obj, [](const auto &a, const auto &b) { return a /= b; });
     }
 

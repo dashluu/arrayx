@@ -10,12 +10,10 @@ namespace ax::optim {
         float lr;
         ArrayVec params;
         ArrayVec grads;
-        bool init = false;
+        bool initial_step = false;
 
     public:
-        Optimizer(const ArrayVec &params, float lr = 1e-3) : params(params), lr(lr) {
-        }
-
+        Optimizer(const ArrayVec &params, float lr = 1e-3) : params(params), lr(lr) {}
         virtual ~Optimizer() = default;
         Optimizer(const Optimizer &) = delete;
         Optimizer &operator=(const Optimizer &) = delete;
@@ -23,7 +21,7 @@ namespace ax::optim {
 
         void step() {
             // Initialize gradients and parameters if not already initialized
-            if (!init) {
+            if (!initial_step) {
                 for (size_t i = 0; i < params.size(); i++) {
                     auto grad = params[i].get_grad();
                     // Check if gradient exists
@@ -34,9 +32,11 @@ namespace ax::optim {
                     grads.push_back(grad.value().detach());
                     params[i] = params[i].detach();
                 }
+
                 forward();
-                init = true;
+                initial_step = true;
             }
+
             // Evaluate all parameters
             for (Array &param : params) {
                 param.eval();

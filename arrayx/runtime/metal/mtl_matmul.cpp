@@ -4,34 +4,34 @@ namespace ax::runtime::metal {
     void MTLRunner::run_matmul_kernel(OpPtr lop, OpPtr rop, OpPtr out_op) {
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
         CommandEncoder encoder(ctx);
-        LazyArrayPtr larr = lop->get_lazy();
-        LazyArrayPtr rarr = rop->get_lazy();
-        LazyArrayPtr out_arr = out_op->get_lazy();
-        bool strided_input = !larr->is_contiguous() || !rarr->is_contiguous();
+        LazyPtr llazy = lop->get_lazy();
+        LazyPtr rlazy = rop->get_lazy();
+        LazyPtr out_lazy = out_op->get_lazy();
+        bool strided_input = !llazy->is_contiguous() || !rlazy->is_contiguous();
 
         // Encode buffers
         if (strided_input) {
-            encoder.encode_ndim(larr);
+            encoder.encode_ndim(llazy);
         }
 
-        encoder.encode_offset({larr, rarr, out_arr});
-        encoder.encode_view(larr);
-        encoder.encode_view(rarr);
+        encoder.encode_offset({llazy, rlazy, out_lazy});
+        encoder.encode_view(llazy);
+        encoder.encode_view(rlazy);
 
         if (strided_input) {
-            encoder.encode_stride(larr);
-            encoder.encode_stride(rarr);
+            encoder.encode_stride(llazy);
+            encoder.encode_stride(rlazy);
         }
 
-        encoder.encode_array(larr);
-        encoder.encode_array(rarr);
-        encoder.encode_array(out_arr);
+        encoder.encode_array(llazy);
+        encoder.encode_array(rlazy);
+        encoder.encode_array(out_lazy);
         std::string mode = "v" + std::string(strided_input ? "s" : "v");
-        std::string kernel_name = "matmul_" + mode + "_" + larr->get_dtype()->str();
+        std::string kernel_name = "matmul_" + mode + "_" + llazy->get_dtype()->str();
         encoder.set_pipeline_state(kernel_name);
 
-        const ShapeView &lhs_view = larr->get_view();
-        const ShapeView &rhs_view = rarr->get_view();
+        const ShapeView &lhs_view = llazy->get_view();
+        const ShapeView &rhs_view = rlazy->get_view();
         const isize batch_size = lhs_view[0];
         const isize nrow = lhs_view[1];
         const isize ncol = rhs_view[2];

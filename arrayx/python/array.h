@@ -85,13 +85,13 @@ namespace ax::bind {
     axr::Array full_like(const axr::Array &other, const nb::object &obj, axc::DtypePtr dtype, const std::string &device_name = axd::default_device_name);
     axr::Array neg(const axr::Array &arr);
     axr::Array add(const axr::Array &arr, const nb::object &obj);
-    axr::Array self_add(const axr::Array &arr, const nb::object &obj);
+    axr::Array inplace_add(const axr::Array &arr, const nb::object &obj);
     axr::Array sub(const axr::Array &arr, const nb::object &obj);
-    axr::Array self_sub(const axr::Array &arr, const nb::object &obj);
+    axr::Array inplace_sub(const axr::Array &arr, const nb::object &obj);
     axr::Array mul(const axr::Array &arr, const nb::object &obj);
-    axr::Array self_mul(const axr::Array &arr, const nb::object &obj);
+    axr::Array inplace_mul(const axr::Array &arr, const nb::object &obj);
     axr::Array div(const axr::Array &arr, const nb::object &obj);
-    axr::Array self_div(const axr::Array &arr, const nb::object &obj);
+    axr::Array inplace_div(const axr::Array &arr, const nb::object &obj);
     axr::Array eq(const axr::Array &arr, const nb::object &obj);
     axr::Array neq(const axr::Array &arr, const nb::object &obj);
     axr::Array lt(const axr::Array &arr, const nb::object &obj);

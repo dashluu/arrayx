@@ -1,7 +1,7 @@
-#include "iter.h"
+#include "lazy_iter.h"
 
 namespace ax::core {
-    uint8_t *LazyArray::strided_elm_ptr(isize k) const {
+    uint8_t *Lazy::strided_elm_ptr(isize k) const {
         if (is_contiguous()) {
             return get_ptr() + k * get_itemsize();
         }
@@ -21,8 +21,8 @@ namespace ax::core {
         return ptr;
     }
 
-    const std::string LazyArray::str() const {
-        auto iter = std::make_unique<ArrayIter>(shared_from_this());
+    const std::string Lazy::str() const {
+        auto iter = std::make_unique<LazyIter>(shared_from_this());
         iter->start();
         bool next_elm_available = iter->has_next();
         if (!next_elm_available) {

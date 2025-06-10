@@ -1,6 +1,6 @@
 from __future__ import annotations
 from arrayx.core import Array, Backend
-from arrayx.nn import CrossEntropyLoss, relu, onehot, cross_entropy_loss
+from arrayx.nn import relu, onehot, cross_entropy_loss
 from arrayx.optim import GradientDescent
 from mnist import MnistModel
 import nn
@@ -36,7 +36,7 @@ class TestBasicNN:
         t3: torch.Tensor = b.torch()
         t3.requires_grad_(True)
         t3.retain_grad()
-        arr2 = linear([arr1]).sum()
+        arr2 = linear(arr1).sum()
         t4 = (t1 @ t2.T + t3).sum()
         arr2.backward()
         t4.backward()
@@ -113,7 +113,7 @@ class TestBasicNN:
         t1 = torch.from_numpy(x)
         t2 = torch.from_numpy(y).type(torch.int64)
 
-        logits = model([arr1])
+        logits = model(arr1)
         torch_logits = torch_model(t1)
 
         # Loss computation
@@ -170,7 +170,7 @@ class TestBasicNN:
         passes = 3
 
         for _ in range(passes):
-            logits = model([arr1])
+            logits = model(arr1)
             torch_logits = torch_model(t1)
             # Loss computation
             loss = cross_entropy_loss(logits, arr2)
@@ -198,7 +198,6 @@ class TestBasicNN:
         arr1 = Array.from_numpy(x)
         arr2 = Array.from_numpy(y)
         model = MnistModel()
-        loss_fn = CrossEntropyLoss()
 
         # PyTorch implementation
         torch_model = torch.nn.Sequential(torch.nn.Linear(784, 128), torch.nn.ReLU(), torch.nn.Linear(128, 10))
@@ -223,14 +222,16 @@ class TestBasicNN:
         # Forward pass
         t1 = torch.from_numpy(x)
         t2 = torch.from_numpy(y).type(torch.int64)
+        model_jit = nn.Jit(model.__call__)
+        loss_jit = nn.Jit(cross_entropy_loss)
         passes = 3
 
         for _ in range(passes):
             # JIT compilation here
-            logits = model.jit([arr1])
+            logits = model_jit(arr1)
             torch_logits = torch_model(t1)
             # Loss computation
-            loss = cross_entropy_loss(logits, arr2)
+            loss = loss_jit(logits, arr2)
             torch_loss: torch.Tensor = torch.nn.CrossEntropyLoss()(torch_logits, t2)
             # Backward pass
             loss.backward()

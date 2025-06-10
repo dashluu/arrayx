@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core/lazy_array.h"
+#include "../../core/lazy.h"
 #include "mtl_context.h"
 
 namespace ax::runtime::metal {
@@ -60,12 +60,12 @@ namespace ax::runtime::metal {
             }
         }
 
-        void encode_ndim(LazyArrayPtr arr) {
-            mtl_usize ndim = static_cast<mtl_usize>(arr->get_ndim());
+        void encode_ndim(LazyPtr lazy) {
+            mtl_usize ndim = static_cast<mtl_usize>(lazy->get_ndim());
             encode_scalar(ndim);
         }
 
-        void encode_offset(const LazyArrayPtrVec &arrs) {
+        void encode_offset(const LazyPtrVec &arrs) {
             mtl_usize *offset = new mtl_usize[arrs.size()];
             for (size_t i = 0; i < arrs.size(); i++) {
                 offset[i] = static_cast<mtl_usize>(arrs[i]->get_offset());
@@ -73,7 +73,7 @@ namespace ax::runtime::metal {
             encode_buffer(offset, sizeof(mtl_usize) * arrs.size(), true);
         }
 
-        void encode_strided(const LazyArrayPtrVec &arrs) {
+        void encode_strided(const LazyPtrVec &arrs) {
             bool *strided = new bool[arrs.size()];
             for (size_t i = 0; i < arrs.size(); i++) {
                 strided[i] = !arrs[i]->is_contiguous();
@@ -81,18 +81,18 @@ namespace ax::runtime::metal {
             encode_buffer(strided, sizeof(bool) * arrs.size(), true);
         }
 
-        void encode_view(LazyArrayPtr arr) {
-            mtl_usize *view = vcast<isize, mtl_usize>(arr->get_view());
-            encode_buffer(view, sizeof(mtl_usize) * arr->get_ndim(), true);
+        void encode_view(LazyPtr lazy) {
+            mtl_usize *view = vcast<isize, mtl_usize>(lazy->get_view());
+            encode_buffer(view, sizeof(mtl_usize) * lazy->get_ndim(), true);
         }
 
-        void encode_stride(LazyArrayPtr arr) {
-            mtl_isize *stride = vcast<isize, mtl_isize>(arr->get_stride());
-            encode_buffer(stride, sizeof(mtl_isize) * arr->get_ndim(), true);
+        void encode_stride(LazyPtr lazy) {
+            mtl_isize *stride = vcast<isize, mtl_isize>(lazy->get_stride());
+            encode_buffer(stride, sizeof(mtl_isize) * lazy->get_ndim(), true);
         }
 
-        void encode_array(LazyArrayPtr arr) {
-            encode_buffer(arr->get_buff_ptr(), arr->get_buff_nbytes(), false);
+        void encode_array(LazyPtr lazy) {
+            encode_buffer(lazy->get_buff_ptr(), lazy->get_buff_nbytes(), false);
         }
 
         void set_pipeline_state(const std::string &kernel_name) {

@@ -18,8 +18,8 @@
 #include <vector>
 
 namespace ax::core {
-    class LazyArray;
-    using LazyArrayPtr = std::shared_ptr<LazyArray>;
+    class Lazy;
+    using LazyPtr = std::shared_ptr<Lazy>;
     using isize = int64_t;
 
     template <class T>
