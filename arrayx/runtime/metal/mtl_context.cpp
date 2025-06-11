@@ -20,15 +20,6 @@ namespace ax::runtime::metal {
         }
     }
 
-    void MTLContext::init_kernels(const std::string &opstr, DtypePtrSet &dtypes, const std::vector<std::string> &modes) {
-        for (auto &mode : modes) {
-            for (auto &dtype : dtypes) {
-                const std::string name = opstr + "_" + mode + "_" + dtype->get_name_str();
-                init_kernel(name);
-            }
-        }
-    }
-
     void MTLContext::init_initializer_kernels() {
         init_kernels("full", all_dtypes);
         init_kernels("arange", numeric_dtypes);
@@ -48,15 +39,14 @@ namespace ax::runtime::metal {
 
     void MTLContext::init_reduce_kernels() {
         std::vector<std::string> reduce_opstrs = {"sum", "max", "min", "argmax", "argmin"};
-        std::vector<std::string> modes = {"vv", "vs"};
         for (auto &opstr : reduce_opstrs) {
-            init_kernels(opstr + "_all", numeric_dtypes, modes);
-            init_kernels(opstr + "_col", numeric_dtypes, modes);
+            init_kernels(opstr + "_all", numeric_dtypes);
+            init_kernels(opstr + "_col", numeric_dtypes);
         }
     }
 
     void MTLContext::init_matmul_kernels() {
-        init_kernels("matmul", numeric_dtypes, {"vv", "vs"});
+        init_kernels("matmul", numeric_dtypes);
     }
 
     void MTLContext::init_copy_kernels() {

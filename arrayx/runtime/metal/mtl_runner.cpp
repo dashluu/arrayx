@@ -115,21 +115,22 @@ namespace ax::runtime::metal {
         LazyPtr lazy = reduce_op->get_lazy();
         OpPtr operand = reduce_op->get_operand();
         alloc(lazy);
-        isize default_val = reduce_op->get_default_val();
 
-        if (reduce_op->get_mode() == ReduceMode::VALUE) {
-            // Fill up array with default value
-            // With arg operations, the array is already filled up with 0s, which are also the default indices
-            // Hence, arg operations do not need to fill up array
-            run_full_kernel(op, default_val);
+        // Fill up array with default value
+        // With arg operations, the array is already filled up with 0s, which are also the default indices
+        // Hence, arg operations do not need to fill up array
+        if (reduce_op->get_opcode() == Opcode::MAX) {
+            run_full_kernel(op, reduce_op->get_lazy()->get_dtype()->min());
+        } else if (reduce_op->get_opcode() == Opcode::MIN) {
+            run_full_kernel(op, reduce_op->get_lazy()->get_dtype()->max());
         }
 
         if (reduce_op->get_dims().size() == 0) {
             // Reduce to one item
-            run_reduce_all_kernel(reduce_op->get_opname(), operand, op, default_val);
+            run_reduce_all_kernel(reduce_op->get_opname(), operand, op);
         } else {
             // Reduce multiple dimensions
-            run_reduce_col_kernel(reduce_op->get_opname(), operand, op, default_val);
+            run_reduce_col_kernel(reduce_op->get_opname(), operand, op);
         }
     }
 } // namespace ax::runtime::metal

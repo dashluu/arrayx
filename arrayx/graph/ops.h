@@ -74,8 +74,6 @@ namespace ax::graph {
 
     struct Op : public std::enable_shared_from_this<Op> {
     protected:
-        Opcode opcode;
-        Optype optype;
         LazyPtr lazy;
         bool idempotent = true;
         // Note: grad_enabled cannot be used to set gradient flow
@@ -86,13 +84,13 @@ namespace ax::graph {
         OpPtr grad = nullptr;
         OpPtr grad_root = nullptr;
 
-        Op(Opcode opcode, Optype optype, LazyPtr lazy) : opcode(opcode), optype(optype), lazy(lazy) {}
+        Op(LazyPtr lazy) : lazy(lazy) {}
         Op(const Op &) = delete;
         Op &operator=(const Op &) = delete;
         virtual ~Op() = default;
-        Opcode get_opcode() const { return opcode; }
+        virtual Opcode get_opcode() const = 0;
         virtual const std::string &get_opname() const = 0;
-        Optype get_optype() const { return optype; }
+        virtual Optype get_optype() const = 0;
         LazyPtr get_lazy() const { return lazy; }
         OpPtr de_op() const { return detach(std::const_pointer_cast<Op>(shared_from_this())); }
         bool is_grad_enabled() const { return grad_enabled; }
@@ -106,13 +104,15 @@ namespace ax::graph {
 
     struct InitializerOp : public Op {
     public:
-        InitializerOp(Opcode opcode, LazyPtr lazy) : Op(opcode, Optype::INITIALIZER, lazy) {}
+        InitializerOp(LazyPtr lazy) : Op(lazy) {}
+        Optype get_optype() const override { return Optype::INITIALIZER; }
     };
 
     struct Nop : public InitializerOp {
     public:
         static constexpr std::string opname = "nop";
-        Nop(LazyPtr lazy) : InitializerOp(Opcode::NOP, lazy) {}
+        Nop(LazyPtr lazy) : InitializerOp(lazy) {}
+        Opcode get_opcode() const override { return Opcode::NOP; }
         const std::string &get_opname() const override { return opname; }
     };
 
@@ -125,12 +125,13 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "arange";
-        ArangeOp(LazyPtr lazy, const ShapeView &view, isize start, isize step, DtypePtr dtype) : InitializerOp(Opcode::ARANGE, lazy), view(view), start(start), step(step), dtype(dtype) {}
+        ArangeOp(LazyPtr lazy, const ShapeView &view, isize start, isize step, DtypePtr dtype) : InitializerOp(lazy), view(view), start(start), step(step), dtype(dtype) {}
+        Opcode get_opcode() const override { return Opcode::ARANGE; }
+        const std::string &get_opname() const override { return opname; }
         const ShapeView &get_view() const { return view; }
         isize get_start() const { return start; }
         isize get_step() const { return step; }
         DtypePtr get_dtype() const { return dtype; }
-        const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return InitializerOp::str() + ", dtype: " + dtype->str() + ", view: (" + vnumstr(view) + "), start: " + std::to_string(start) + ", step: " + std::to_string(step); }
     };
 
@@ -142,11 +143,12 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "full";
-        FullOp(LazyPtr lazy, const ShapeView &view, isize c, DtypePtr dtype) : InitializerOp(Opcode::FULL, lazy), view(view), c(c), dtype(dtype) {}
+        FullOp(LazyPtr lazy, const ShapeView &view, isize c, DtypePtr dtype) : InitializerOp(lazy), view(view), c(c), dtype(dtype) {}
+        Opcode get_opcode() const override { return Opcode::FULL; }
+        const std::string &get_opname() const override { return opname; }
         const ShapeView &get_view() const { return view; }
         isize get_const() const { return c; }
         DtypePtr get_dtype() const { return dtype; }
-        const std::string &get_opname() const override { return opname; }
         const std::string str() const override {
             auto s = InitializerOp::str() + ", dtype: " + dtype->str() + ", view: (" + vnumstr(view) + "), value: ";
             return s + dtype->get_value_as_str(c);
@@ -159,11 +161,12 @@ namespace ax::graph {
         OpPtr operand;
 
     public:
-        UnaryOp(Opcode opcode, LazyPtr lazy, OpPtr operand, bool in_place) : Op(opcode, Optype::UNARY, lazy), operand(operand), in_place(in_place) {
+        UnaryOp(LazyPtr lazy, OpPtr operand, bool in_place) : Op(lazy), operand(operand), in_place(in_place) {
             if (operand != nullptr) {
                 idempotent = !in_place && operand->is_idempotent();
             }
         }
+        Optype get_optype() const override { return Optype::UNARY; }
         OpPtr get_operand() const { return operand; }
         OpPtr de_operand() const { return detach(operand); }
         bool is_in_place() const { return in_place; }
@@ -174,11 +177,11 @@ namespace ax::graph {
     protected:
         OpPtr lhs;
         OpPtr rhs;
-        BinaryMode mode;
 
     public:
-        BinaryOp(Opcode opcode, BinaryMode mode, LazyPtr lazy, OpPtr lhs, OpPtr rhs) : Op(opcode, Optype::BINARY, lazy), mode(mode), lhs(lhs), rhs(rhs) {}
-        BinaryMode get_mode() const { return mode; }
+        BinaryOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : Op(lazy), lhs(lhs), rhs(rhs) {}
+        Optype get_optype() const override { return Optype::BINARY; }
+        virtual BinaryMode get_mode() const = 0;
         OpPtr get_lhs() const { return lhs; }
         OpPtr get_rhs() const { return rhs; }
         OpPtr de_lhs() const { return detach(lhs); }
@@ -191,19 +194,21 @@ namespace ax::graph {
         bool in_place;
 
     public:
-        ElmwiseBinaryOp(Opcode opcode, LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(opcode, BinaryMode::ELMWISE, lazy, lhs, rhs), in_place(in_place) {
+        ElmwiseBinaryOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : BinaryOp(lazy, lhs, rhs), in_place(in_place) {
             if (lhs != nullptr && rhs != nullptr) {
                 idempotent = lhs->is_idempotent() && rhs->is_idempotent();
             }
         }
 
+        BinaryMode get_mode() const override { return BinaryMode::ELMWISE; }
         bool is_in_place() const { return in_place; }
         const std::string str() const override { return Op::str() + ", in-place: " + std::to_string(in_place) + ", lhs: " + lhs->get_lazy()->get_id().str() + ", rhs: " + rhs->get_lazy()->get_id().str(); }
     };
 
     struct CmpOp : public BinaryOp {
     public:
-        CmpOp(Opcode opcode, LazyPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(opcode, BinaryMode::CMP, lazy, lhs, rhs) { grad_enabled = false; }
+        CmpOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(lazy, lhs, rhs) { grad_enabled = false; }
+        BinaryMode get_mode() const override { return BinaryMode::CMP; }
         void enable_grad(bool enabled) override { grad_enabled = false; }
     };
 
@@ -212,12 +217,13 @@ namespace ax::graph {
         OpPtr operand;
 
     public:
-        TransformOp(Opcode opcode, LazyPtr lazy, OpPtr operand) : Op(opcode, Optype::TRANSFORM, lazy), operand(operand) {
+        TransformOp(LazyPtr lazy, OpPtr operand) : Op(lazy), operand(operand) {
             if (operand != nullptr) {
                 idempotent = operand->is_idempotent();
             }
         }
 
+        Optype get_optype() const override { return Optype::TRANSFORM; }
         OpPtr get_operand() const { return operand; }
         OpPtr de_operand() const { return detach(operand); }
         const std::string str() const override { return Op::str() + ", operand: " + operand->get_lazy()->get_id().str(); }
@@ -225,30 +231,29 @@ namespace ax::graph {
 
     struct ReduceOp : public Op {
     protected:
-        ReduceMode mode;
         OpPtr operand;
         ShapeDims dims;
-        isize default_val;
 
     public:
-        ReduceOp(Opcode opcode, ReduceMode mode, LazyPtr lazy, OpPtr operand, const ShapeDims &dims, isize default_val) : Op(opcode, Optype::REDUCE, lazy), mode(mode), operand(operand), dims(dims), default_val(default_val) {
+        ReduceOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : Op(lazy), operand(operand), dims(dims) {
             if (operand != nullptr) {
                 idempotent = operand->is_idempotent();
             }
         }
 
-        ReduceMode get_mode() const { return mode; }
+        Optype get_optype() const override { return Optype::REDUCE; }
+        virtual ReduceMode get_mode() const = 0;
         OpPtr get_operand() const { return operand; }
         OpPtr de_operand() const { return detach(operand); }
         const ShapeDims &get_dims() const { return dims; }
-        isize get_default_val() const { return default_val; }
-        const std::string str() const override { return Op::str() + ", operand: " + operand->get_lazy()->get_id().str() + ", dims: " + vnumstr(dims) + ", default value: " + std::to_string(default_val); }
+        const std::string str() const override { return Op::str() + ", operand: " + operand->get_lazy()->get_id().str() + ", dims: " + vnumstr(dims); }
     };
 
     struct AddOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "add";
-        AddOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::ADD, lazy, lhs, rhs, in_place) {}
+        AddOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::ADD; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -256,7 +261,8 @@ namespace ax::graph {
     struct SubOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "sub";
-        SubOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::SUB, lazy, lhs, rhs, in_place) {}
+        SubOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::SUB; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -264,7 +270,8 @@ namespace ax::graph {
     struct MulOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "mul";
-        MulOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::MUL, lazy, lhs, rhs, in_place) {}
+        MulOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::MUL; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -272,7 +279,8 @@ namespace ax::graph {
     struct DivOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "div";
-        DivOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::DIV, lazy, lhs, rhs, in_place) {}
+        DivOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::DIV; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -280,49 +288,56 @@ namespace ax::graph {
     struct EqOp : public CmpOp {
     public:
         static constexpr std::string opname = "eq";
-        EqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::EQ, lazy, lhs, rhs) {}
+        EqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::EQ; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct NeqOp : public CmpOp {
     public:
         static constexpr std::string opname = "neq";
-        NeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::NEQ, lazy, lhs, rhs) {}
+        NeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::NEQ; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct LtOp : public CmpOp {
     public:
         static constexpr std::string opname = "lt";
-        LtOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::LT, lazy, lhs, rhs) {}
+        LtOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::LT; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct GtOp : public CmpOp {
     public:
         static constexpr std::string opname = "gt";
-        GtOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::GT, lazy, lhs, rhs) {}
+        GtOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::GT; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct LeqOp : public CmpOp {
     public:
         static constexpr std::string opname = "leq";
-        LeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::LEQ, lazy, lhs, rhs) {}
+        LeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::LEQ; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct GeqOp : public CmpOp {
     public:
         static constexpr std::string opname = "geq";
-        GeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(Opcode::GEQ, lazy, lhs, rhs) {}
+        GeqOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : CmpOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::GEQ; }
         const std::string &get_opname() const override { return opname; }
     };
 
     struct MinimumOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "minimum";
-        MinimumOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::MINIMUM, lazy, lhs, rhs, in_place) {}
+        MinimumOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::MINIMUM; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -330,7 +345,8 @@ namespace ax::graph {
     struct MaximumOp : public ElmwiseBinaryOp {
     public:
         static constexpr std::string opname = "maximum";
-        MaximumOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(Opcode::MAXIMUM, lazy, lhs, rhs, in_place) {}
+        MaximumOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs, bool in_place) : ElmwiseBinaryOp(lazy, lhs, rhs, in_place) {}
+        Opcode get_opcode() const override { return Opcode::MAXIMUM; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -338,7 +354,9 @@ namespace ax::graph {
     struct MatmulOp : public BinaryOp {
     public:
         static constexpr std::string opname = "matmul";
-        MatmulOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(Opcode::MATMUL, BinaryMode::MATMUL, lazy, lhs, rhs) {}
+        MatmulOp(LazyPtr lazy, OpPtr lhs, OpPtr rhs) : BinaryOp(lazy, lhs, rhs) {}
+        Opcode get_opcode() const override { return Opcode::MATMUL; }
+        BinaryMode get_mode() const override { return BinaryMode::MATMUL; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -346,7 +364,8 @@ namespace ax::graph {
     struct SqOp : public UnaryOp {
     public:
         static constexpr std::string opname = "sq";
-        SqOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQ, lazy, operand, in_place) {}
+        SqOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::SQ; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -354,7 +373,8 @@ namespace ax::graph {
     struct SqrtOp : public UnaryOp {
     public:
         static constexpr std::string opname = "sqrt";
-        SqrtOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::SQRT, lazy, operand, in_place) {}
+        SqrtOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::SQRT; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -362,7 +382,8 @@ namespace ax::graph {
     struct NegOp : public UnaryOp {
     public:
         static constexpr std::string opname = "neg";
-        NegOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::NEG, lazy, operand, in_place) {}
+        NegOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::NEG; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -370,7 +391,8 @@ namespace ax::graph {
     struct CopyOp : public UnaryOp {
     public:
         static constexpr std::string opname = "copy";
-        CopyOp(LazyPtr lazy, OpPtr operand) : UnaryOp(Opcode::COPY, lazy, operand, false) {}
+        CopyOp(LazyPtr lazy, OpPtr operand) : UnaryOp(lazy, operand, false) {}
+        Opcode get_opcode() const override { return Opcode::COPY; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -378,7 +400,8 @@ namespace ax::graph {
     struct ExpOp : public UnaryOp {
     public:
         static constexpr std::string opname = "exp";
-        ExpOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::EXP, lazy, operand, in_place) {}
+        ExpOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::EXP; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -386,7 +409,8 @@ namespace ax::graph {
     struct LogOp : public UnaryOp {
     public:
         static constexpr std::string opname = "log";
-        LogOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::LOG, lazy, operand, in_place) {}
+        LogOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::LOG; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -394,7 +418,8 @@ namespace ax::graph {
     struct RecipOp : public UnaryOp {
     public:
         static constexpr std::string opname = "recip";
-        RecipOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(Opcode::RECIP, lazy, operand, in_place) {}
+        RecipOp(LazyPtr lazy, OpPtr operand, bool in_place) : UnaryOp(lazy, operand, in_place) {}
+        Opcode get_opcode() const override { return Opcode::RECIP; }
         const std::string &get_opname() const override { return opname; }
         void backward() const override;
     };
@@ -405,8 +430,9 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "reshape";
-        ReshapeOp(LazyPtr lazy, OpPtr operand, const ShapeView &view) : TransformOp(Opcode::RESHAPE, lazy, operand), view(view) {}
+        ReshapeOp(LazyPtr lazy, OpPtr operand, const ShapeView &view) : TransformOp(lazy, operand), view(view) {}
         const ShapeView &get_view() const { return view; }
+        Opcode get_opcode() const override { return Opcode::RESHAPE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", view: (" + vnumstr(view) + ")"; }
         void backward() const override;
@@ -418,8 +444,9 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "slice";
-        SliceOp(LazyPtr lazy, OpPtr operand, const std::vector<Range> &ranges) : TransformOp(Opcode::SLICE, lazy, operand), ranges(ranges) {}
+        SliceOp(LazyPtr lazy, OpPtr operand, const std::vector<Range> &ranges) : TransformOp(lazy, operand), ranges(ranges) {}
         const std::vector<Range> &get_ranges() const { return ranges; }
+        Opcode get_opcode() const override { return Opcode::SLICE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override {
             return TransformOp::str() + ", ranges:(" + vstr<Range>(ranges, [](Range range) { return range.str(); }) + ")";
@@ -433,8 +460,9 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "permute";
-        PermuteOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::PERMUTE, lazy, operand), dims(dims) {}
+        PermuteOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(lazy, operand), dims(dims) {}
         const ShapeDims &get_perm() const { return dims; }
+        Opcode get_opcode() const override { return Opcode::PERMUTE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", permutation: (" + vnumstr(dims) + ")"; }
         void backward() const override;
@@ -448,10 +476,11 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "broadcast";
-        BroadcastOp(LazyPtr lazy, OpPtr operand, const ShapeView &input_view, const ShapeView &output_view, const ShapeDims &dims) : TransformOp(Opcode::BROADCAST, lazy, operand), input_view(input_view), output_view(output_view), dims(dims) {}
+        BroadcastOp(LazyPtr lazy, OpPtr operand, const ShapeView &input_view, const ShapeView &output_view, const ShapeDims &dims) : TransformOp(lazy, operand), input_view(input_view), output_view(output_view), dims(dims) {}
         const ShapeView &get_input_view() const { return input_view; }
         const ShapeView &get_output_view() const { return output_view; }
         const ShapeDims &get_dims() const { return dims; }
+        Opcode get_opcode() const override { return Opcode::BROADCAST; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", output view: (" + vnumstr(output_view) + ")"; }
         void backward() const override;
@@ -463,8 +492,9 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "squeeze";
-        SqueezeOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::SQUEEZE, lazy, operand), dims(dims) {}
+        SqueezeOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(lazy, operand), dims(dims) {}
         const ShapeDims &get_dims() const { return dims; }
+        Opcode get_opcode() const override { return Opcode::SQUEEZE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", dims: " + vnumstr(dims); }
         void backward() const override;
@@ -476,8 +506,9 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "unsqueeze";
-        UnsqueezeOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(Opcode::UNSQUEEZE, lazy, operand), dims(dims) {}
+        UnsqueezeOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : TransformOp(lazy, operand), dims(dims) {}
         const ShapeDims &get_dims() const { return dims; }
+        Opcode get_opcode() const override { return Opcode::UNSQUEEZE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", dims: " + vnumstr(dims); }
         void backward() const override;
@@ -489,9 +520,10 @@ namespace ax::graph {
 
     public:
         static constexpr std::string opname = "astype";
-        AstypeOp(LazyPtr lazy, OpPtr operand, DtypePtr dtype) : TransformOp(Opcode::ASTYPE, lazy, operand), dtype(dtype) { grad_enabled = false; }
+        AstypeOp(LazyPtr lazy, OpPtr operand, DtypePtr dtype) : TransformOp(lazy, operand), dtype(dtype) { grad_enabled = false; }
         void enable_grad(bool enabled) override { grad_enabled = false; }
         DtypePtr get_dtype() const { return dtype; }
+        Opcode get_opcode() const override { return Opcode::ASTYPE; }
         const std::string &get_opname() const override { return opname; }
         const std::string str() const override { return TransformOp::str() + ", dtype: " + dtype->str(); }
     };
@@ -499,45 +531,55 @@ namespace ax::graph {
     struct SumOp : public ReduceOp {
     public:
         static constexpr std::string opname = "sum";
-        SumOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::SUM, ReduceMode::VALUE, lazy, operand, dims, 0) {}
+        SumOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(lazy, operand, dims) {}
+        Opcode get_opcode() const override { return Opcode::SUM; }
         const std::string &get_opname() const override { return opname; }
+        ReduceMode get_mode() const override { return ReduceMode::VALUE; }
         void backward() const override;
     };
 
     struct MaxOp : public ReduceOp {
     public:
         static constexpr std::string opname = "max";
-        MaxOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MAX, ReduceMode::VALUE, lazy, operand, dims, lazy->get_dtype()->min()) {}
+        MaxOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(lazy, operand, dims) {}
+        Opcode get_opcode() const override { return Opcode::MAX; }
         const std::string &get_opname() const override { return opname; }
+        ReduceMode get_mode() const override { return ReduceMode::VALUE; }
         void backward() const override;
     };
 
     struct MinOp : public ReduceOp {
     public:
         static constexpr std::string opname = "min";
-        MinOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::MIN, ReduceMode::VALUE, lazy, operand, dims, lazy->get_dtype()->max()) {}
+        MinOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(lazy, operand, dims) {}
+        Opcode get_opcode() const override { return Opcode::MIN; }
         const std::string &get_opname() const override { return opname; }
+        ReduceMode get_mode() const override { return ReduceMode::VALUE; }
         void backward() const override;
     };
 
     struct ArgmaxOp : public ReduceOp {
     public:
         static constexpr std::string opname = "argmax";
-        ArgmaxOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMAX, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->min()) {
+        ArgmaxOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(lazy, operand, dims) {
             grad_enabled = false;
         }
         void enable_grad(bool enabled) override { grad_enabled = false; }
+        Opcode get_opcode() const override { return Opcode::ARGMAX; }
         const std::string &get_opname() const override { return opname; }
+        ReduceMode get_mode() const override { return ReduceMode::ARG; }
     };
 
     struct ArgminOp : public ReduceOp {
     public:
         static constexpr std::string opname = "argmin";
-        ArgminOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(Opcode::ARGMIN, ReduceMode::ARG, lazy, operand, dims, operand->get_lazy()->get_dtype()->max()) {
+        ArgminOp(LazyPtr lazy, OpPtr operand, const ShapeDims &dims) : ReduceOp(lazy, operand, dims) {
             grad_enabled = false;
         }
         void enable_grad(bool enabled) override { grad_enabled = false; }
+        Opcode get_opcode() const override { return Opcode::ARGMIN; }
         const std::string &get_opname() const override { return opname; }
+        ReduceMode get_mode() const override { return ReduceMode::ARG; }
     };
 
     OpPtr empty_like(OpPtr op, DtypePtr dtype, DevicePtr device);

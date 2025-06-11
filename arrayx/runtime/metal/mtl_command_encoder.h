@@ -4,26 +4,13 @@
 #include "mtl_context.h"
 
 namespace ax::runtime::metal {
-    using mtl_usize = uint32_t;
-    using mtl_isize = int32_t;
-
     class CommandEncoder {
     private:
         std::shared_ptr<MTLContext> ctx;
         MTL::CommandBuffer *cmd_buff;
         MTL::ComputeCommandEncoder *encoder;
         isize buff_idx = 0;
-        std::vector<uint8_t *> buffs;
         std::shared_ptr<MTLKernel> kernel;
-
-        template <class T1, class T2>
-        T2 *vcast(const std::vector<T1> &v1) {
-            T2 *v2 = new T2[v1.size()];
-            for (size_t i = 0; i < v1.size(); i++) {
-                v2[i] = static_cast<T2>(v1[i]);
-            }
-            return v2;
-        }
 
     public:
         CommandEncoder(std::shared_ptr<MTLContext> ctx) : ctx(ctx) {
@@ -32,68 +19,20 @@ namespace ax::runtime::metal {
         }
 
         CommandEncoder(const CommandEncoder &) = delete;
-
-        ~CommandEncoder() {
-            for (uint8_t *&buff : buffs) {
-                delete[] buff;
-            }
-        }
+        ~CommandEncoder() = default;
 
         CommandEncoder &operator=(const CommandEncoder &) = delete;
-
         std::shared_ptr<MTLKernel> get_kernel() const { return kernel; }
-
         MTL::ComputeCommandEncoder *get_internal_encoder() const { return encoder; }
 
-        template <class T>
-        void encode_scalar(T scalar) {
-            T *scalar_buff = new T[1];
-            *scalar_buff = scalar;
-            encode_buffer(scalar_buff, sizeof(T), true);
-        }
-
-        void encode_buffer(void *buff, isize size, bool tracked) {
+        void encode_buffer(const void *buff, isize size) {
             MTL::Buffer *mtl_buff = ctx->get_device()->newBuffer(buff, size, MTL::ResourceStorageModeShared, nullptr);
             encoder->setBuffer(mtl_buff, 0, buff_idx++);
-            if (tracked) {
-                buffs.push_back(reinterpret_cast<uint8_t *>(buff));
-            }
         }
 
-        void encode_ndim(LazyPtr lazy) {
-            mtl_usize ndim = static_cast<mtl_usize>(lazy->get_ndim());
-            encode_scalar(ndim);
-        }
-
-        void encode_offset(const LazyPtrVec &arrs) {
-            mtl_usize *offset = new mtl_usize[arrs.size()];
-            for (size_t i = 0; i < arrs.size(); i++) {
-                offset[i] = static_cast<mtl_usize>(arrs[i]->get_offset());
-            }
-            encode_buffer(offset, sizeof(mtl_usize) * arrs.size(), true);
-        }
-
-        void encode_strided(const LazyPtrVec &arrs) {
-            bool *strided = new bool[arrs.size()];
-            for (size_t i = 0; i < arrs.size(); i++) {
-                strided[i] = !arrs[i]->is_contiguous();
-            }
-            encode_buffer(strided, sizeof(bool) * arrs.size(), true);
-        }
-
-        void encode_view(LazyPtr lazy) {
-            mtl_usize *view = vcast<isize, mtl_usize>(lazy->get_view());
-            encode_buffer(view, sizeof(mtl_usize) * lazy->get_ndim(), true);
-        }
-
-        void encode_stride(LazyPtr lazy) {
-            mtl_isize *stride = vcast<isize, mtl_isize>(lazy->get_stride());
-            encode_buffer(stride, sizeof(mtl_isize) * lazy->get_ndim(), true);
-        }
-
-        void encode_array(LazyPtr lazy) {
-            encode_buffer(lazy->get_buff_ptr(), lazy->get_buff_nbytes(), false);
-        }
+        void encode_view(LazyPtr lazy) { encode_buffer(lazy->get_view().data(), sizeof(isize) * lazy->get_ndim()); }
+        void encode_stride(LazyPtr lazy) { encode_buffer(lazy->get_stride().data(), sizeof(isize) * lazy->get_ndim()); }
+        void encode_array(LazyPtr lazy) { encode_buffer(lazy->get_buff_ptr(), lazy->get_buff_nbytes()); }
 
         void set_pipeline_state(const std::string &kernel_name) {
             kernel = ctx->get_kernel(kernel_name);

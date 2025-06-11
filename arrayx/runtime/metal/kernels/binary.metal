@@ -74,22 +74,22 @@ struct Maximum
 
 template <class Op, class T, class R>
 kernel void binary(
-    const constant uint &ndim [[buffer(0)]],
-    const constant uint *offset [[buffer(1)]],
-    const constant uint *shape [[buffer(2)]],
-    const constant int *lstride [[buffer(3)]],
-    const constant int *rstride [[buffer(4)]],
-    const constant int *outstride [[buffer(5)]],
+    const constant isize &ndim [[buffer(0)]],
+    const constant isize *offset [[buffer(1)]],
+    const constant isize *shape [[buffer(2)]],
+    const constant isize *lstride [[buffer(3)]],
+    const constant isize *rstride [[buffer(4)]],
+    const constant isize *outstride [[buffer(5)]],
     const constant bool *strided [[buffer(6)]],
     device T *lhs [[buffer(7)]],
     device T *rhs [[buffer(8)]],
     device R *output [[buffer(9)]],
     uint id [[thread_position_in_grid]])
 {
-    uint lidx = strided[0] ? strided_idx(id, ndim, shape, lstride) : id;
-    uint ridx = strided[1] ? strided_idx(id, ndim, shape, rstride) : id;
-    uint outidx = strided[2] ? strided_idx(id, ndim, shape, outstride) : id;
-    output[offset[2] + outidx] = Op()(lhs[offset[0] + lidx], rhs[offset[1] + ridx]);
+    isize lidx = strided[0] ? strided_idx(id, ndim, shape, lstride) : id;
+    isize ridx = strided[1] ? strided_idx(id, ndim, shape, rstride) : id;
+    isize out_idx = strided[2] ? strided_idx(id, ndim, shape, outstride) : id;
+    output[offset[2] + out_idx] = Op()(lhs[offset[0] + lidx], rhs[offset[1] + ridx]);
 }
 
 #define make_binary(opname, op, dtype, T, R) \

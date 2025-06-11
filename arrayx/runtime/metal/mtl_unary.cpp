@@ -6,12 +6,15 @@ namespace ax::runtime::metal {
         CommandEncoder encoder(ctx);
         LazyPtr in_lazy = in_op->get_lazy();
         LazyPtr out_lazy = out_op->get_lazy();
-        encoder.encode_ndim(in_lazy);
-        encoder.encode_offset({in_lazy, out_lazy});
+        isize ndim = in_lazy->get_ndim();
+        isize offset[] = {in_lazy->get_offset(), out_lazy->get_offset()};
+        bool strided[] = {!in_lazy->is_contiguous(), !out_lazy->is_contiguous()};
+        encoder.encode_buffer(&ndim, sizeof(isize));
+        encoder.encode_buffer(offset, sizeof(isize) * 2);
         encoder.encode_view(in_lazy);
         encoder.encode_stride(in_lazy);
         encoder.encode_stride(out_lazy);
-        encoder.encode_strided({in_lazy, out_lazy});
+        encoder.encode_buffer(strided, sizeof(bool) * 2);
         encoder.encode_array(in_lazy);
         encoder.encode_array(out_lazy);
         std::string kernel_name = name + "_" + in_lazy->get_dtype()->str();

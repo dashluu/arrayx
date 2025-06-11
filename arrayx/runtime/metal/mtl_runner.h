@@ -14,8 +14,8 @@ namespace ax::runtime::metal {
         void run_matmul_kernel(OpPtr lop, OpPtr rop, OpPtr out_op) override;
         void run_unary_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) override;
         void run_copy_kernel(OpPtr in_op, OpPtr out_op) override;
-        void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) override;
-        void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) override;
+        void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) override;
+        void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) override;
         void run_initializer_op(OpPtr op) override;
         void run_unary_op(OpPtr op) override;
         void run_binary_op(OpPtr op) override;

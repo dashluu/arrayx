@@ -56,19 +56,19 @@ struct Sq
 
 template <class Op, class T, class R>
 kernel void unary(
-    const constant uint &ndim [[buffer(0)]],
-    const constant uint *offset [[buffer(1)]],
-    const constant uint *shape [[buffer(2)]],
-    const constant int *instride [[buffer(3)]],
-    const constant int *outstride [[buffer(4)]],
+    const constant isize &ndim [[buffer(0)]],
+    const constant isize *offset [[buffer(1)]],
+    const constant isize *shape [[buffer(2)]],
+    const constant isize *instride [[buffer(3)]],
+    const constant isize *outstride [[buffer(4)]],
     const constant bool *strided [[buffer(5)]],
     device T *input [[buffer(6)]],
     device R *output [[buffer(7)]],
     uint id [[thread_position_in_grid]])
 {
-    uint inidx = strided[0] ? strided_idx(id, ndim, shape, instride) : id;
-    uint outidx = strided[1] ? strided_idx(id, ndim, shape, outstride) : id;
-    output[offset[1] + outidx] = Op()(input[offset[0] + inidx]);
+    isize in_idx = strided[0] ? strided_idx(id, ndim, shape, instride) : id;
+    isize out_idx = strided[1] ? strided_idx(id, ndim, shape, outstride) : id;
+    output[offset[1] + out_idx] = Op()(input[offset[0] + in_idx]);
 }
 
 #define make_unary_all(opname, op, dtype, T, R) \

@@ -7,34 +7,27 @@ namespace ax::runtime::metal {
         LazyPtr llazy = lop->get_lazy();
         LazyPtr rlazy = rop->get_lazy();
         LazyPtr out_lazy = out_op->get_lazy();
-        bool strided_input = !llazy->is_contiguous() || !rlazy->is_contiguous();
-
-        // Encode buffers
-        if (strided_input) {
-            encoder.encode_ndim(llazy);
-        }
-
-        encoder.encode_offset({llazy, rlazy, out_lazy});
+        isize ndim = llazy->get_ndim();
+        isize offset[] = {llazy->get_offset(), rlazy->get_offset(), out_lazy->get_offset()};
+        bool strided[] = {!llazy->is_contiguous(), !rlazy->is_contiguous()};
+        encoder.encode_buffer(&ndim, sizeof(isize));
+        encoder.encode_buffer(offset, sizeof(isize) * 3);
         encoder.encode_view(llazy);
         encoder.encode_view(rlazy);
-
-        if (strided_input) {
-            encoder.encode_stride(llazy);
-            encoder.encode_stride(rlazy);
-        }
-
+        encoder.encode_stride(llazy);
+        encoder.encode_stride(rlazy);
+        encoder.encode_buffer(strided, sizeof(bool) * 2);
         encoder.encode_array(llazy);
         encoder.encode_array(rlazy);
         encoder.encode_array(out_lazy);
-        std::string mode = "v" + std::string(strided_input ? "s" : "v");
-        std::string kernel_name = "matmul_" + mode + "_" + llazy->get_dtype()->str();
+        std::string kernel_name = "matmul_" + llazy->get_dtype()->str();
         encoder.set_pipeline_state(kernel_name);
 
-        const ShapeView &lhs_view = llazy->get_view();
-        const ShapeView &rhs_view = rlazy->get_view();
-        const isize batch_size = lhs_view[0];
-        const isize nrow = lhs_view[1];
-        const isize ncol = rhs_view[2];
+        const ShapeView &lview = llazy->get_view();
+        const ShapeView &rview = rlazy->get_view();
+        const isize batch_size = lview[0];
+        const isize nrow = lview[1];
+        const isize ncol = rview[2];
         const isize x_threads_per_group = 8;
         const isize y_threads_per_group = 8;
         const isize z_threads_per_group = 4;

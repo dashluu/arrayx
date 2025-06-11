@@ -1,4 +1,4 @@
-#include <metal_stdlib>
+#include "utils.h"
 
 template <class T>
 kernel void full(
@@ -11,8 +11,8 @@ kernel void full(
 
 template <class T>
 kernel void arange(
-    device int *start [[buffer(0)]],
-    device int *step [[buffer(1)]],
+    device isize *start [[buffer(0)]],
+    device isize *step [[buffer(1)]],
     device T *output [[buffer(2)]],
     uint id [[thread_position_in_grid]])
 {

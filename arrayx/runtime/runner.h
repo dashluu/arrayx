@@ -15,8 +15,8 @@ namespace ax::runtime {
         virtual void run_matmul_kernel(OpPtr lop, OpPtr rop, OpPtr out_op) = 0;
         virtual void run_unary_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) = 0;
         virtual void run_copy_kernel(OpPtr in_op, OpPtr out_op) = 0;
-        virtual void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) = 0;
-        virtual void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op, isize default_val) = 0;
+        virtual void run_reduce_all_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) = 0;
+        virtual void run_reduce_col_kernel(const std::string &name, OpPtr in_op, OpPtr out_op) = 0;
         virtual void run_initializer_op(OpPtr op) = 0;
         virtual void run_unary_op(OpPtr op) = 0;
         virtual void run_binary_op(OpPtr op) = 0;

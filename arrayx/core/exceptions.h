@@ -12,12 +12,12 @@ namespace ax::core {
 
     class IncompatShapesForOp : public std::invalid_argument {
     public:
-        IncompatShapesForOp(const std::string &op, const std::string lhs_view, const std::string rhs_view) : std::invalid_argument("Cannot run operator " + op + " on incompatible shapes " + lhs_view + " and " + rhs_view + ".") {}
+        IncompatShapesForOp(const std::string &op, const std::string lview, const std::string rview) : std::invalid_argument("Cannot run operator " + op + " on incompatible shapes " + lview + " and " + rview + ".") {}
     };
 
     class IncompatDtypesForOp : public std::invalid_argument {
     public:
-        IncompatDtypesForOp(const std::string &op, const std::string lhs_dtype, const std::string rhs_dtype) : std::invalid_argument("Cannot run operator " + op + " on incompatible data types " + lhs_dtype + " and " + rhs_dtype + ".") {}
+        IncompatDtypesForOp(const std::string &op, const std::string ldtype, const std::string rdtype) : std::invalid_argument("Cannot run operator " + op + " on incompatible data types " + ldtype + " and " + rdtype + ".") {}
     };
 
     class IncompatDtypeForOp : public std::invalid_argument {
