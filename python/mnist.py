@@ -1,5 +1,5 @@
 from arrayx.core import Array
-from arrayx.nn import relu
+import arrayx.functional as F
 import nn
 
 
@@ -11,6 +11,6 @@ class MnistModel(nn.Module):
 
     def forward(self, x: Array):
         x = self.linear1(x)
-        x = relu(x)
+        x = F.relu(x)
         x = self.linear2(x)
         return x

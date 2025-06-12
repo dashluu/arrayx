@@ -1,22 +1,8 @@
-from arrayx.core import Array, Backend
+from arrayx.core import Array
 import numpy as np
 
 
 class TestInitializers:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestInitializers class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestInitializers class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def test_zeros(self):
         print("\nTesting zeros:")
 

@@ -1,24 +1,10 @@
 import torch
 import torch.testing
 import numpy as np
-from arrayx.core import Array, Backend
+from arrayx.core import Array
 
 
 class TestReduce:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestReduce class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestReduce class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     @staticmethod
     def check_err(a: torch.Tensor, b: torch.Tensor, rtol=1e-3, atol=1e-4):
         try:

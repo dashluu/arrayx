@@ -2,7 +2,7 @@
 
 #include "../array/array.h"
 
-namespace ax::nn {
+namespace ax::nn::functional {
     using namespace ax::array;
 
     inline Array relu(const Array &x) {
@@ -18,7 +18,7 @@ namespace ax::nn {
         return linear(x, weight) + bias;
     }
 
-    inline Array onehot(const Array &x, isize num_classes = 0) {
+    inline Array onehot(const Array &x, isize num_classes) {
         if (x.get_dtype()->get_type() != DtypeType::INT) {
             throw std::invalid_argument("Array " + x.get_id().str() + " must be of type int.");
         }
@@ -43,21 +43,21 @@ namespace ax::nn {
         log(sum(exp(x))) = max(x) + log(sum(exp(x - max(x))))
         x: (*, N)
         y: (*, 1) for labels
-        max_x: (*, 1)
-        exp_x: (*, N)
-        sum_exp_x: (*, 1)
-        log_sum_exp_x: (*, 1)
-        onehot_y: (*, N)
-        onehot_y * x: (*, N)
+        max: (*, 1)
+        exp: (*, N)
+        sum_exp: (*, 1)
+        log_sum_exp: (*, 1)
+        target_onehot: (*, N)
+        target_onehot * x: (*, N)
         loss: (*, 1)
         */
-        isize x_ndim = x.get_ndim();
-        Array max_x = x.max({x_ndim - 1});
-        Array exp_x = (x - max_x).exp();
-        Array sum_exp_x = exp_x.sum({x_ndim - 1});
-        Array log_sum_exp_x = sum_exp_x.log() + max_x;
-        Array onehot_y = onehot(y).astype(x.get_dtype());
-        Array loss = -(onehot_y * x).sum({x_ndim - 1}) + log_sum_exp_x;
+        isize ndim = x.get_ndim();
+        Array max = x.max({ndim - 1});
+        Array exp = (x - max).exp();
+        Array sum_exp = exp.sum({ndim - 1});
+        Array log_sum_exp = sum_exp.log() + max;
+        Array target_onehot = onehot(y, 0).astype(x.get_dtype());
+        Array loss = -(target_onehot * x).sum({ndim - 1}) + log_sum_exp;
         return loss.mean();
     }
 } // namespace ax::nn

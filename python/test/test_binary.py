@@ -1,5 +1,5 @@
 from __future__ import annotations
-from arrayx.core import Array, Backend
+from arrayx.core import Array
 import numpy as np
 import operator
 
@@ -22,20 +22,6 @@ def positive_randn(shape) -> np.ndarray:
 
 
 class TestBinary:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestBinary class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestBinary class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def binary_no_broadcast(self, name: str, op1, op2, gen=randn):
         print(f"{name}:")
         n = np.random.randint(1, 5)

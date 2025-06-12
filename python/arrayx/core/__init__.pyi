@@ -87,15 +87,6 @@ class Device:
     def __str__(self) -> str:
         """String representation of device"""
 
-class Backend:
-    @staticmethod
-    def init() -> None:
-        """Initialize backend"""
-
-    @staticmethod
-    def cleanup() -> None:
-        """Shutdown backend"""
-
 class Array:
     @property
     def id(self) -> str:

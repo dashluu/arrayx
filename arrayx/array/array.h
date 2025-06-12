@@ -14,9 +14,10 @@ namespace ax::array {
         std::shared_ptr<ComputeGraph> compute_graph = nullptr;
         bool initial_run = false;
 
-        static DevicePtr get_backend_device(const std::string &device_name) { return Backend::instance().get_device(device_name); }
-        RunnerPtr get_backend_runner() const { return Backend::instance().get_runner(op->get_lazy()->get_device_name()); }
-        std::function<std::shared_ptr<ComputeGraph>(OpPtr)> get_backend_graph_builder() { return Backend::instance().get_graph_builder(op->get_lazy()->get_device_name()); }
+        static Backend &get_backend();
+        static DevicePtr get_backend_device(const std::string &device_name) { return get_backend().get_device(device_name); }
+        RunnerPtr get_backend_runner() const { return get_backend().get_runner(op->get_lazy()->get_device_name()); }
+        GraphBuilder get_backend_graph_builder() { return get_backend().get_graph_builder(op->get_lazy()->get_device_name()); }
 
     public:
         Array() = default;

@@ -9,17 +9,15 @@
 #endif
 
 namespace ax::array {
-    static Backend backend;
-
     void Backend::init() {
-        if (backend.devices.size() > 0) {
+        if (devices.size() > 0) {
             return;
         }
 
         // TODO: assume there is a CPU for now
         auto cpu = std::make_shared<Device>(DeviceType::CPU, 0);
-        backend.devices.emplace("cpu", cpu);
-        backend.devices.emplace(cpu->get_name(), cpu);
+        devices.emplace("cpu", cpu);
+        devices.emplace(cpu->get_name(), cpu);
 
 #ifdef __APPLE__
         NS::AutoreleasePool *pool = NS::AutoreleasePool::alloc()->init();
@@ -45,24 +43,16 @@ namespace ax::array {
             device = std::make_shared<Device>(DeviceType::MPS, i);
             context = std::make_shared<ax::runtime::metal::MTLContext>(mtl_device, lib_path);
             runner = std::make_shared<ax::runtime::metal::MTLRunner>(context);
-            backend.devices.emplace(device->get_name(), device);
-            backend.runners.emplace(device->get_name(), runner);
-            backend.graph_builders.emplace(device->get_name(),
-                                           [](OpPtr op) -> std::shared_ptr<ComputeGraph> { return std::make_shared<ax::graph::metal::MTLGraph>(op); });
+            devices.emplace(device->get_name(), device);
+            runners.emplace(device->get_name(), runner);
+            graph_builders.emplace(device->get_name(), [](OpPtr op) -> std::shared_ptr<ComputeGraph> {
+                return std::make_shared<ax::graph::metal::MTLGraph>(op);
+            });
             std::cout << "Initializing device " << device->get_name() << "..." << std::endl;
         }
 
         pool->release();
 #endif
-    }
-
-    void Backend::cleanup() {
-        backend.devices.clear();
-        backend.runners.clear();
-    }
-
-    const Backend &Backend::instance() {
-        return backend;
     }
 
     DevicePtr Backend::get_device(const std::string &name) const {
@@ -79,7 +69,7 @@ namespace ax::array {
         return runners.at(device_name);
     }
 
-    std::function<std::shared_ptr<ComputeGraph>(OpPtr)> Backend::get_graph_builder(const std::string &device_name) const {
+    GraphBuilder Backend::get_graph_builder(const std::string &device_name) const {
         if (graph_builders.find(device_name) == graph_builders.end()) {
             throw std::runtime_error("No graph builder found for device " + device_name + ".");
         }

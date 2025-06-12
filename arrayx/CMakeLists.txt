@@ -66,33 +66,42 @@ if(APPLE)
     add_dependencies(${PROJECT_NAME} mtl_kernels)
 endif()
 
-# Add stub files
-function(add_nanobind_stub STUB_NAME MODULE_NAME)
+function(add_stub STUB_NAME MODULE_NAME MODULE_DIR)
     nanobind_add_stub(
         ${STUB_NAME}
         MODULE arrayx.${MODULE_NAME}
-        OUTPUT arrayx/${MODULE_NAME}/__init__.pyi
+        OUTPUT ${MODULE_DIR}/__init__.pyi
         PYTHON_PATH $<TARGET_FILE_DIR:arrayx>
         DEPENDS arrayx
     )
 endfunction()
 
-add_nanobind_stub(core_stub core)
-add_nanobind_stub(nn_stub nn)
-add_nanobind_stub(optim_stub optim)
+# Add stub files
+add_stub(core_stub core core)
+add_stub(optim_stub optim optim)
+add_stub(functional_stub functional functional)
 
 # Define output directory for Python module and move files after build
 set(PYTHON_MODULE_DIR "${CMAKE_SOURCE_DIR}/../python")
 message(STATUS "PYTHON_MODULE_DIR is set to: ${PYTHON_MODULE_DIR}")
 get_filename_component(PYTHON_MODULE_DIR_ABS "${PYTHON_MODULE_DIR}" ABSOLUTE)
 message(STATUS "Absolute path: ${PYTHON_MODULE_DIR_ABS}")
-# Add custom command to move files after build
-add_custom_target(move_files ALL
-    # Remove the destination directory if it exists
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "${PYTHON_MODULE_DIR}/${PROJECT_NAME}"
-    COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" "${PYTHON_MODULE_DIR}/${PROJECT_NAME}"
-    COMMAND ${CMAKE_COMMAND} -E touch "${PYTHON_MODULE_DIR}/${PROJECT_NAME}/__init__.pyi"
+
+# Add custom command to move Nanobind extension after build
+add_custom_target(move_extension ALL
     COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE:${PROJECT_NAME}>" "${PYTHON_MODULE_DIR}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-    DEPENDS core_stub nn_stub optim_stub
+    DEPENDS core_stub optim_stub functional_stub
     COMMENT "Moving Python module and stub files"
 )
+
+function(move_module SRC DEST)
+    add_custom_command(TARGET move_extension POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${PYTHON_MODULE_DIR}/${PROJECT_NAME}/${DEST}"
+        COMMAND ${CMAKE_COMMAND} -E rename "${CMAKE_CURRENT_BINARY_DIR}/${SRC}" "${PYTHON_MODULE_DIR}/${PROJECT_NAME}/${DEST}"
+    )
+endfunction()
+
+# Move modules
+move_module(core core)
+move_module(optim optim)
+move_module(functional functional)

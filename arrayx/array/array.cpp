@@ -1,6 +1,12 @@
 #include "array.h"
 
 namespace ax::array {
+    Backend &Array::get_backend() {
+        thread_local Backend backend;
+        backend.init();
+        return backend;
+    }
+
     void Array::eval() {
         if (compute_graph == nullptr) {
             compute_graph = get_backend_graph_builder()(op);

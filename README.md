@@ -7,7 +7,7 @@ Arrayx is a lightweight deep learning framework designed to provide Metal-accele
 A virtual environment(e.g., Conda) is recommended before installing Python packages. The following software is needed to run Arrayx:
 - Python 3.12+
 - C++ 23
-- NumPy (>=2.0 but should work for any version)
+- NumPy >=2.0
 - Nanobind >= 2.7.0 (Python package for C++ bindings)
 - Metal 3.2 and metal-cpp for macOS 15.2 and iOS 18.2
 - Pytest >= 8.3.4 (optional, mainly for testing arrayx in Python)
@@ -33,14 +33,13 @@ The two files are automatically generated in the `python` directory.
 ## Usage
 The following assumes you will be writing code in the `python` directory. If you want to write your code elsewhere, move `.so` and `.pyi` file to the directory you are writing your code in.
 
-1. Import `arrayx` in your Python code:
+1. Import `arrayx.core` in your Python code:
 ```python
-from arrayx import Array, f32, Backend
+from arrayx.core import Array, f32
 ```
 
-2. Initialize backend and arrays, remember to call `Backend.cleanup()` at the end of the program:
+2. Initialize arrays:
 ```python
-Backend.init()
 shape = [2, 3, 4]
 x1 = Array.from_numpy(np.random.randn(*shape).astype(np.float32))
 x2 = Array.from_numpy(np.random.randn(*shape).astype(np.float32))
@@ -54,24 +53,26 @@ x3 = Array.full(shape, 2.0, dtype=f32)
 out = ((x1 + x2) * x3).exp().sum()
 # Execute both forward and backward pass once backward is called
 out.backward()
-Backend.cleanup()
 ```
 
 Check out an example of `main.py` inside `python` directory. Cleaner code can also be achieved by using context manager defined in `ax.py`:
 ```python
-from arrayx import Array, f32, Backend
+from arrayx.core import Array, f32
 import ax
 import numpy as np
 import torch
 
-
-with ax.context():
-    arr1 = Array.zeros([2, 5, 3])
-    arr2 = arr1[:, 1:4]
-    arr2 += Array.ones([2, 3, 3])
-	# print triggers the computational graph to be compiled and executed
-    print(arr2)
+arr1 = Array.zeros([2, 5, 3])
+arr2 = arr1[:, 1:4]
+arr2 += Array.ones([2, 3, 3])
+# print triggers the computational graph to be compiled and executed
+print(arr2)
 ```
+
+There are a few more modules than just `core`:
+* `core`: contains `Array`, data types such as `f32` and such.
+* `functional`: contains important functions to implement neural networks such as `linear`, `onehot`, etc.
+* `optim`: contains optimizer and Gradient Decsent implementations for updating parameters.
 
 ## Features
 - Metal-accelerated array operations

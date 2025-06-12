@@ -1,9 +1,8 @@
 from __future__ import annotations
-import numpy as np
-from arrayx.core import Array, DtypeType, f32, i32
-from arrayx.nn import linear, linear_with_bias
-from collections.abc import Sequence
 from typing import Callable
+from arrayx.core import Array
+import arrayx.functional as F
+import numpy as np
 
 
 class JitKey:
@@ -40,7 +39,7 @@ class Jit:
         if key in self.__cache:
             return self.__cache[key]
         else:
-            result = self.__callable(*args, **kwargs)
+            result: Array = self.__callable(*args, **kwargs)
             result.compile()
             self.__cache[key] = result
             return result
@@ -60,7 +59,7 @@ class Module:
         return self.forward(*args, **kwargs)
 
     def forward(self, *args, **kwargs):
-        raise NotImplementedError("Subclasses must implement forward method")
+        raise NotImplementedError("Subclasses must implement forward method.")
 
 
 class Linear(Module):
@@ -85,4 +84,4 @@ class Linear(Module):
         return self.__b
 
     def forward(self, x: Array):
-        return linear(x, self.__w) if self.__b is None else linear_with_bias(x, self.__w, self.__b)
+        return F.linear(x, self.__w) if self.__b is None else F.linear_with_bias(x, self.__w, self.__b)

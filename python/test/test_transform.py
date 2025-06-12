@@ -1,22 +1,8 @@
-from arrayx.core import Array, Backend
+from arrayx.core import Array
 import numpy as np
 
 
 class TestTransform:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestTransform class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestTransform class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def test_slice_v1(self):
         print("slice 1:")
         shape = [np.random.randint(1, 50) for _ in range(3)]

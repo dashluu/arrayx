@@ -1,4 +1,4 @@
-from arrayx.core import Array, Backend, Shape
+from arrayx.core import Array, Shape
 import numpy as np
 import torch
 
@@ -8,20 +8,6 @@ def compare_grads(arr_grad: Array, torch_grad: torch.Tensor, name: str):
 
 
 class TestBackprop:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestBackprop class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestBackprop class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def make_shape(self) -> Shape:
         n = np.random.randint(1, 5)
         shape = [np.random.randint(1, 100) for _ in range(n)]

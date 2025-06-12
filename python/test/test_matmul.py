@@ -1,22 +1,8 @@
 import numpy as np
-from arrayx.core import Array, Backend
+from arrayx.core import Array
 
 
 class TestMatmul:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestMatmul class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestMatmul class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def test_2d_matmul(self):
         """Test matrix multiplication for 2D arrays"""
         print("matmul 2d:")

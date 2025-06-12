@@ -1,28 +1,14 @@
 from __future__ import annotations
-from arrayx.core import Array, Backend
-from arrayx.nn import relu, onehot, cross_entropy_loss
-from arrayx.optim import GradientDescent
-from mnist import MnistModel
+from arrayx.core import Array
+import arrayx.functional as F
+import arrayx.optim as optim
 import nn
+from mnist import MnistModel
 import numpy as np
 import torch
 
 
 class TestBasicNN:
-    @classmethod
-    def setup_class(cls):
-        """Run once before all tests in the class"""
-        print("\nSetting up TestBasicNN class...")
-        # Add any setup code here
-        Backend.init()
-
-    @classmethod
-    def teardown_class(cls):
-        """Run once after all tests in the class"""
-        print("\nTearing down TestBasicNN class...")
-        # Add any cleanup code here
-        Backend.cleanup()
-
     def test_linear(self):
         x = np.random.randn(64, 784).astype(np.float32)
         arr1 = Array.from_numpy(x)
@@ -47,7 +33,7 @@ class TestBasicNN:
         arr1 = Array.from_numpy(x)
         t1 = torch.from_numpy(x)
         t1.requires_grad_(True)
-        arr2 = relu(arr1)
+        arr2 = F.relu(arr1)
         arr3 = arr2.sum()
         t2 = torch.relu(t1)
         t3 = t2.sum()
@@ -60,7 +46,7 @@ class TestBasicNN:
         x = np.random.randint(0, 10, (64,), dtype=np.int32)
         arr1 = Array.from_numpy(x)
         t1 = torch.from_numpy(x).type(torch.int64)
-        onehot1 = onehot(arr1)
+        onehot1 = F.onehot(arr1)
         onehot2 = torch.nn.functional.one_hot(t1, num_classes=10).type(torch.int32)
         assert torch.allclose(onehot1.torch(), onehot2, atol=1e-3, rtol=0)
 
@@ -72,7 +58,7 @@ class TestBasicNN:
         t1.requires_grad_(True)
         arr2 = Array.from_numpy(y)
         t2 = torch.from_numpy(y).type(torch.int64)
-        loss1 = cross_entropy_loss(arr1, arr2)
+        loss1 = F.cross_entropy_loss(arr1, arr2)
         loss2: torch.Tensor = torch.nn.CrossEntropyLoss()(t1, t2)
         loss1.backward()
         loss2.backward()
@@ -117,7 +103,7 @@ class TestBasicNN:
         torch_logits = torch_model(t1)
 
         # Loss computation
-        loss = cross_entropy_loss(logits, arr2)
+        loss = F.cross_entropy_loss(logits, arr2)
         torch_loss: torch.Tensor = torch.nn.CrossEntropyLoss()(torch_logits, t2)
 
         # Backward pass
@@ -173,13 +159,13 @@ class TestBasicNN:
             logits = model(arr1)
             torch_logits = torch_model(t1)
             # Loss computation
-            loss = cross_entropy_loss(logits, arr2)
+            loss = F.cross_entropy_loss(logits, arr2)
             torch_loss: torch.Tensor = torch.nn.CrossEntropyLoss()(torch_logits, t2)
             # Backward pass
             loss.backward()
             torch_loss.backward()
             # Setup optimizers
-            optimizer = GradientDescent(model.parameters(), lr=1e-3)
+            optimizer = optim.GradientDescent(model.parameters(), lr=1e-3)
             torch_optimizer = torch.optim.SGD(torch_model.parameters(), lr=1e-3, momentum=0, weight_decay=0)
             optimizer.step()
             torch_optimizer.step()
@@ -223,7 +209,7 @@ class TestBasicNN:
         t1 = torch.from_numpy(x)
         t2 = torch.from_numpy(y).type(torch.int64)
         model_jit = nn.Jit(model.__call__)
-        loss_jit = nn.Jit(cross_entropy_loss)
+        loss_jit = nn.Jit(F.cross_entropy_loss)
         passes = 3
 
         for _ in range(passes):
@@ -237,7 +223,7 @@ class TestBasicNN:
             loss.backward()
             torch_loss.backward()
             # Setup optimizers
-            optimizer = GradientDescent(model.parameters(), lr=1e-3)
+            optimizer = optim.GradientDescent(model.parameters(), lr=1e-3)
             torch_optimizer = torch.optim.SGD(torch_model.parameters(), lr=1e-3, momentum=0, weight_decay=0)
             optimizer.step()
             torch_optimizer.step()

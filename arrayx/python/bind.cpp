@@ -3,7 +3,7 @@
 
 NB_MODULE(arrayx, m) {
     auto m_core = m.def_submodule("core", "Core module");
-    auto m_nn = m.def_submodule("nn", "Neural network module");
+    auto m_functional = m.def_submodule("functional", "Functional module");
     auto m_optim = m.def_submodule("optim", "Optimizer module");
 
     // Dtype class and operations
@@ -47,11 +47,6 @@ NB_MODULE(arrayx, m) {
         .def_prop_ro("id", &axd::Device::get_id, "Get device's ID")
         .def_prop_ro("name", &axd::Device::get_name, "Get device's name")
         .def("__str__", &axd::Device::str, "String representation of device");
-
-    // Backend class
-    nb::class_<axr::Backend>(m_core, "Backend")
-        .def_static("init", &axr::Backend::init, "Initialize backend")
-        .def_static("cleanup", &axr::Backend::cleanup, "Shutdown backend");
 
     // Array class
     nb::class_<axr::Array>(m_core, "Array")
@@ -160,9 +155,9 @@ NB_MODULE(arrayx, m) {
     nb::class_<axo::GradientDescent, axo::Optimizer>(m_optim, "GradientDescent")
         .def(nb::init<const axr::ArrayVec &, float>(), "params"_a, "lr"_a = 1e-3, "Gradient Descent optimizer");
 
-    m_nn.def("linear", &axnn::linear, "x"_a, "weight"_a, "Functional linear without bias");
-    m_nn.def("linear_with_bias", &axnn::linear_with_bias, "x"_a, "weight"_a, "bias"_a, "Functional linear with bias");
-    m_nn.def("relu", &axnn::relu, "x"_a, "ReLU activation function");
-    m_nn.def("onehot", &axnn::onehot, "x"_a, "num_classes"_a = -1, "One-hot encode input array");
-    m_nn.def("cross_entropy_loss", &axnn::cross_entropy_loss, "x"_a, "y"_a, "Compute cross-entropy loss between input x and target y");
+    m_functional.def("linear", &axf::linear, "x"_a, "weight"_a, "Functional linear without bias");
+    m_functional.def("linear_with_bias", &axf::linear_with_bias, "x"_a, "weight"_a, "bias"_a, "Functional linear with bias");
+    m_functional.def("relu", &axf::relu, "x"_a, "ReLU activation function");
+    m_functional.def("onehot", &axf::onehot, "x"_a, "num_classes"_a = -1, "One-hot encode input array");
+    m_functional.def("cross_entropy_loss", &axf::cross_entropy_loss, "x"_a, "y"_a, "Compute cross-entropy loss between input x and target y");
 }
